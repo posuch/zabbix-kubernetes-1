@@ -29,13 +29,14 @@ class CheckKubernetes:
     def __init__(self, config, config_name, action, resource, resource_name, key):
         self.server = 'https://%s:%s' % (config.host, config.port)
 
-        self.cache_time = config.cache_time
         self.action = action
         self.resource = resource
         self.resource_name = resource_name
         self.key = key
         self.config_name = config_name
-        self.cache_filename = 'cache/' + self.config_name + '__' + self.resource + '.json'
+        self.cache_time = config.cache_time
+        self.cache_folder = config.cache_folder
+        self.cache_filename = self.cache_folder + '/' + self.config_name + '__' + self.resource + '.json'
 
         self.api_configuration = client.Configuration()
         self.api_configuration.host = self.server
@@ -68,6 +69,9 @@ class CheckKubernetes:
             return apps_v1.list_deployment_for_all_namespaces(watch=False).to_dict()
 
     def write_cache(self, cached_data):
+        if not os.path.exists(self.cache_folder):
+            os.mkdir(self.cache_folder, mode=0o770)
+
         with open(self.cache_filename, 'w') as fh:
             fh.write(json.dumps(cached_data, default=json_serial))
 
