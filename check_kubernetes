@@ -76,12 +76,21 @@ class CheckKubernetes:
         with open(self.cache_filename, 'w') as fh:
             fh.write(json.dumps(cached_data, default=json_serial))
 
+    def slugit(self, name, maxlen):
+       if (len(name) <= maxlen):
+         return name
+
+       prefix_pos = int((maxlen / 2) - 1)
+       suffix_pos = len(name) - int(maxlen / 2) - 2
+       return name[:prefix_pos] +  "~" + name[suffix_pos:]
+
     def discover_deployments(self, data):
         name_list = []
         for deployment in data['items']:
             name_list.append({
                   "{#NAME}": deployment['metadata']['name'], 
-                  "{#NAMESPACE}": deployment['metadata']['namespace'] 
+                  "{#NAMESPACE}": deployment['metadata']['namespace'],
+                  "{#SLUG}": self.slugit(deployment['metadata']['namespace']+"/"+deployment['metadata']['name'],40),
                   })
         print(json.dumps({ "data": name_list}))
 
