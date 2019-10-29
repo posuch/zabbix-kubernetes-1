@@ -16,7 +16,7 @@ from kubernetes import client, config
 from datetime import datetime, date
 
 KNOWN_ACTIONS = ['discover', 'get']
-KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods']
+KNOWN_RESOURCES = ['nodes', 'deployments', 'components', 'tls', 'services', 'pods']
 
 
 def json_serial(obj):
@@ -62,17 +62,26 @@ class CheckKubernetes:
             data = self.get_data()
             self.write_cache(data)
 
-        getattr(self, action + '_' + resource)(data=data)
+        if data:
+            getattr(self, action + '_' + resource)(data=data)
+        else:
+            print('No data for resource "' + self.resource + '"')
 
     def get_data(self):
-        if self.resource == 'nodes':
+        if self.resource in ['nodes', 'components', 'tls', 'pods']:
             core_v1 = client.CoreV1Api(self.api_client)
+        elif self.resource in ['deployments']:
+            apps_v1 = client.AppsV1Api(self.api_client)
+
+        if self.resource == 'nodes':
             return core_v1.list_node(watch=False).to_dict()
         elif self.resource == 'deployments':
-            apps_v1 = client.AppsV1Api(self.api_client)
             return apps_v1.list_deployment_for_all_namespaces(watch=False).to_dict()
+        elif self.resource == 'components':
+            return core_v1.list_component_status(watch=False).to_dict()
+        elif self.resource == 'tls':
+            return core_v1.list_secret_for_all_namespaces(watch=False).to_dict()
         elif self.resource == 'pods':
-            core_v1 = client.CoreV1Api(self.api_client)
             return core_v1.list_pod_for_all_namespaces(watch=False).to_dict()
 
     def write_cache(self, cached_data):
@@ -149,6 +158,43 @@ class CheckKubernetes:
                     print(True)
                 else:
                     print(self.transform_value(deployment['status'][self.key]))
+
+    def discover_components(self, data):
+        name_list = []
+        for component in data['items']:
+            name_list.append({
+                "{#NAME}": component['metadata']['name'],
+            })
+        print(json.dumps({"data": name_list}))
+
+    def get_components(self, data):
+        for component in data['items']:
+            if component['metadata']['name'] == self.resource_name:
+                if self.key == 'available_status':
+                    # special case available_status check
+                    for cond in [x for x in component['conditions'] if x['type'].lower() == "healthy"]:
+                        if cond['status'] == 'True':
+                            print(True)
+                        else:
+                            print(False)
+                        break
+                else:
+                    print(self.transform_value(component['status'][self.key]))
+
+    def discover_tls(self, data):
+        name_list = []
+        for component in data['items']:
+            name_list.append({
+                "{#NAME}": component['metadata']['name'],
+                "{#NAMESPACE}": component['metadata']['namespace'],
+            })
+        print(json.dumps({"data": name_list}))
+
+    def get_tls(self, data):
+        for component in data['items']:
+            if component['metadata']['name'] == self.resource_name and \
+                    component['metadata']['namespace'] == self.resource_namespace:
+                pass
 
 
 if __name__ == '__main__':
