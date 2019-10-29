@@ -77,32 +77,32 @@ class CheckKubernetes:
             fh.write(json.dumps(cached_data, default=json_serial))
 
     def slugit(self, name, maxlen):
-       if (len(name) <= maxlen):
-         return name
+        if len(name) <= maxlen:
+            return name
 
-       prefix_pos = int((maxlen / 2) - 1)
-       suffix_pos = len(name) - int(maxlen / 2) - 2
-       return name[:prefix_pos] +  "~" + name[suffix_pos:]
+        prefix_pos = int((maxlen / 2) - 1)
+        suffix_pos = len(name) - int(maxlen / 2) - 2
+        return name[:prefix_pos] + "~" + name[suffix_pos:]
 
     def discover_deployments(self, data):
         name_list = []
         for deployment in data['items']:
             name_list.append({
-                  "{#NAME}": deployment['metadata']['name'], 
-                  "{#NAMESPACE}": deployment['metadata']['namespace'],
-                  "{#SLUG}": self.slugit(deployment['metadata']['namespace']+"/"+deployment['metadata']['name'],40),
-                  })
-        print(json.dumps({ "data": name_list}))
+                "{#NAME}": deployment['metadata']['name'],
+                "{#NAMESPACE}": deployment['metadata']['namespace'],
+                "{#SLUG}": self.slugit(deployment['metadata']['namespace'] + "/" + deployment['metadata']['name'], 40),
+            })
+        print(json.dumps({"data": name_list}))
 
     def transform_value(self, value):
-       if value is None:
-         return 0
-       return value
+        if value is None:
+            return 0
+        return value
 
     def get_deployments(self, data):
         for deployment in data['items']:
             if deployment['metadata']['name'] == self.resource_name and \
-               deployment['metadata']['namespace'] == self.resource_namespace:
+                    deployment['metadata']['namespace'] == self.resource_namespace:
                 print(self.transform_value(deployment['status'][self.key]))
 
     # core_v1 = client.CoreV1Api(api_client)
@@ -128,11 +128,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if action not in KNOWN_ACTIONS:
-        print("action '%s' not found in known list. ABORTING!")
+        print("action '%s' not found in known list. ABORTING!" % action)
         sys.exit(1)
 
     if resource not in KNOWN_RESOURCES:
-        print("resource '%s' not found in known list. ABORTING!")
+        print("resource '%s' not found in known list. ABORTING!" % resource)
         sys.exit(1)
 
     CheckKubernetes(config, config_name, action, resource, resource_namespace, resource_name, key).do_request()
