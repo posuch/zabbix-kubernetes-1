@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+""" kubernetes zabbix monitoring tries to read config from file (host, port, token)
+    action [discover, get]
+    resource [deployment, service]
+    name <NAME_OF_THE_RESOURCE>
+    key [e.g. ready, ready_replicas]
+
+    cache results for each <config>__<resource>.json for <config.cache_time> seconds
+"""
+import os
+import sys
+import importlib.util
+import json
+
+from kubernetes import client, config
+from datetime import datetime, date
+
+KNOWN_ACTIONS = ['discover', 'get']
+KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods']
+
+
+def json_serial(obj):
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    raise TypeError("Type %s not serializable" % type(obj))
+
+
+class CheckKubernetes:
+    def __init__(self, config, config_name, action, resource, resource_namespace, resource_name, key):
+        self.server = 'https://%s:%s' % (config.host, config.port)
+
+        self.action = action
+        self.resource = resource
+        self.resource_namespace = resource_namespace
+        self.resource_name = resource_name
+        self.key = key
+        self.config_name = config_name
+        self.cache_time = config.cache_time
+        self.cache_folder = config.cache_folder + "_" + str(os.getuid())
+        self.cache_filename = self.cache_folder + '/' + self.config_name + '__' + self.resource + '.json'
+
+        self.api_configuration = client.Configuration()
+        self.api_configuration.host = self.server
+        self.api_configuration.verify_ssl = config.verify_ssl
+        self.api_configuration.api_key = {"authorization": "Bearer " + config.token}
+
+        self.api_client = client.ApiClient(self.api_configuration)
+
+    def do_request(self):
+        data = None
+
+        # try to get cache
+        if os.path.isfile(self.cache_filename):
+            mtime = os.path.getmtime(self.cache_filename)
+            now = datetime.now().timestamp()
+            if now - mtime <= self.cache_time:
+                with open(self.cache_filename, 'r') as fh:
+                    data = json.load(fh)
+
+        # if empty -> build cache
+        if not data:
+            data = self.get_data()
+            self.write_cache(data)
+
+        getattr(self, action + '_' + resource)(data=data)
+
+    def get_data(self):
+        if self.resource == 'nodes':
+            core_v1 = client.CoreV1Api(self.api_client)
+            return core_v1.list_node(watch=False).to_dict()
+        elif self.resource == 'deployments':
+            apps_v1 = client.AppsV1Api(self.api_client)
+            return apps_v1.list_deployment_for_all_namespaces(watch=False).to_dict()
+        elif self.resource == 'pods':
+            core_v1 = client.CoreV1Api(self.api_client)
+            return core_v1.list_pod_for_all_namespaces(watch=False).to_dict()
+
+    def write_cache(self, cached_data):
+        if not os.path.exists(self.cache_folder):
+            os.mkdir(self.cache_folder, mode=0o770)
+
+        json_data = json.dumps(cached_data, default=json_serial)
+        with open(self.cache_filename, 'w') as fh:
+            fh.write(json_data)
+
+    def slugit(self, name, maxlen):
+        if len(name) <= maxlen:
+            return name
+
+        prefix_pos = int((maxlen / 2) - 1)
+        suffix_pos = len(name) - int(maxlen / 2) - 2
+        return name[:prefix_pos] + "~" + name[suffix_pos:]
+
+    def transform_value(self, value):
+        if value is None:
+            return 0
+        return value
+
+    def discover_nodes(self, data):
+        name_list = []
+        for node in data['items']:
+            name_list.append({
+                "{#NAME}": node['metadata']['name'],
+            })
+        print(json.dumps({"data": name_list}))
+
+    def get_nodes(self, data):
+        for node in data['items']:
+            if node['metadata']['name'] == self.resource_name:
+                if self.key == 'available_status':
+                    # special case available_status check
+                    for cond in [x for x in node['status']['conditions'] if x['type'].lower() == "ready"]:
+                        if cond['status'] == 'True':
+                            print(True)
+                        else:
+                            print(False)
+                        break
+                elif self.key == 'condition_status_failed':
+                    for cond in [x for x in node['status']['conditions'] if x['type'].lower() != "ready"]:
+                        if cond['status'] == 'True':
+                            print(cond['type'])
+                            break
+                    print(False)
+                else:
+                    print(self.transform_value(node['status'][self.key]))
+
+    def discover_deployments(self, data):
+        name_list = []
+        for deployment in data['items']:
+            name_list.append({
+                "{#NAME}": deployment['metadata']['name'],
+                "{#NAMESPACE}": deployment['metadata']['namespace'],
+                "{#SLUG}": self.slugit(deployment['metadata']['namespace'] + "/" + deployment['metadata']['name'], 40),
+            })
+        print(json.dumps({"data": name_list}))
+
+    def get_deployments(self, data):
+        for deployment in data['items']:
+            if deployment['metadata']['name'] == self.resource_name and \
+                    deployment['metadata']['namespace'] == self.resource_namespace:
+                if self.key == 'available_status':
+                    # special case available_status check
+                    for cond in [x for x in deployment['status']['conditions'] if x['type'].lower() == "available"]:
+                        if cond['status'] == 'True':
+                            continue
+                        else:
+                            print(False)
+                            return
+                    print(True)
+                else:
+                    print(self.transform_value(deployment['status'][self.key]))
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 7:
+        print("kubernetes <CONFIG_NAME> <ACTION> <RESOURCE> <RESOURCE_NAMESPACE> <RESOURCE_NAME> <KEY>")
+        sys.exit(1)
+
+    config_name = sys.argv[1]
+    action = sys.argv[2]
+    resource = sys.argv[3]
+    resource_namespace = sys.argv[4]
+    resource_name = sys.argv[5]
+    key = sys.argv[6]
+
+    try:
+        config = importlib.import_module(config_name)
+    except ImportError:
+        print("config file %s not found. ABORTING!" % config_name)
+        sys.exit(1)
+
+    if action not in KNOWN_ACTIONS:
+        print("action '%s' not found in known list. ABORTING!" % action)
+        sys.exit(1)
+
+    if resource not in KNOWN_RESOURCES:
+        print("resource '%s' not found in known list. ABORTING!" % resource)
+        sys.exit(1)
+
+    CheckKubernetes(config, config_name, action, resource, resource_namespace, resource_name, key).do_request()
