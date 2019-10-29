@@ -16,7 +16,7 @@ from kubernetes import client, config
 from datetime import datetime, date
 
 KNOWN_ACTIONS = ['discover', 'get']
-KNOWN_RESOURCES = ['deployments', 'services']
+KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods']
 
 
 def json_serial(obj):
@@ -65,16 +65,23 @@ class CheckKubernetes:
         getattr(self, action + '_' + resource)(data=data)
 
     def get_data(self):
-        if self.resource == 'deployments':
+        if self.resource == 'nodes':
+            core_v1 = client.CoreV1Api(self.api_client)
+            return core_v1.list_node(watch=False).to_dict()
+        elif self.resource == 'deployments':
             apps_v1 = client.AppsV1Api(self.api_client)
             return apps_v1.list_deployment_for_all_namespaces(watch=False).to_dict()
+        elif self.resource == 'pods':
+            core_v1 = client.CoreV1Api(self.api_client)
+            return core_v1.list_pod_for_all_namespaces(watch=False).to_dict()
 
     def write_cache(self, cached_data):
         if not os.path.exists(self.cache_folder):
             os.mkdir(self.cache_folder, mode=0o770)
 
+        json_data = json.dumps(cached_data, default=json_serial)
         with open(self.cache_filename, 'w') as fh:
-            fh.write(json.dumps(cached_data, default=json_serial))
+            fh.write(json_data)
 
     def slugit(self, name, maxlen):
         if len(name) <= maxlen:
@@ -83,6 +90,39 @@ class CheckKubernetes:
         prefix_pos = int((maxlen / 2) - 1)
         suffix_pos = len(name) - int(maxlen / 2) - 2
         return name[:prefix_pos] + "~" + name[suffix_pos:]
+
+    def transform_value(self, value):
+        if value is None:
+            return 0
+        return value
+
+    def discover_nodes(self, data):
+        name_list = []
+        for node in data['items']:
+            name_list.append({
+                "{#NAME}": node['metadata']['name'],
+            })
+        print(json.dumps({"data": name_list}))
+
+    def get_nodes(self, data):
+        for node in data['items']:
+            if node['metadata']['name'] == self.resource_name:
+                if self.key == 'available_status':
+                    # special case available_status check
+                    for cond in [x for x in node['status']['conditions'] if x['type'].lower() == "ready"]:
+                        if cond['status'] == 'True':
+                            print(True)
+                        else:
+                            print(False)
+                        break
+                elif self.key == 'condition_status_failed':
+                    for cond in [x for x in node['status']['conditions'] if x['type'].lower() != "ready"]:
+                        if cond['status'] == 'True':
+                            print(cond['type'])
+                            break
+                    print(False)
+                else:
+                    print(self.transform_value(node['status'][self.key]))
 
     def discover_deployments(self, data):
         name_list = []
@@ -93,11 +133,6 @@ class CheckKubernetes:
                 "{#SLUG}": self.slugit(deployment['metadata']['namespace'] + "/" + deployment['metadata']['name'], 40),
             })
         print(json.dumps({"data": name_list}))
-
-    def transform_value(self, value):
-        if value is None:
-            return 0
-        return value
 
     def get_deployments(self, data):
         for deployment in data['items']:
@@ -114,9 +149,6 @@ class CheckKubernetes:
                     print(True)
                 else:
                     print(self.transform_value(deployment['status'][self.key]))
-
-    # core_v1 = client.CoreV1Api(api_client)
-    # ret = core_v1.list_pod_for_all_namespaces(watch=False)
 
 
 if __name__ == '__main__':
