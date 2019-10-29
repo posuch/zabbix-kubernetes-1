@@ -103,7 +103,17 @@ class CheckKubernetes:
         for deployment in data['items']:
             if deployment['metadata']['name'] == self.resource_name and \
                     deployment['metadata']['namespace'] == self.resource_namespace:
-                print(self.transform_value(deployment['status'][self.key]))
+                if self.key == 'available_status':
+                    # special case available_status check
+                    for cond in [x for x in deployment['status']['conditions'] if x['type'].lower() == "available"]:
+                        if cond['status'] == 'True':
+                            continue
+                        else:
+                            print(False)
+                            return
+                    print(True)
+                else:
+                    print(self.transform_value(deployment['status'][self.key]))
 
     # core_v1 = client.CoreV1Api(api_client)
     # ret = core_v1.list_pod_for_all_namespaces(watch=False)
