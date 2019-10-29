@@ -26,16 +26,17 @@ def json_serial(obj):
 
 
 class CheckKubernetes:
-    def __init__(self, config, config_name, action, resource, resource_name, key):
+    def __init__(self, config, config_name, action, resource, resource_namespace, resource_name, key):
         self.server = 'https://%s:%s' % (config.host, config.port)
 
         self.action = action
         self.resource = resource
+        self.resource_namespace = resource_namespace
         self.resource_name = resource_name
         self.key = key
         self.config_name = config_name
         self.cache_time = config.cache_time
-        self.cache_folder = config.cache_folder
+        self.cache_folder = config.cache_folder + "_" + str(os.getuid())
         self.cache_filename = self.cache_folder + '/' + self.config_name + '__' + self.resource + '.json'
 
         self.api_configuration = client.Configuration()
@@ -78,29 +79,38 @@ class CheckKubernetes:
     def discover_deployments(self, data):
         name_list = []
         for deployment in data['items']:
-            name_list.append(deployment['metadata']['name'])
+            name_list.append({
+                  "{#NAME}": deployment['metadata']['name'], 
+                  "{#NAMESPACE}": deployment['metadata']['namespace'] 
+                  })
+        print(json.dumps({ "data": name_list}))
 
-        print(name_list)
+    def transform_value(self, value):
+       if value is None:
+         return 0
+       return value
 
     def get_deployments(self, data):
         for deployment in data['items']:
-            if deployment['metadata']['name'] == self.resource_name:
-                print(deployment['status'][self.key])
+            if deployment['metadata']['name'] == self.resource_name and \
+               deployment['metadata']['namespace'] == self.resource_namespace:
+                print(self.transform_value(deployment['status'][self.key]))
 
     # core_v1 = client.CoreV1Api(api_client)
     # ret = core_v1.list_pod_for_all_namespaces(watch=False)
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 6:
-        print("kubernetes <CONFIG_NAME> <ACTION> <RESOURCE> <RESOURCE_NAME> <KEY>")
+    if len(sys.argv) < 7:
+        print("kubernetes <CONFIG_NAME> <ACTION> <RESOURCE> <RESOURCE_NAMESPACE> <RESOURCE_NAME> <KEY>")
         sys.exit(1)
 
     config_name = sys.argv[1]
     action = sys.argv[2]
     resource = sys.argv[3]
-    resource_name = sys.argv[4]
-    key = sys.argv[5]
+    resource_namespace = sys.argv[4]
+    resource_name = sys.argv[5]
+    key = sys.argv[6]
 
     try:
         config = importlib.import_module(config_name)
@@ -116,4 +126,4 @@ if __name__ == '__main__':
         print("resource '%s' not found in known list. ABORTING!")
         sys.exit(1)
 
-    CheckKubernetes(config, config_name, action, resource, resource_name, key).do_request()
+    CheckKubernetes(config, config_name, action, resource, resource_namespace, resource_name, key).do_request()
