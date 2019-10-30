@@ -13,6 +13,7 @@ import importlib.util
 import json
 
 from kubernetes import client, config
+from kubernetes.client.rest import ApiException
 from datetime import datetime, date
 
 KNOWN_ACTIONS = ['discover', 'get']
@@ -59,7 +60,11 @@ class CheckKubernetes:
 
         # if empty -> build cache
         if not data:
-            data = self.get_data()
+            try:
+                data = self.get_data()
+            except ApiException as e:
+                print('ApiException occured: %s' % str(e))
+                return
             self.write_cache(data)
 
         if data:
