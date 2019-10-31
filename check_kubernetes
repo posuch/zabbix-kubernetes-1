@@ -8,6 +8,7 @@
     cache results for each <config>__<resource>.json for <config.cache_time> seconds
 """
 import os
+import re
 import sys
 import importlib.util
 import json
@@ -108,6 +109,9 @@ class CheckKubernetes:
     def transform_value(self, value):
         if value is None:
             return 0
+        m = re.match(r"^(\d+)Ki$", value)
+        if m:
+           return int(m.group(1)) * 1024
         return value
 
     def discover_nodes(self, data):
@@ -136,7 +140,10 @@ class CheckKubernetes:
                             break
                     print(False)
                 else:
-                    print(self.transform_value(node['status'][self.key]))
+                    current_indirection = node['status']
+                    for key in self.key.split("."):
+                          current_indirection = current_indirection[key]
+                    print(self.transform_value(current_indirection))
 
     def discover_deployments(self, data):
         name_list = []

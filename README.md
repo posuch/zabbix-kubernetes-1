@@ -39,6 +39,42 @@ Installation
   kubectl describe secret -n monitoring <id>
   cp /opt/zabbix-kubernetes/config_example.py /opt/zabbix-kubernetes/config_${CLUSTERNAME}.py
   ```
+* Test 
+  ```
+  /opt/zabbix-kubernetes/check_kubernetes config_${CLUSTERNAME} discover deployments none none none|python -m json.tool
+  /opt/zabbix-kubernetes/check_kubernetes config_${CLUSTERNAME} get deployments kube-system coredns replicas|python -m json.tool
+  ```
+
+  nodes deployments components tls pods
+
+
+TODOs
+=====
+
+
+- Node Status Discoveren, neue Discovery node_conditions
+  ```
+            "status": {
+ 
+                "conditions": [
+                    {
+                        "last_heartbeat_time": "2019-10-30T12:23:58+00:00",
+                        "last_transition_time": "2019-10-30T12:23:58+00:00",
+                        "message": "Calico is running on this node",
+                        "reason": "CalicoIsUp",
+                        "status": "False",
+                        "type": "NetworkUnavailable"
+                    },
+                    {
+                        "last_heartbeat_time": "2019-10-31T08:23:30+00:00",
+                        "last_transition_time": "2019-10-30T10:44:51+00:00",
+                        "message": "kubelet has sufficient memory available",
+                        "reason": "KubeletHasSufficientMemory",
+                        "status": "False",
+                        "type": "MemoryPressure"
+                    },
+
+  ```
 
 Authors
 =======
