@@ -45,7 +45,7 @@ Installation
   /opt/zabbix-kubernetes/check_kubernetes config_${CLUSTERNAME} get deployments kube-system coredns replicas|python -m json.tool
   ```
 
-  nodes deployments components tls pods
+  components tls pods
 
 
 TODOs

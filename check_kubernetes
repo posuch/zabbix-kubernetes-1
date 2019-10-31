@@ -126,7 +126,6 @@ class CheckKubernetes:
         for node in data['items']:
             if node['metadata']['name'] == self.resource_name:
                 if self.key == 'available_status':
-                    # special case available_status check
                     for cond in [x for x in node['status']['conditions'] if x['type'].lower() == "ready"]:
                         if cond['status'] == 'True':
                             print(True)
@@ -134,11 +133,14 @@ class CheckKubernetes:
                             print(False)
                         break
                 elif self.key == 'condition_status_failed':
+                    failed_conds = []
                     for cond in [x for x in node['status']['conditions'] if x['type'].lower() != "ready"]:
                         if cond['status'] == 'True':
-                            print(cond['type'])
-                            break
-                    print(False)
+                            failed_conds.append(cond['type'])
+                    if len(failed_conds) > 0:
+                        print(", ".join(failed_conds))
+                    else:
+                        print("OK")
                 else:
                     current_indirection = node['status']
                     for key in self.key.split("."):
