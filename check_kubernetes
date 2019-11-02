@@ -114,7 +114,7 @@ class CheckKubernetes:
             return 0
         m = re.match(r"^(\d+)Ki$", str(value))
         if m:
-           return int(m.group(1)) * 1024
+            return int(m.group(1)) * 1024
         return value
 
     def discover_nodes(self, data):
@@ -149,7 +149,7 @@ class CheckKubernetes:
                 else:
                     current_indirection = node['status']
                     for key in self.key.split("."):
-                          current_indirection = current_indirection[key]
+                        current_indirection = current_indirection[key]
                     print(self.transform_value(current_indirection))
 
     def discover_deployments(self, data):
@@ -230,29 +230,28 @@ class CheckKubernetes:
                 else:
                     print(self.transform_value(component['status'][self.key]))
 
-
     def discover_tls(self, data):
         name_list = []
         for tls_cert in data['items']:
             if tls_cert["data"] is None:
-               continue
+                continue
             if "tls.crt" in dict(tls_cert["data"]):
-               name_list.append({
-                   "{#NAME}": tls_cert['metadata']['name'],
-                   "{#NAMESPACE}": tls_cert['metadata']['namespace'],
-               })
+                name_list.append({
+                    "{#NAME}": tls_cert['metadata']['name'],
+                    "{#NAMESPACE}": tls_cert['metadata']['namespace'],
+                })
         print(json.dumps({"data": name_list}))
 
     def get_tls(self, data):
-       for tls_cert in data['items']:
+        for tls_cert in data['items']:
             if tls_cert['metadata']['name'] == self.resource_name and \
-               tls_cert['metadata']['namespace'] == self.resource_namespace and \
-               "tls.crt" in tls_cert["data"]:
-                    base64_decode = base64.b64decode(tls_cert["data"]["tls.crt"])
-                    print(base64_decode)
-                    # now decode x509, get expiration date
-                    # calculate remaining days
-                    raise Exception("NOT IMPLEMENTED")
+                    tls_cert['metadata']['namespace'] == self.resource_namespace and \
+                    "tls.crt" in tls_cert["data"]:
+                base64_decode = base64.b64decode(tls_cert["data"]["tls.crt"])
+                print(base64_decode)
+                # now decode x509, get expiration date
+                # calculate remaining days
+                raise Exception("NOT IMPLEMENTED")
 
 
 if __name__ == '__main__':

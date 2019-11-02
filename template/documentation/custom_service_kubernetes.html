@@ -61,6 +61,52 @@
 <th>Type</th><th>Name</th><th>Key</th><th>Description</th><th>Interval (sec)</th><th>History Days</th><th>Trend Days</th>
 </tr>
 </table>
+<h1>Discovery rule "Custom - Service - Kubernetes - Components"</h1>
+<table class="pretty">
+<tr>
+<th>Name</th><th>Value</th>
+</tr>
+<tr>
+<td>Name</td><td>Custom - Service - Kubernetes - Components</td>
+</tr>
+<tr>
+<td>Key</td><td>check_kubernetes[{$CONFIG_NAME},discover,components,none,none,none]</td>
+</tr>
+<tr>
+<td>Type</td><td>
+<p class="desc">External check</p>
+</td>
+</tr>
+<tr>
+<td>Delay</td><td>1h</td>
+</tr>
+</table>
+<h2>Trigger Overview</h2>
+<table class="pretty">
+<tr>
+<th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
+</tr>
+<tr>
+<td>Component   {#NAME} - available_status failed: {ITEM.LASTVALUE1}</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetes[{$CONFIG_NAME},get,components,none,{#NAME},available_status].str("OK")}&lt;&gt;1</tt></td><td><tt></tt></td>
+</tr>
+</table>
+<h2>Graph Overview</h2>
+<table class="pretty">
+<tr>
+<th>Name</th><th>Elements</th>
+</tr>
+</table>
+<h2>Item Overview</h2>
+<table class="pretty">
+<tr>
+<th>Type</th><th>Name</th><th>Key</th><th>Description</th><th>Interval (sec)</th><th>History Days</th><th>Trend Days</th>
+</tr>
+<tr>
+<td>
+<p class="desc">External check</p>
+</td><td>Component {#NAME} - available_status</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,components,none,{#NAME},available_status]</tt></td><td></td><td>2m</td><td>90d</td><td>0</td>
+</tr>
+</table>
 <h1>Discovery rule "Custom - Service - Kubernetes - Deployments"</h1>
 <table class="pretty">
 <tr>
@@ -78,7 +124,7 @@
 </td>
 </tr>
 <tr>
-<td>Delay</td><td>2m</td>
+<td>Delay</td><td>1h</td>
 </tr>
 </table>
 <h2>Trigger Overview</h2>
@@ -87,7 +133,7 @@
 <th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
 </tr>
 <tr>
-<td>Deployment {#NAMESPACE} / {#NAME} - available_status failed: {ITEM.LASTVALUE1}</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},available_status].str(True)}&lt;&gt;1</tt></td><td><tt></tt></td>
+<td>Deployment {#NAMESPACE} / {#NAME} - available_status failed: {ITEM.LASTVALUE1}</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},available_status].str("OK")}&lt;&gt;1</tt></td><td><tt></tt></td>
 </tr>
 </table>
 <h2>Graph Overview</h2>
@@ -112,32 +158,32 @@
 <tr>
 <td>
 <p class="desc">External check</p>
-</td><td>{#NAMESPACE} / {#NAME} - available_status</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},available_status]</tt></td><td></td><td>2m</td><td>3d</td><td>0</td>
+</td><td>{#NAMESPACE} / {#NAME} - available_status</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},available_status]</tt></td><td></td><td>2m</td><td>5d</td><td>0</td>
 </tr>
 <tr>
 <td>
 <p class="desc">External check</p>
-</td><td>{#NAMESPACE} / {#NAME} - collision_count</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},collision_count]</tt></td><td></td><td>2m</td><td>3d</td><td>365d</td>
+</td><td>{#NAMESPACE} / {#NAME} - collision_count</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},collision_count]</tt></td><td></td><td>5m</td><td>3d</td><td>365d</td>
 </tr>
 <tr>
 <td>
 <p class="desc">External check</p>
-</td><td>{#NAMESPACE} / {#NAME} - observed_generation</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},observed_generation]</tt></td><td></td><td>2m</td><td>3d</td><td>365d</td>
+</td><td>{#NAMESPACE} / {#NAME} - observed_generation</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},observed_generation]</tt></td><td></td><td>5m</td><td>3d</td><td>365d</td>
 </tr>
 <tr>
 <td>
 <p class="desc">External check</p>
-</td><td>{#NAMESPACE} / {#NAME} - ready_replicas</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},ready_replicas]</tt></td><td></td><td>2m</td><td>3d</td><td>365d</td>
+</td><td>{#NAMESPACE} / {#NAME} - ready_replicas</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},ready_replicas]</tt></td><td></td><td>5m</td><td>3d</td><td>365d</td>
 </tr>
 <tr>
 <td>
 <p class="desc">External check</p>
-</td><td>{#NAMESPACE} / {#NAME} - replicas</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},replicas]</tt></td><td></td><td>2m</td><td>3d</td><td>365d</td>
+</td><td>{#NAMESPACE} / {#NAME} - replicas</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},replicas]</tt></td><td></td><td>5m</td><td>3d</td><td>365d</td>
 </tr>
 <tr>
 <td>
 <p class="desc">External check</p>
-</td><td>{#NAMESPACE} / {#NAME} - unavailable_replicas</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},unavailable_replicas]</tt></td><td></td><td>2m</td><td>3d</td><td>365d</td>
+</td><td>{#NAMESPACE} / {#NAME} - unavailable_replicas</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,deployments,{#NAMESPACE},{#NAME},unavailable_replicas]</tt></td><td></td><td>5m</td><td>3d</td><td>365d</td>
 </tr>
 </table>
 <h1>Discovery rule "Custom - Service - Kubernetes - Nodes"</h1>
@@ -157,7 +203,7 @@
 </td>
 </tr>
 <tr>
-<td>Delay</td><td>2m</td>
+<td>Delay</td><td>1h</td>
 </tr>
 </table>
 <h2>Trigger Overview</h2>
@@ -169,7 +215,7 @@
 <td>Node {#NAME} condition_status_failed: {ITEM.LASTVALUE1}</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},condition_status_failed].str(OK)}&lt;&gt;1</tt></td><td><tt></tt></td>
 </tr>
 <tr>
-<td>Node {#NAME} not ready: {ITEM.LASTVALUE1}</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},available_status].str(True)}&lt;&gt;1</tt></td><td><tt></tt></td>
+<td>Node {#NAME} not ready: {ITEM.LASTVALUE1}</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},available_status].str(OK)}&lt;&gt;1</tt></td><td><tt></tt></td>
 </tr>
 </table>
 <h2>Graph Overview</h2>
@@ -178,7 +224,7 @@
 <th>Name</th><th>Elements</th>
 </tr>
 <tr>
-<td>Node {#NAME} - CPUs</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},allocatable.cpus]<br>check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},capacity.cpus]<br>
+<td>Node {#NAME} - CPUs</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},allocatable.cpu]<br>check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},capacity.cpu]<br>
 </tt></td>
 </tr>
 <tr>
@@ -202,7 +248,7 @@
 <tr>
 <td>
 <p class="desc">External check</p>
-</td><td>{#NAME} - allocatable.cpus</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},allocatable.cpus]</tt></td><td></td><td>10m</td><td>90d</td><td>365d</td>
+</td><td>{#NAME} - allocatable.cpus</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},allocatable.cpu]</tt></td><td></td><td>10m</td><td>90d</td><td>365d</td>
 </tr>
 <tr>
 <td>
@@ -227,7 +273,7 @@
 <tr>
 <td>
 <p class="desc">External check</p>
-</td><td>{#NAME} - capacity.cpus</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},capacity.cpus]</tt></td><td></td><td>10m</td><td>90d</td><td>365d</td>
+</td><td>{#NAME} - capacity.cpus</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},capacity.cpu]</tt></td><td></td><td>10m</td><td>90d</td><td>365d</td>
 </tr>
 <tr>
 <td>
@@ -248,6 +294,44 @@
 <td>
 <p class="desc">External check</p>
 </td><td>{#NAME} - condition_status_failed</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,nodes,none,{#NAME},condition_status_failed]</tt></td><td></td><td>2m</td><td>90d</td><td>0</td>
+</tr>
+</table>
+<h1>Discovery rule "Custom - Service - Kubernetes - TLS"</h1>
+<table class="pretty">
+<tr>
+<th>Name</th><th>Value</th>
+</tr>
+<tr>
+<td>Name</td><td>Custom - Service - Kubernetes - TLS</td>
+</tr>
+<tr>
+<td>Key</td><td>check_kubernetes[{$CONFIG_NAME},discover,tls,none,none,none]</td>
+</tr>
+<tr>
+<td>Type</td><td>
+<p class="desc">External check</p>
+</td>
+</tr>
+<tr>
+<td>Delay</td><td>1h</td>
+</tr>
+</table>
+<h2>Trigger Overview</h2>
+<table class="pretty">
+<tr>
+<th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
+</tr>
+</table>
+<h2>Graph Overview</h2>
+<table class="pretty">
+<tr>
+<th>Name</th><th>Elements</th>
+</tr>
+</table>
+<h2>Item Overview</h2>
+<table class="pretty">
+<tr>
+<th>Type</th><th>Name</th><th>Key</th><th>Description</th><th>Interval (sec)</th><th>History Days</th><th>Trend Days</th>
 </tr>
 </table>
 </body>
