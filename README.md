@@ -11,6 +11,7 @@ This project enhances zabbix with a externalscript which provides the following 
 * replicasets: Check and discover replicasets readiness
 * tls: Check tls secrets expiration dates
 
+For details of the monitored kubernetes attributes, have a look at the [documentation](http://htmlpreview.github.io/?https://github.com/vico-research-and-consulting/zabbix-kubernetes/blob/master/template/documentation/custom_service_kubernetes.html)
 
 Installation
 =============
