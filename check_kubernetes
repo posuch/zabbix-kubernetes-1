@@ -17,6 +17,8 @@ from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from datetime import datetime, date
 import base64
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 
 KNOWN_ACTIONS = ['discover', 'get']
 KNOWN_RESOURCES = ['nodes', 'deployments', 'components', 'tls', 'services', 'pods']
@@ -247,11 +249,11 @@ class CheckKubernetes:
             if tls_cert['metadata']['name'] == self.resource_name and \
                     tls_cert['metadata']['namespace'] == self.resource_namespace and \
                     "tls.crt" in tls_cert["data"]:
-                base64_decode = base64.b64decode(tls_cert["data"]["tls.crt"])
-                print(base64_decode)
-                # now decode x509, get expiration date
-                # calculate remaining days
-                raise Exception("NOT IMPLEMENTED")
+                if self.key == "valid_days":
+                   base64_decode = base64.b64decode(tls_cert["data"]["tls.crt"])
+                   cert = x509.load_pem_x509_certificate(base64_decode, default_backend())
+                   expire_in = cert.not_valid_after - datetime.now()
+                   print(expire_in.days)
 
 
 if __name__ == '__main__':
