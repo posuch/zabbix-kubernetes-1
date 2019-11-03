@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>3.4</version>
-    <date>2019-11-02T21:41:28Z</date>
+    <date>2019-11-03T09:48:13Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -26,6 +26,9 @@
                 </application>
                 <application>
                     <name>Custom - Service - Kubernetes - Nodes</name>
+                </application>
+                <application>
+                    <name>Custom - Service - Kubernetes - TLS</name>
                 </application>
             </applications>
             <items/>
@@ -1222,7 +1225,7 @@
                     <snmp_oid/>
                     <key>check_kubernetes[{$CONFIG_NAME},discover,tls,none,none,none]</key>
                     <delay>1h</delay>
-                    <status>1</status>
+                    <status>0</status>
                     <allowed_hosts/>
                     <snmpv3_contextname/>
                     <snmpv3_securityname/>
@@ -1246,8 +1249,68 @@
                     </filter>
                     <lifetime>1h</lifetime>
                     <description/>
-                    <item_prototypes/>
-                    <trigger_prototypes/>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>TLS {#NAMESPACE} / {#NAME}  - tls valid_days</name>
+                            <type>0</type>
+                            <snmp_community/>
+                            <snmp_oid/>
+                            <key>check_kubernetes[{$CONFIG_NAME},get,tls,{#NAMESPACE},{#NAME},valid_days]</key>
+                            <delay>8h</delay>
+                            <history>3d</history>
+                            <trends>365d</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units>d</units>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description/>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Custom - Service - Kubernetes - TLS</name>
+                                </application>
+                            </applications>
+                            <valuemap/>
+                            <logtimefmt/>
+                            <preprocessing/>
+                            <jmx_endpoint/>
+                            <application_prototypes/>
+                            <master_item_prototype/>
+                        </item_prototype>
+                    </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger_prototype>
+                            <expression>{Custom - Service - Kubernetes:check_kubernetes[{$CONFIG_NAME},get,tls,{#NAMESPACE},{#NAME},valid_days].last()}&lt;{$TLS_MIN_VALID_DAYS}</expression>
+                            <recovery_mode>0</recovery_mode>
+                            <recovery_expression/>
+                            <name>TLS {#NAMESPACE} / {#NAME} - tls valid_seconds &lt; {$TLS_MIN_VALID_DAYS}</name>
+                            <correlation_mode>0</correlation_mode>
+                            <correlation_tag/>
+                            <url/>
+                            <status>0</status>
+                            <priority>2</priority>
+                            <description/>
+                            <type>0</type>
+                            <manual_close>0</manual_close>
+                            <dependencies/>
+                            <tags/>
+                        </trigger_prototype>
+                    </trigger_prototypes>
                     <graph_prototypes/>
                     <host_prototypes/>
                     <jmx_endpoint/>
@@ -1258,6 +1321,10 @@
                 <macro>
                     <macro>{$CONFIG_NAME}</macro>
                     <value>default</value>
+                </macro>
+                <macro>
+                    <macro>{$TLS_MIN_VALID_DAYS}</macro>
+                    <value>35</value>
                 </macro>
             </macros>
             <templates/>

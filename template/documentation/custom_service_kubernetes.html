@@ -41,6 +41,9 @@
 <tr>
 <td>{$CONFIG_NAME}</td><td>default</td>
 </tr>
+<tr>
+<td>{$TLS_MIN_VALID_DAYS}</td><td>35</td>
+</tr>
 </table>
 <h1>Static Elements</h1>
 <h2>Trigger Overview</h2>
@@ -321,6 +324,9 @@
 <tr>
 <th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
 </tr>
+<tr>
+<td>TLS {#NAMESPACE} / {#NAME} - tls valid_seconds &lt; {$TLS_MIN_VALID_DAYS}</td><td></td><td style="background-color:#FFFF00;">Warning</td><td><tt>{Custom - Service - Kubernetes:check_kubernetes[{$CONFIG_NAME},get,tls,{#NAMESPACE},{#NAME},valid_days].last()}&lt;{$TLS_MIN_VALID_DAYS}</tt></td><td><tt></tt></td>
+</tr>
 </table>
 <h2>Graph Overview</h2>
 <table class="pretty">
@@ -332,6 +338,11 @@
 <table class="pretty">
 <tr>
 <th>Type</th><th>Name</th><th>Key</th><th>Description</th><th>Interval (sec)</th><th>History Days</th><th>Trend Days</th>
+</tr>
+<tr>
+<td>
+<p class="desc">Zabbix Agent</p>
+</td><td>TLS {#NAMESPACE} / {#NAME}  - tls valid_days</td><td><tt>check_kubernetes[{$CONFIG_NAME},get,tls,{#NAMESPACE},{#NAME},valid_days]</tt></td><td></td><td>8h</td><td>3d</td><td>365d</td>
 </tr>
 </table>
 </body>

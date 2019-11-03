@@ -250,10 +250,10 @@ class CheckKubernetes:
                     tls_cert['metadata']['namespace'] == self.resource_namespace and \
                     "tls.crt" in tls_cert["data"]:
                 if self.key == "valid_days":
-                   base64_decode = base64.b64decode(tls_cert["data"]["tls.crt"])
-                   cert = x509.load_pem_x509_certificate(base64_decode, default_backend())
-                   expire_in = cert.not_valid_after - datetime.now()
-                   print(expire_in.days)
+                    base64_decode = base64.b64decode(tls_cert["data"]["tls.crt"])
+                    cert = x509.load_pem_x509_certificate(base64_decode, default_backend())
+                    expire_in = cert.not_valid_after - datetime.now()
+                    print(expire_in.days)
 
 
 if __name__ == '__main__':
