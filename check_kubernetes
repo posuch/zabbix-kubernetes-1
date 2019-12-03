@@ -19,6 +19,7 @@ from datetime import datetime, date
 import base64
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
+from pprint import pprint
 
 KNOWN_ACTIONS = ['discover', 'get']
 KNOWN_RESOURCES = ['nodes', 'deployments', 'components', 'tls', 'services', 'pods']
@@ -126,6 +127,49 @@ class CheckKubernetes:
                 "{#NAME}": node['metadata']['name'],
             })
         print(json.dumps({"data": name_list}))
+
+    def discover_pods(self, data):
+        collect = {}
+        for pod in data['items']:
+            for container in pod['spec']['containers']:
+                  namespace = pod['metadata']['namespace']
+                  collect.setdefault(pod['metadata']['namespace'],{})
+                  collect[pod['metadata']['namespace']].setdefault(container['name'],0)
+                  collect[pod['metadata']['namespace']][container['name']] += 1
+
+        name_list = []
+        for namespace,data in collect.items():
+          for container,count in data.items():
+            name_list.append({
+                "{#NAMESPACE}": namespace,
+                "{#CONTAINER}": container
+            })
+        print(json.dumps({"data": name_list}))
+
+    def get_pods(self, data):
+        collect = {}
+        for pod in data['items']:
+            namespace = pod['metadata']['namespace']
+            for container in pod['status']['container_statuses']:
+                  collect.setdefault(pod['metadata']['namespace'],{})
+                  collect[pod['metadata']['namespace']].setdefault(
+                      container['name'],
+                      {
+                        "restart_count" : 0,
+                        "ready" : 0,
+                        "not_ready" : 0,
+                      }
+                  )
+                  collect[pod['metadata']['namespace']][container['name']]["restart_count"] += container['restart_count']
+
+                  if container['ready'] == "True":
+                    collect[pod['metadata']['namespace']][container['name']]["ready"] += 1
+                  else:
+                    collect[pod['metadata']['namespace']][container['name']]["not_ready"] += 1
+
+        print(collect[self.resource_namespace][self.resource_name][self.key])
+
+
 
     def get_nodes(self, data):
         for node in data['items']:
