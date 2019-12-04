@@ -21,7 +21,7 @@ from datetime import datetime, date
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
-from .file_locking import file_lock
+from file_locking import file_lock
 
 KNOWN_ACTIONS = ['discover', 'get']
 KNOWN_RESOURCES = ['nodes', 'deployments', 'components', 'tls', 'services', 'pods']
