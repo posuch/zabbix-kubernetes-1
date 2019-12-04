@@ -13,14 +13,15 @@ import sys
 import importlib.util
 import json
 import pickle
+import base64
 
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from datetime import datetime, date
-import base64
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from pprint import pprint
+
+from .file_locking import file_lock
 
 KNOWN_ACTIONS = ['discover', 'get']
 KNOWN_RESOURCES = ['nodes', 'deployments', 'components', 'tls', 'services', 'pods']
@@ -47,6 +48,7 @@ class CheckKubernetes:
 
         self.api_client = client.ApiClient(self.api_configuration)
 
+    @file_lock()
     def do_request(self):
         data = None
 
