@@ -1,4 +1,4 @@
 host = 'example.kube-apiserver.com'
-port = 6443
+port = 443
 verify_ssl = True
 token = ''
