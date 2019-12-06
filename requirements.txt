@@ -1,2 +1,3 @@
-kubernetes
-cryptography
+kubernetes==10.0.1
+cryptography==2.7
+py-zabbix==1.1.5

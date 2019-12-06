@@ -9,10 +9,12 @@ import re
 import sys
 import importlib.util
 import json
-import pickle
 import base64
 import time
+import pprint
+import logging
 
+from pyzabbix import ZabbixAPI, ZabbixMetric, ZabbixSender, ZabbixResponse, ZabbixAPIException
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from datetime import datetime, date
@@ -23,6 +25,12 @@ SLEEP_INTERVAL_SEC = 60
 
 KNOWN_ACTIONS = ['discover', 'get']
 KNOWN_RESOURCES = ['nodes', 'deployments', 'components', 'tls', 'services', 'pods']
+
+stream = logging.StreamHandler(sys.stdout)
+stream.setLevel(logging.DEBUG)
+log = logging.getLogger('pyzabbix')
+log.addHandler(stream)
+log.setLevel(logging.DEBUG)
 
 
 def slugit(name, maxlen):
@@ -49,17 +57,19 @@ class CheckKubernetesDaemon:
         self.core_v1 = client.CoreV1Api(self.api_client)
         self.apps_v1 = client.AppsV1Api(self.api_client)
         self.data = dict()
+        self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
 
     def run(self):
         while True:
             for resource in KNOWN_RESOURCES:
                 try:
-                    self.get_data(resource)
+                    self.data[resource] = self.get_data(resource)
                 except ApiException as e:
                     print('ApiException occured: %s' % str(e))
                     return
-            print(self.data)
 
+            self.send_discovery_to_zabbix()
+            self.send_data_to_zabbix()
             time.sleep(SLEEP_INTERVAL_SEC)
 
     def get_data(self, resource):
@@ -92,6 +102,18 @@ class CheckKubernetesDaemon:
         if m:
             return int(m.group(1)) * 1024
         return value
+
+    def send_discovery_to_zabbix(self):
+        metrics = list()
+        for resource in ['deployments']:
+            zabbix_data = getattr(self, 'discover_' + resource)()
+            metrics.append(ZabbixMetric(config.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', zabbix_data))
+        if metrics:
+            self.zabbix_sender.send(metrics)
+        print(metrics)
+
+    def send_data_to_zabbix(self):
+        pass
 
     def discover_nodes(self, data):
         name_list = []
@@ -169,15 +191,15 @@ class CheckKubernetesDaemon:
                         current_indirection = current_indirection[key]
                     print(self.transform_value(current_indirection))
 
-    def discover_deployments(self, data):
+    def discover_deployments(self):
         name_list = []
-        for deployment in data['items']:
+        for deployment in self.data.get('deployments').get('items'):
             name_list.append({
                 "{#NAME}": deployment['metadata']['name'],
                 "{#NAMESPACE}": deployment['metadata']['namespace'],
                 "{#SLUG}": slugit(deployment['metadata']['namespace'] + "/" + deployment['metadata']['name'], 40),
             })
-        print(json.dumps({"data": name_list}))
+        return json.dumps({"data": name_list})
 
     def get_deployments(self, data):
         for deployment in data['items']:
