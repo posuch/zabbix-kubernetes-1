@@ -6,6 +6,7 @@ This project enhances zabbix with a externalscript which provides the following 
 * apiserver : Check and discover apiservers
 * components : Check and discover health of k8s components (etcd, controller-manager, scheduler etc.)
 * nodes: Check and discover active nodes
+* pods: Check pods for restarts
 * deployments: Check and discover deployments
 * daemonsets: Check and discover daemonsets readiness
 * replicasets: Check and discover replicasets readiness
@@ -13,46 +14,76 @@ This project enhances zabbix with a externalscript which provides the following 
 
 For details of the monitored kubernetes attributes, have a look at the [documentation](http://htmlpreview.github.io/?https://github.com/vico-research-and-consulting/zabbix-kubernetes/blob/master/template/documentation/custom_service_kubernetes.html)
 
-Installation
-=============
+Testing and development
+=======================
 
 
 * Clone Repo and install dependencies
   ```
-  cd /opt
-  umask 0022
   git clone git@github.com:vico-research-and-consulting/zabbix-kubernetes.git
   pip3 install -r /opt/zabbix-kubernetes/requirements.txt
   ```
-* Symlink externalscript to the externalscripts folder
-  ```
-  cd /etc/zabbix/externalscripts
-  ln -s /opt/zabbix-kubernetes/check_kubernetes .
-  ```
 * Create monitoring account
   ```
-  kubectl apply -f monitoring-user.yaml
+  kubectl apply -f kubernetes/monitoring-user.yaml
   ```
-* Create a configuration
+* Get API Key
   ```
-  CLUSTERNAME="c1t"
   kubectl get secrets -n monitoring
   kubectl describe secret -n monitoring <id>
-  cp /opt/zabbix-kubernetes/config_example.py /opt/zabbix-kubernetes/config_${CLUSTERNAME}.py
   ```
 * Test 
   ```
-  /opt/zabbix-kubernetes/check_kubernetes config_${CLUSTERNAME} discover deployments none none none|python -m json.tool
-  /opt/zabbix-kubernetes/check_kubernetes config_${CLUSTERNAME} get deployments kube-system coredns replicas|python -m json.tool
+  export API_KEY="FAKE-4uo7ahn0HaireePhohm.....7ahn0HaireePhohm"
+  export API_URL="http://k8s-api.foo.bar/bar"
+  export ZABBIX_URL="zabbix.api.foo.bar:10080"
+  ./check_kubernetes config_${CLUSTERNAME}
+  ```
+* Test in docker
+  ```
+  ```
+  docker build  -t kubernetes-zabbix:latest -f Dockerfile .
+  docker run --rm \
+    --env API_KEY="$API_KEY" \
+    --env API_URL="${API_URL}" \
+    --env ZABBIX_URL="${ZABBIX_URL}" \
+    --name zabbix-kubernetes kubernetes-zabbix:latest
   ```
 
-  pods
+Run in Kubernetes
+=================
 
+* Clone Repo and install dependencies
+  ```
+  git clone git@github.com:vico-research-and-consulting/zabbix-kubernetes.git
+  ```
+* Clone Repo and install dependencies
+  ```
+  docker build  -t kubernetes-zabbix:latest -f Dockerfile .
+  docker inspect kubernetes-zabbix:latest --format='{{.Size}}MB'
+  docker tag kubernetes-zabbix:latest docker-registry.foo.bar:kubernetes-zabbix:latest
+  docker push docker-registry.foo.bar:kubernetes-zabbix:latest
+  ```
+* Get API Key
+  ```
+  kubectl get secrets -n monitoring
+  kubectl describe secret -n monitoring <id>
+  ```
+* Create monitoring account and api service
+  ```
+  kubectl apply -f kubernetes/service-apiserver.yaml
+  kubectl apply -f kubernetes/monitoring-user.yaml
+  ```
+* Create and apply deployment
+  ```
+  vi kubernetes/deployment.yaml
+  kubectl apply -f kubernetes/deployment.yaml
+  ```
 
 TODOs
 =====
 
-- 'services', 'pods'
+- services
 
 Authors
 =======

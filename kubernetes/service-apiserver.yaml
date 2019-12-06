@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    k8s-app: kube-apiserver
+    kubernetes.io/cluster-service: "true"
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  ports:
+  - name: ssl
+    port: 443
+    protocol: TCP
+    targetPort: 6443
+  selector:
+    component: kube-apiserver
