@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+""" kubernetes zabbix monitoring daemon
+    - tries to read config from file (host, port, token)
+    - sends data to zabbix
+    - sends data to inventory REST-API
+"""
+import os
+import re
+import sys
+import importlib.util
+import json
+import pickle
+import base64
+import time
+
+from kubernetes import client, config
+from kubernetes.client.rest import ApiException
+from datetime import datetime, date
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+
+SLEEP_INTERVAL_SEC = 60
+
+KNOWN_ACTIONS = ['discover', 'get']
+KNOWN_RESOURCES = ['nodes', 'deployments', 'components', 'tls', 'services', 'pods']
+
+
+def slugit(name, maxlen):
+    if len(name) <= maxlen:
+        return name
+
+    prefix_pos = int((maxlen / 2) - 1)
+    suffix_pos = len(name) - int(maxlen / 2) - 2
+    return name[:prefix_pos] + "~" + name[suffix_pos:]
+
+
+class CheckKubernetesDaemon:
+    def __init__(self, config, config_name):
+        self.server = 'https://%s:%s' % (config.host, config.port)
+
+        self.config_name = config_name
+
+        self.api_configuration = client.Configuration()
+        self.api_configuration.host = self.server
+        self.api_configuration.verify_ssl = config.verify_ssl
+        self.api_configuration.api_key = {"authorization": "Bearer " + config.token}
+
+        self.api_client = client.ApiClient(self.api_configuration)
+        self.core_v1 = client.CoreV1Api(self.api_client)
+        self.apps_v1 = client.AppsV1Api(self.api_client)
+        self.data = dict()
+
+    def run(self):
+        while True:
+            for resource in KNOWN_RESOURCES:
+                try:
+                    self.get_data(resource)
+                except ApiException as e:
+                    print('ApiException occured: %s' % str(e))
+                    return
+            print(self.data)
+
+            time.sleep(SLEEP_INTERVAL_SEC)
+
+    def get_data(self, resource):
+        if resource in ['nodes', 'components', 'tls', 'pods', 'services']:
+            # use core_v1
+            api = self.core_v1
+        elif resource in ['deployments']:
+            # use apps_v1
+            api = self.apps_v1
+        else:
+            raise AttributeError('No valid resource found: %s' % resource)
+
+        if resource == 'nodes':
+            return api.list_node(watch=False).to_dict()
+        elif resource == 'deployments':
+            return api.list_deployment_for_all_namespaces(watch=False).to_dict()
+        elif resource == 'components':
+            return api.list_component_status(watch=False).to_dict()
+        elif resource == 'tls':
+            return api.list_secret_for_all_namespaces(watch=False).to_dict()
+        elif resource == 'pods':
+            return api.list_pod_for_all_namespaces(watch=False).to_dict()
+        elif resource == 'services':
+            return api.list_service_for_all_namespaces(watch=False).to_dict()
+
+    def transform_value(self, value):
+        if value is None:
+            return 0
+        m = re.match(r"^(\d+)Ki$", str(value))
+        if m:
+            return int(m.group(1)) * 1024
+        return value
+
+    def discover_nodes(self, data):
+        name_list = []
+        for node in data['items']:
+            name_list.append({
+                "{#NAME}": node['metadata']['name'],
+            })
+        print(json.dumps({"data": name_list}))
+
+    def discover_pods(self, data):
+        collect = {}
+        for pod in data['items']:
+            for container in pod['spec']['containers']:
+                namespace = pod['metadata']['namespace']
+                collect.setdefault(pod['metadata']['namespace'], {})
+                collect[pod['metadata']['namespace']].setdefault(container['name'], 0)
+                collect[pod['metadata']['namespace']][container['name']] += 1
+
+        name_list = []
+        for namespace, data in collect.items():
+            for container, count in data.items():
+                name_list.append({
+                    "{#NAMESPACE}": namespace,
+                    "{#NAME}": container
+                })
+        print(json.dumps({"data": name_list}))
+
+    def get_pods(self, data):
+        collect = {}
+        for pod in data['items']:
+            namespace = pod['metadata']['namespace']
+            for container in pod['status']['container_statuses']:
+                collect.setdefault(pod['metadata']['namespace'], {})
+                collect[pod['metadata']['namespace']].setdefault(
+                    container['name'],
+                    {
+                        "restart_count": 0,
+                        "ready": 0,
+                        "not_ready": 0,
+                    }
+                )
+                collect[pod['metadata']['namespace']][container['name']]["restart_count"] += container['restart_count']
+
+                if container['ready'] == "True":
+                    collect[pod['metadata']['namespace']][container['name']]["ready"] += 1
+                else:
+                    collect[pod['metadata']['namespace']][container['name']]["not_ready"] += 1
+
+        print(collect[self.resource_namespace][self.resource_name][self.key])
+
+    def get_nodes(self, data):
+        for node in data['items']:
+            if node['metadata']['name'] == self.resource_name:
+                if self.key == 'available_status':
+                    failed_conds = []
+                    for cond in [x for x in node['status']['conditions'] if x['type'].lower() == "ready"]:
+                        if cond['status'] != 'True':
+                            failed_conds.append(cond['type'])
+                    if len(failed_conds) > 0:
+                        print(", ".join(failed_conds))
+                    else:
+                        print("OK")
+                elif self.key == 'condition_status_failed':
+                    failed_conds = []
+                    for cond in [x for x in node['status']['conditions'] if x['type'].lower() != "ready"]:
+                        if cond['status'] == 'True':
+                            failed_conds.append(cond['type'])
+                    if len(failed_conds) > 0:
+                        print(", ".join(failed_conds))
+                    else:
+                        print("OK")
+                else:
+                    current_indirection = node['status']
+                    for key in self.key.split("."):
+                        current_indirection = current_indirection[key]
+                    print(self.transform_value(current_indirection))
+
+    def discover_deployments(self, data):
+        name_list = []
+        for deployment in data['items']:
+            name_list.append({
+                "{#NAME}": deployment['metadata']['name'],
+                "{#NAMESPACE}": deployment['metadata']['namespace'],
+                "{#SLUG}": slugit(deployment['metadata']['namespace'] + "/" + deployment['metadata']['name'], 40),
+            })
+        print(json.dumps({"data": name_list}))
+
+    def get_deployments(self, data):
+        for deployment in data['items']:
+            if deployment['metadata']['name'] == self.resource_name and \
+                    deployment['metadata']['namespace'] == self.resource_namespace:
+                if self.key == 'available_status':
+                    # special case available_status check
+                    failed_conds = []
+                    for cond in [x for x in deployment['status']['conditions'] if x['type'].lower() == "available"]:
+                        if cond['status'] != 'True':
+                            failed_conds.append(cond['type'])
+                    if len(failed_conds) > 0:
+                        print(", ".join(failed_conds))
+                    else:
+                        print("OK")
+                else:
+                    print(self.transform_value(deployment['status'][self.key]))
+
+    def discover_services(self, data):
+        name_list = []
+        for service in data['items']:
+            name_list.append({
+                "{#NAME}": service['metadata']['name'],
+                "{#NAMESPACE}": service['metadata']['namespace'],
+                "{#SLUG}": slugit(service['metadata']['namespace'] + "/" + service['metadata']['name'], 40),
+            })
+        print(json.dumps({"data": name_list}))
+
+    def get_services(self, data):
+        for service in data['items']:
+            if service['metadata']['name'] == self.resource_name and \
+                    service['metadata']['namespace'] == self.resource_namespace:
+                if self.key == 'available_status':
+                    # special case available_status check
+                    failed_conds = []
+                    for cond in [x for x in service['status']['conditions'] if x['type'].lower() == "available"]:
+                        if cond['status'] != 'True':
+                            failed_conds.append(cond['type'])
+                    if len(failed_conds) > 0:
+                        print(", ".join(failed_conds))
+                    else:
+                        print("OK")
+                else:
+                    print(self.transform_value(service['status'][self.key]))
+
+    def discover_components(self, data):
+        name_list = []
+        for component in data['items']:
+            name_list.append({
+                "{#NAME}": component['metadata']['name'],
+            })
+        print(json.dumps({"data": name_list}))
+
+    def get_components(self, data):
+        for component in data['items']:
+            if component['metadata']['name'] == self.resource_name:
+                if self.key == 'available_status':
+                    # special case available_status check
+                    failed_conds = []
+                    for cond in [x for x in component['conditions'] if x['type'].lower() == "healthy"]:
+                        if cond['status'] != 'True':
+                            failed_conds.append(cond['type'])
+                    if len(failed_conds) > 0:
+                        print(", ".join(failed_conds))
+                    else:
+                        print("OK")
+                else:
+                    print(self.transform_value(component['status'][self.key]))
+
+    def discover_tls(self, data):
+        name_list = []
+        for tls_cert in data['items']:
+            if tls_cert["data"] is None:
+                continue
+            if "tls.crt" in dict(tls_cert["data"]):
+                name_list.append({
+                    "{#NAME}": tls_cert['metadata']['name'],
+                    "{#NAMESPACE}": tls_cert['metadata']['namespace'],
+                })
+        print(json.dumps({"data": name_list}))
+
+    def get_tls(self, data):
+        for tls_cert in data['items']:
+            if tls_cert['metadata']['name'] == self.resource_name and \
+                    tls_cert['metadata']['namespace'] == self.resource_namespace and \
+                    "tls.crt" in tls_cert["data"]:
+                if self.key == "valid_days":
+                    base64_decode = base64.b64decode(tls_cert["data"]["tls.crt"])
+                    cert = x509.load_pem_x509_certificate(base64_decode, default_backend())
+                    expire_in = cert.not_valid_after - datetime.now()
+                    print(expire_in.days)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print("kubernetes <CONFIG_NAME>")
+        sys.exit(1)
+
+    config_name = sys.argv[1]
+
+    try:
+        config = importlib.import_module(config_name)
+    except ImportError:
+        print("config file %s not found. ABORTING!" % config_name)
+        sys.exit(1)
+
+    CheckKubernetesDaemon(config, config_name).run()
