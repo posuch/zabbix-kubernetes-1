@@ -21,10 +21,12 @@ from datetime import datetime, date
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
-SLEEP_INTERVAL_SEC = 60
+TIME_SLEEP_INTERVAL_SEC = 60
+TIME_DISCOVER_TO_DATA = 1
 
 KNOWN_ACTIONS = ['discover', 'get']
-KNOWN_RESOURCES = ['nodes', 'deployments', 'components', 'tls', 'services', 'pods']
+# KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods', 'components', 'tls']
+KNOWN_RESOURCES = ['services']
 
 stream = logging.StreamHandler(sys.stdout)
 stream.setLevel(logging.DEBUG)
@@ -69,8 +71,9 @@ class CheckKubernetesDaemon:
                     return
 
             self.send_discovery_to_zabbix()
+            time.sleep(TIME_DISCOVER_TO_DATA)
             self.send_data_to_zabbix()
-            time.sleep(SLEEP_INTERVAL_SEC)
+            time.sleep(TIME_SLEEP_INTERVAL_SEC)
 
     def get_data(self, resource):
         if resource in ['nodes', 'components', 'tls', 'pods', 'services']:
@@ -105,27 +108,49 @@ class CheckKubernetesDaemon:
 
     def send_discovery_to_zabbix(self):
         metrics = list()
-        for resource in ['deployments']:
+        for resource in KNOWN_RESOURCES:
             zabbix_data = getattr(self, 'discover_' + resource)()
             metrics.append(ZabbixMetric(config.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', zabbix_data))
         if metrics:
             self.zabbix_sender.send(metrics)
-        print(metrics)
 
     def send_data_to_zabbix(self):
-        pass
+        for resource in KNOWN_RESOURCES:
+            data_to_send = getattr(self, 'get_' + resource)()
+            if data_to_send:
+                self.zabbix_sender.send(data_to_send)
 
-    def discover_nodes(self, data):
+    def discover_nodes(self):
         name_list = []
-        for node in data['items']:
+        for node in self.data.get('nodes').get('items'):
             name_list.append({
                 "{#NAME}": node['metadata']['name'],
             })
-        print(json.dumps({"data": name_list}))
+        return json.dumps({"data": name_list})
 
-    def discover_pods(self, data):
+    def discover_deployments(self):
+        name_list = []
+        for deployment in self.data.get('deployments').get('items'):
+            name_list.append({
+                "{#NAME}": deployment['metadata']['name'],
+                "{#NAMESPACE}": deployment['metadata']['namespace'],
+                "{#SLUG}": slugit(deployment['metadata']['namespace'] + "/" + deployment['metadata']['name'], 40),
+            })
+        return json.dumps({"data": name_list})
+
+    def discover_services(self):
+        name_list = []
+        for service in self.data.get('services').get('items'):
+            name_list.append({
+                "{#NAME}": service['metadata']['name'],
+                "{#NAMESPACE}": service['metadata']['namespace'],
+                "{#SLUG}": slugit(service['metadata']['namespace'] + "/" + service['metadata']['name'], 40),
+            })
+        return json.dumps({"data": name_list})
+
+    def discover_pods(self):
         collect = {}
-        for pod in data['items']:
+        for pod in self.data.get('pods').get('items'):
             for container in pod['spec']['containers']:
                 namespace = pod['metadata']['namespace']
                 collect.setdefault(pod['metadata']['namespace'], {})
@@ -139,9 +164,111 @@ class CheckKubernetesDaemon:
                     "{#NAMESPACE}": namespace,
                     "{#NAME}": container
                 })
-        print(json.dumps({"data": name_list}))
+        return json.dumps({"data": name_list})
 
-    def get_pods(self, data):
+    def discover_components(self):
+        name_list = []
+        for component in self.data.get('components').get('items'):
+            name_list.append({
+                "{#NAME}": component['metadata']['name'],
+            })
+        return json.dumps({"data": name_list})
+
+    def discover_tls(self):
+        name_list = []
+        for tls_cert in self.data.get('tls').get('items'):
+            if tls_cert["data"] is None:
+                continue
+            if "tls.crt" in dict(tls_cert["data"]):
+                name_list.append({
+                    "{#NAME}": tls_cert['metadata']['name'],
+                    "{#NAMESPACE}": tls_cert['metadata']['namespace'],
+                })
+        return json.dumps({"data": name_list})
+
+    def get_nodes(self):
+        data_to_send = list()
+        for node in self.data.get('nodes').get('items'):
+            node_name = node['metadata']['name']
+
+            failed_conds = []
+            for cond in node['status']['conditions']:
+                if cond['type'].lower() == "ready":
+                    data_to_send.append(ZabbixMetric(config.zabbix_host, 'check_kubernetesd[get,nodes,' + node_name + ',available_status]',
+                                                     'not available' if cond['status'] != 'True' else 'OK'))
+                else:
+                    if cond['status'] == 'True':
+                        failed_conds.append(cond['type'])
+
+            data_to_send.append(ZabbixMetric(config.zabbix_host, 'check_kubernetesd[get,nodes,' + node_name + ',condition_status_failed]',
+                                             failed_conds if len(failed_conds) > 0 else 'OK'))
+
+            for monitor_value in ['allocatable.cpu',
+                                  'allocatable.ephemeral-storage',
+                                  'allocatable.memory',
+                                  'allocatable.pods',
+                                  'capacity.cpu',
+                                  'capacity.ephemeral-storage',
+                                  'capacity.memory',
+                                  'capacity.pods']:
+                current_indirection = node['status']
+                for key in monitor_value.split("."):
+                    current_indirection = current_indirection[key]
+                data_to_send.append(ZabbixMetric(
+                    config.zabbix_host, 'check_kubernetesd[get,nodes,%s,%s]' % (node_name, monitor_value),
+                    self.transform_value(current_indirection))
+                )
+
+        return data_to_send
+
+    def get_deployments(self):
+        data_to_send = list()
+        for deployment in self.data.get('deployments').get('items'):
+            deployment_name = deployment['metadata']['name']
+            deployment_namespace = deployment['metadata']['namespace']
+            for status_type in deployment['status']:
+                if status_type == 'conditions':
+                    continue
+
+                data_to_send.append(ZabbixMetric(
+                    config.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,%s]' % (deployment_namespace, deployment_name, status_type),
+                    self.transform_value(deployment['status'][status_type]))
+                )
+
+            failed_conds = []
+            for cond in [x for x in deployment['status']['conditions'] if x['type'].lower() == "available"]:
+                if cond['status'] != 'True':
+                    failed_conds.append(cond['type'])
+
+            data_to_send.append(ZabbixMetric(
+                config.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,available_status]' % (deployment_namespace, deployment_name),
+                failed_conds if len(failed_conds) > 0 else 'OK')
+            )
+        return data_to_send
+
+    def get_services(self):
+        data_to_send = list()
+        for service in self.data.get('services').get('items'):
+            service_name = service['metadata']['name']
+            service_namespace = service['metadata']['namespace']
+
+            failed_conds = []
+            for cond in [x for x in service['status']['conditions'] if x['type'].lower() == "available"]:
+                if cond['status'] != 'True':
+                    failed_conds.append(cond['type'])
+
+            data_to_send.append(ZabbixMetric(
+                config.zabbix_host, 'check_kubernetesd[get,services,%s,%s,available_status]' % (service_namespace, service_name),
+                failed_conds if len(failed_conds) > 0 else 'OK')
+            )
+
+            if len(failed_conds) > 0:
+                print(", ".join(failed_conds))
+            else:
+                print("OK")
+            print(self.transform_value(service['status'][self.key]))
+
+    def get_pods(self):
         collect = {}
         for pod in data['items']:
             namespace = pod['metadata']['namespace']
@@ -164,96 +291,7 @@ class CheckKubernetesDaemon:
 
         print(collect[self.resource_namespace][self.resource_name][self.key])
 
-    def get_nodes(self, data):
-        for node in data['items']:
-            if node['metadata']['name'] == self.resource_name:
-                if self.key == 'available_status':
-                    failed_conds = []
-                    for cond in [x for x in node['status']['conditions'] if x['type'].lower() == "ready"]:
-                        if cond['status'] != 'True':
-                            failed_conds.append(cond['type'])
-                    if len(failed_conds) > 0:
-                        print(", ".join(failed_conds))
-                    else:
-                        print("OK")
-                elif self.key == 'condition_status_failed':
-                    failed_conds = []
-                    for cond in [x for x in node['status']['conditions'] if x['type'].lower() != "ready"]:
-                        if cond['status'] == 'True':
-                            failed_conds.append(cond['type'])
-                    if len(failed_conds) > 0:
-                        print(", ".join(failed_conds))
-                    else:
-                        print("OK")
-                else:
-                    current_indirection = node['status']
-                    for key in self.key.split("."):
-                        current_indirection = current_indirection[key]
-                    print(self.transform_value(current_indirection))
-
-    def discover_deployments(self):
-        name_list = []
-        for deployment in self.data.get('deployments').get('items'):
-            name_list.append({
-                "{#NAME}": deployment['metadata']['name'],
-                "{#NAMESPACE}": deployment['metadata']['namespace'],
-                "{#SLUG}": slugit(deployment['metadata']['namespace'] + "/" + deployment['metadata']['name'], 40),
-            })
-        return json.dumps({"data": name_list})
-
-    def get_deployments(self, data):
-        for deployment in data['items']:
-            if deployment['metadata']['name'] == self.resource_name and \
-                    deployment['metadata']['namespace'] == self.resource_namespace:
-                if self.key == 'available_status':
-                    # special case available_status check
-                    failed_conds = []
-                    for cond in [x for x in deployment['status']['conditions'] if x['type'].lower() == "available"]:
-                        if cond['status'] != 'True':
-                            failed_conds.append(cond['type'])
-                    if len(failed_conds) > 0:
-                        print(", ".join(failed_conds))
-                    else:
-                        print("OK")
-                else:
-                    print(self.transform_value(deployment['status'][self.key]))
-
-    def discover_services(self, data):
-        name_list = []
-        for service in data['items']:
-            name_list.append({
-                "{#NAME}": service['metadata']['name'],
-                "{#NAMESPACE}": service['metadata']['namespace'],
-                "{#SLUG}": slugit(service['metadata']['namespace'] + "/" + service['metadata']['name'], 40),
-            })
-        print(json.dumps({"data": name_list}))
-
-    def get_services(self, data):
-        for service in data['items']:
-            if service['metadata']['name'] == self.resource_name and \
-                    service['metadata']['namespace'] == self.resource_namespace:
-                if self.key == 'available_status':
-                    # special case available_status check
-                    failed_conds = []
-                    for cond in [x for x in service['status']['conditions'] if x['type'].lower() == "available"]:
-                        if cond['status'] != 'True':
-                            failed_conds.append(cond['type'])
-                    if len(failed_conds) > 0:
-                        print(", ".join(failed_conds))
-                    else:
-                        print("OK")
-                else:
-                    print(self.transform_value(service['status'][self.key]))
-
-    def discover_components(self, data):
-        name_list = []
-        for component in data['items']:
-            name_list.append({
-                "{#NAME}": component['metadata']['name'],
-            })
-        print(json.dumps({"data": name_list}))
-
-    def get_components(self, data):
+    def get_components(self):
         for component in data['items']:
             if component['metadata']['name'] == self.resource_name:
                 if self.key == 'available_status':
@@ -269,19 +307,7 @@ class CheckKubernetesDaemon:
                 else:
                     print(self.transform_value(component['status'][self.key]))
 
-    def discover_tls(self, data):
-        name_list = []
-        for tls_cert in data['items']:
-            if tls_cert["data"] is None:
-                continue
-            if "tls.crt" in dict(tls_cert["data"]):
-                name_list.append({
-                    "{#NAME}": tls_cert['metadata']['name'],
-                    "{#NAMESPACE}": tls_cert['metadata']['namespace'],
-                })
-        print(json.dumps({"data": name_list}))
-
-    def get_tls(self, data):
+    def get_tls(self):
         for tls_cert in data['items']:
             if tls_cert['metadata']['name'] == self.resource_name and \
                     tls_cert['metadata']['namespace'] == self.resource_namespace and \
