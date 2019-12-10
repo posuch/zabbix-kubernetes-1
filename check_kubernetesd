@@ -26,7 +26,7 @@ TIME_DISCOVER_TO_DATA = 1
 
 KNOWN_ACTIONS = ['discover', 'get']
 # KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods', 'components', 'tls']
-KNOWN_RESOURCES = ['services']
+KNOWN_RESOURCES = ['pods']
 
 stream = logging.StreamHandler(sys.stdout)
 stream.setLevel(logging.DEBUG)
@@ -248,30 +248,17 @@ class CheckKubernetesDaemon:
 
     def get_services(self):
         data_to_send = list()
-        for service in self.data.get('services').get('items'):
-            service_name = service['metadata']['name']
-            service_namespace = service['metadata']['namespace']
-
-            failed_conds = []
-            for cond in [x for x in service['status']['conditions'] if x['type'].lower() == "available"]:
-                if cond['status'] != 'True':
-                    failed_conds.append(cond['type'])
-
-            data_to_send.append(ZabbixMetric(
-                config.zabbix_host, 'check_kubernetesd[get,services,%s,%s,available_status]' % (service_namespace, service_name),
-                failed_conds if len(failed_conds) > 0 else 'OK')
-            )
-
-            if len(failed_conds) > 0:
-                print(", ".join(failed_conds))
-            else:
-                print("OK")
-            print(self.transform_value(service['status'][self.key]))
+        # for service in self.data.get('services').get('items'):
+        #     service_name = service['metadata']['name']
+        #     service_namespace = service['metadata']['namespace']
+        return data_to_send
 
     def get_pods(self):
         collect = {}
-        for pod in data['items']:
-            namespace = pod['metadata']['namespace']
+        data_to_send = list()
+        for pod in self.data.get('pods').get('items'):
+            pods_name = pod['metadata']['name']
+            pods_namespace = pod['metadata']['namespace']
             for container in pod['status']['container_statuses']:
                 collect.setdefault(pod['metadata']['namespace'], {})
                 collect[pod['metadata']['namespace']].setdefault(
@@ -289,7 +276,8 @@ class CheckKubernetesDaemon:
                 else:
                     collect[pod['metadata']['namespace']][container['name']]["not_ready"] += 1
 
-        print(collect[self.resource_namespace][self.resource_name][self.key])
+
+            print(collect[self.resource_namespace][self.resource_name][self.key])
 
     def get_components(self):
         for component in data['items']:
