@@ -100,11 +100,11 @@ class CheckKubernetesDaemon:
     def run(self):
         self.discover_thread = TimedThread('discover_thread', TIME_DISCOVERY_INTERVAL_SEC, exit_flag,
                                            daemon=self, daemon_method='send_discovery_to_zabbix')
-        time.sleep(5)
         self.data_thread = TimedThread('data_thread', TIME_DATA_INTERVAL_SEC, exit_flag,
                                        daemon=self, daemon_method='send_data_to_zabbix')
 
         self.discover_thread.start()
+        time.sleep(5)
         self.data_thread.start()
 
     def check_or_refresh_data(self):
@@ -190,7 +190,7 @@ class CheckKubernetesDaemon:
 
         if sended:
             # API is good
-            self.zabbix_sender.send(ZabbixMetric(config.zabbix_host, 'check_kubernetesd[discover,api', 'OK'))
+            self.zabbix_sender.send([ZabbixMetric(config.zabbix_host, 'check_kubernetesd[discover,api', 'OK')])
 
     def discover_nodes(self):
         name_list = []
