@@ -10,29 +10,31 @@ import sys
 import importlib.util
 import json
 import base64
-import time
-import pprint
 import logging
+import signal
+import time
+import threading
 
 from pyzabbix import ZabbixAPI, ZabbixMetric, ZabbixSender, ZabbixResponse, ZabbixAPIException
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
-TIME_SLEEP_INTERVAL_SEC = 60
-TIME_DISCOVER_TO_DATA = 1
+TIME_DISCOVERY_INTERVAL_SEC = 120
+TIME_DATA_INTERVAL_SEC = 60
 
 KNOWN_ACTIONS = ['discover', 'get']
-# KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods', 'components', 'tls']
-KNOWN_RESOURCES = ['pods']
+KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods', 'components', 'tls']
 
 stream = logging.StreamHandler(sys.stdout)
 stream.setLevel(logging.DEBUG)
-log = logging.getLogger('pyzabbix')
-log.addHandler(stream)
-log.setLevel(logging.DEBUG)
+logger = logging.getLogger('pyzabbix')
+logger.addHandler(stream)
+logger.setLevel(logging.DEBUG)
+
+exit_flag = threading.Event()
 
 
 def slugit(name, maxlen):
@@ -42,6 +44,29 @@ def slugit(name, maxlen):
     prefix_pos = int((maxlen / 2) - 1)
     suffix_pos = len(name) - int(maxlen / 2) - 2
     return name[:prefix_pos] + "~" + name[suffix_pos:]
+
+
+class TimedThread(threading.Thread):
+    stop_thread = False
+    daemon = None
+
+    def __init__(self, thread_name, interval, exit_flag, daemon, daemon_method):
+        self.cycle_interval_seconds = interval
+        self.exit_flag = exit_flag
+        self.thread_name = thread_name
+        self.daemon = daemon
+        self.daemon_method = daemon_method
+        threading.Thread.__init__(self, target=self.run)
+
+    def stop(self):
+        logger.info('OK: Thread "' + self.thread_name + '" is stopping"')
+        self.stop_thread = True
+
+    def run(self):
+        logger.info('starting thread %s' % self.thread_name)
+        getattr(self.daemon, self.daemon_method)()
+        while not self.exit_flag.wait(self.cycle_interval_seconds):
+            getattr(self.daemon, self.daemon_method)()
 
 
 class CheckKubernetesDaemon:
@@ -58,22 +83,57 @@ class CheckKubernetesDaemon:
         self.api_client = client.ApiClient(self.api_configuration)
         self.core_v1 = client.CoreV1Api(self.api_client)
         self.apps_v1 = client.AppsV1Api(self.api_client)
-        self.data = dict()
         self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
 
-    def run(self):
-        while True:
-            for resource in KNOWN_RESOURCES:
-                try:
-                    self.data[resource] = self.get_data(resource)
-                except ApiException as e:
-                    print('ApiException occured: %s' % str(e))
-                    return
+        self.data = dict()
+        self.data_refreshed = None
+        self.refresh_lock = False
 
-            self.send_discovery_to_zabbix()
-            time.sleep(TIME_DISCOVER_TO_DATA)
-            self.send_data_to_zabbix()
-            time.sleep(TIME_SLEEP_INTERVAL_SEC)
+    def handler(self, signum, *args):
+        logger.info('Signal handler called with signal %s... stopping (max %s seconds)' % (signum, 3))
+        exit_flag.set()
+        self.discover_thread.join(timeout=3)
+        self.data_thread.join(timeout=3)
+        logger.info('All threads exited... exit check_kubernetesd')
+        sys.exit(0)
+
+    def run(self):
+        self.discover_thread = TimedThread('discover_thread', TIME_DISCOVERY_INTERVAL_SEC, exit_flag,
+                                           daemon=self, daemon_method='send_discovery_to_zabbix')
+        time.sleep(5)
+        self.data_thread = TimedThread('data_thread', TIME_DATA_INTERVAL_SEC, exit_flag,
+                                       daemon=self, daemon_method='send_data_to_zabbix')
+
+        self.discover_thread.start()
+        self.data_thread.start()
+
+    def check_or_refresh_data(self):
+        now = datetime.now()
+        if not self.data_refreshed or self.data_refreshed + timedelta(seconds=60) < now:
+            self.refresh_data()
+
+        if not self.data_refreshed or self.data_refreshed + timedelta(seconds=60) < now:
+            logger.error('could not refresh data')
+            return False
+        return True
+
+    def refresh_data(self):
+        if self.refresh_lock:
+            # already refreshing data
+            return False
+
+        self.refresh_lock = True
+        for resource in KNOWN_RESOURCES:
+            try:
+                self.data[resource] = self.get_data(resource)
+            except ApiException as e:
+                logger.error('ApiException occured: %s' % str(e))
+                self.refresh_lock = False
+                return False
+
+        self.refresh_lock = False
+        self.data_refreshed = datetime.now()
+        return True
 
     def get_data(self, resource):
         if resource in ['nodes', 'components', 'tls', 'pods', 'services']:
@@ -107,6 +167,9 @@ class CheckKubernetesDaemon:
         return value
 
     def send_discovery_to_zabbix(self):
+        if not self.check_or_refresh_data():
+            return
+
         metrics = list()
         for resource in KNOWN_RESOURCES:
             zabbix_data = getattr(self, 'discover_' + resource)()
@@ -115,10 +178,19 @@ class CheckKubernetesDaemon:
             self.zabbix_sender.send(metrics)
 
     def send_data_to_zabbix(self):
+        if not self.check_or_refresh_data():
+            return
+
+        sended = False
         for resource in KNOWN_RESOURCES:
             data_to_send = getattr(self, 'get_' + resource)()
             if data_to_send:
+                sended = True
                 self.zabbix_sender.send(data_to_send)
+
+        if sended:
+            # API is good
+            self.zabbix_sender.send(ZabbixMetric(config.zabbix_host, 'check_kubernetesd[discover,api', 'OK'))
 
     def discover_nodes(self):
         name_list = []
@@ -153,9 +225,9 @@ class CheckKubernetesDaemon:
         for pod in self.data.get('pods').get('items'):
             for container in pod['spec']['containers']:
                 namespace = pod['metadata']['namespace']
-                collect.setdefault(pod['metadata']['namespace'], {})
-                collect[pod['metadata']['namespace']].setdefault(container['name'], 0)
-                collect[pod['metadata']['namespace']][container['name']] += 1
+                collect.setdefault(namespace, {})
+                collect[namespace].setdefault(container['name'], 0)
+                collect[namespace][container['name']] += 1
 
         name_list = []
         for namespace, data in collect.items():
@@ -248,9 +320,10 @@ class CheckKubernetesDaemon:
 
     def get_services(self):
         data_to_send = list()
-        # for service in self.data.get('services').get('items'):
-        #     service_name = service['metadata']['name']
-        #     service_namespace = service['metadata']['namespace']
+        for service in self.data.get('services').get('items'):
+            service_name = service['metadata']['name']
+            service_namespace = service['metadata']['namespace']
+            print(service)
         return data_to_send
 
     def get_pods(self):
@@ -259,52 +332,78 @@ class CheckKubernetesDaemon:
         for pod in self.data.get('pods').get('items'):
             pods_name = pod['metadata']['name']
             pods_namespace = pod['metadata']['namespace']
+            container_name = None
+
             for container in pod['status']['container_statuses']:
+                container_name = container['name']
                 collect.setdefault(pod['metadata']['namespace'], {})
                 collect[pod['metadata']['namespace']].setdefault(
-                    container['name'],
+                    container_name,
                     {
                         "restart_count": 0,
                         "ready": 0,
                         "not_ready": 0,
                     }
                 )
-                collect[pod['metadata']['namespace']][container['name']]["restart_count"] += container['restart_count']
+                collect[pods_namespace][container_name]["restart_count"] += container['restart_count']
 
                 if container['ready'] == "True":
-                    collect[pod['metadata']['namespace']][container['name']]["ready"] += 1
+                    collect[pods_namespace][container_name]["ready"] += 1
                 else:
-                    collect[pod['metadata']['namespace']][container['name']]["not_ready"] += 1
+                    collect[pods_namespace][container_name]["not_ready"] += 1
+        for pods_namespace, pod_data in collect.items():
+            for container_name, data in pod_data.items():
+                data_to_send.append(ZabbixMetric(
+                    config.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,ready]' % (pods_namespace, container_name),
+                    collect[pods_namespace][container_name]["ready"],
+                ))
+                data_to_send.append(ZabbixMetric(
+                    config.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,not_ready]' % (pods_namespace, container_name),
+                    collect[pods_namespace][container_name]["not_ready"],
+                ))
+                data_to_send.append(ZabbixMetric(
+                    config.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,restart_count]' % (pods_namespace, container_name),
+                    collect[pods_namespace][container_name]["restart_count"],
+                ))
 
-
-            print(collect[self.resource_namespace][self.resource_name][self.key])
+        return data_to_send
 
     def get_components(self):
-        for component in data['items']:
-            if component['metadata']['name'] == self.resource_name:
-                if self.key == 'available_status':
-                    # special case available_status check
-                    failed_conds = []
-                    for cond in [x for x in component['conditions'] if x['type'].lower() == "healthy"]:
-                        if cond['status'] != 'True':
-                            failed_conds.append(cond['type'])
-                    if len(failed_conds) > 0:
-                        print(", ".join(failed_conds))
-                    else:
-                        print("OK")
-                else:
-                    print(self.transform_value(component['status'][self.key]))
+        data_to_send = list()
+        for component in self.data.get('components').get('items'):
+            component_name = component['metadata']['name']
+            failed_conds = []
+            for cond in [x for x in component['conditions'] if x['type'].lower() == "healthy"]:
+                if cond['status'] != 'True':
+                    failed_conds.append(cond['type'])
+
+            data_to_send.append(ZabbixMetric(
+                config.zabbix_host, 'check_kubernetesd[get,components,' + component_name + ',available_status]',
+                failed_conds if len(failed_conds) > 0 else 'OK')
+            )
+        return data_to_send
 
     def get_tls(self):
-        for tls_cert in data['items']:
-            if tls_cert['metadata']['name'] == self.resource_name and \
-                    tls_cert['metadata']['namespace'] == self.resource_namespace and \
-                    "tls.crt" in tls_cert["data"]:
-                if self.key == "valid_days":
-                    base64_decode = base64.b64decode(tls_cert["data"]["tls.crt"])
-                    cert = x509.load_pem_x509_certificate(base64_decode, default_backend())
-                    expire_in = cert.not_valid_after - datetime.now()
-                    print(expire_in.days)
+        data_to_send = list()
+        for tls_cert in self.data.get('tls').get('items'):
+            tls_name = tls_cert['metadata']['name']
+            tls_namespace = tls_cert['metadata']['namespace']
+
+            if 'data' not in tls_cert or not tls_cert['data']:
+                logger.warning('No data for tls_cert "' + tls_namespace + '/' + tls_name + '"', tls_cert)
+                continue
+
+            if "tls.crt" not in tls_cert["data"]:
+                continue
+
+            base64_decode = base64.b64decode(tls_cert["data"]["tls.crt"])
+            cert = x509.load_pem_x509_certificate(base64_decode, default_backend())
+            expire_in = cert.not_valid_after - datetime.now()
+            data_to_send.append(ZabbixMetric(
+                config.zabbix_host, 'check_kubernetesd[get,tls,' + tls_namespace + ',' + tls_name + ',valid_days]',
+                expire_in.days)
+            )
+        return data_to_send
 
 
 if __name__ == '__main__':
@@ -320,4 +419,12 @@ if __name__ == '__main__':
         print("config file %s not found. ABORTING!" % config_name)
         sys.exit(1)
 
-    CheckKubernetesDaemon(config, config_name).run()
+    daemon = CheckKubernetesDaemon(config, config_name)
+    try:
+        daemon.run()
+        while True:
+            time.sleep(10)
+    except KeyboardInterrupt:
+        daemon.handler(15)
+        time.sleep(3)
+        daemon.handler(9)
