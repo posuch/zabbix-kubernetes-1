@@ -22,17 +22,12 @@ from datetime import datetime, date, timedelta
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
-TIME_DISCOVERY_INTERVAL_SEC = 120
-TIME_DATA_INTERVAL_SEC = 60
 
 KNOWN_ACTIONS = ['discover', 'get']
 KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods', 'components', 'tls']
 
 stream = logging.StreamHandler(sys.stdout)
-stream.setLevel(logging.DEBUG)
 logger = logging.getLogger('pyzabbix')
-logger.addHandler(stream)
-logger.setLevel(logging.DEBUG)
 
 exit_flag = threading.Event()
 
@@ -63,9 +58,11 @@ class TimedThread(threading.Thread):
         self.stop_thread = True
 
     def run(self):
-        logger.info('starting thread %s' % self.thread_name)
+        logger.info('starting thread %s | interval: %s' % (self.thread_name, self.cycle_interval_seconds))
         getattr(self.daemon, self.daemon_method)()
         while not self.exit_flag.wait(self.cycle_interval_seconds):
+            now = datetime.now().isoformat()
+            logger.info(now + ' - starting new run on thread ' + self.thread_name + '.' + self.daemon_method)
             getattr(self.daemon, self.daemon_method)()
 
 
@@ -98,9 +95,9 @@ class CheckKubernetesDaemon:
         sys.exit(0)
 
     def run(self):
-        self.discover_thread = TimedThread('discover_thread', TIME_DISCOVERY_INTERVAL_SEC, exit_flag,
+        self.discover_thread = TimedThread('discover_thread', config.discovery_interval, exit_flag,
                                            daemon=self, daemon_method='send_discovery_to_zabbix')
-        self.data_thread = TimedThread('data_thread', TIME_DATA_INTERVAL_SEC, exit_flag,
+        self.data_thread = TimedThread('data_thread', config.data_interval, exit_flag,
                                        daemon=self, daemon_method='send_data_to_zabbix')
 
         self.discover_thread.start()
@@ -190,7 +187,7 @@ class CheckKubernetesDaemon:
 
         if sended:
             # API is good
-            self.zabbix_sender.send([ZabbixMetric(config.zabbix_host, 'check_kubernetesd[discover,api', 'OK')])
+            self.zabbix_sender.send([ZabbixMetric(config.zabbix_host, 'check_kubernetesd[discover,api]', 'OK')])
 
     def discover_nodes(self):
         name_list = []
@@ -323,7 +320,6 @@ class CheckKubernetesDaemon:
         for service in self.data.get('services').get('items'):
             service_name = service['metadata']['name']
             service_namespace = service['metadata']['namespace']
-            print(service)
         return data_to_send
 
     def get_pods(self):
@@ -347,10 +343,11 @@ class CheckKubernetesDaemon:
                 )
                 collect[pods_namespace][container_name]["restart_count"] += container['restart_count']
 
-                if container['ready'] == "True":
+                if container['ready'] is True:
                     collect[pods_namespace][container_name]["ready"] += 1
                 else:
                     collect[pods_namespace][container_name]["not_ready"] += 1
+
         for pods_namespace, pod_data in collect.items():
             for container_name, data in pod_data.items():
                 data_to_send.append(ZabbixMetric(
@@ -419,12 +416,19 @@ if __name__ == '__main__':
         print("config file %s not found. ABORTING!" % config_name)
         sys.exit(1)
 
+    if config.debug:
+        stream.setLevel(logging.DEBUG)
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+    logger.addHandler(stream)
+
     daemon = CheckKubernetesDaemon(config, config_name)
     try:
         daemon.run()
         while True:
             time.sleep(10)
     except KeyboardInterrupt:
-        daemon.handler(15)
+        daemon.handler(signal.SIGTERM)
         time.sleep(3)
-        daemon.handler(9)
+        daemon.handler(signal.SIGKILL)
