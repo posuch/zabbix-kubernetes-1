@@ -62,7 +62,7 @@ test_container(){
    IDENT="${IMAGE_NAME}_test"
    docker kill $IDENT
    docker rm $IDENT
-   exec_cmd "docker run -it --rm --env ZABBIX_SERVER='localhost' --env ZABBIX_HOST='localhost' ${IMAGE_BASE} /app/configd_example.py"
+   exec_cmd "docker run -it --rm --env ZABBIX_SERVER='localhost' --env ZABBIX_HOST='localhost' ${IMAGE_BASE} configd_example"
    sleep 3
    docker kill $IDENT
    #exec_cmd "grep -q -P ': Tomcat started on port\(s\): 8080 \(http\) with context path' /tmp/$IDENT/javabase-test/spring.log"
