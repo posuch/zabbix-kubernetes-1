@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.8.0-buster
 LABEL Description="zabbix-kubernetes - efficent kubernetes monitoring for zabbix"
 
 MAINTAINER operations@vico-research.com

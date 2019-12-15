@@ -408,6 +408,10 @@ if __name__ == '__main__':
         print("kubernetes <CONFIG_NAME>")
         sys.exit(1)
 
+    if sys.argv[1].startswith("/bin/"):
+        os.system(sys.argv[1])
+        sys.exit(1)
+
     config_name = sys.argv[1]
 
     try:
