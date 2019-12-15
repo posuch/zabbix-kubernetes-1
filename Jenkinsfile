@@ -3,7 +3,7 @@
 pipeline {
     agent any
     parameters {
-        booleanParam(defaultValue: true, description: 'Create release', name: 'RELEASE')
+        booleanParam(defaultValue: false, description: 'Create release', name: 'RELEASE')
     }
 
     triggers {
