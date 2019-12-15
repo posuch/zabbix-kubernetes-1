@@ -17,12 +17,13 @@ pipeline {
     }
 
     stages {
-        stage('Clean') {
+        stage('Prepare') {
             when {
                   environment name: 'RELEASE', value: 'true' 
             }
             steps {
                ansiColor('xterm') {
+                  sh 'git fetch'
                   sh './build.sh cleanup'
                }
             }
