@@ -23,7 +23,7 @@ pipeline {
             }
             steps {
                ansiColor('xterm') {
-                  sh 'git fetch'
+                  sh 'git fetch --tags'
                   sh './build.sh cleanup'
                }
             }
