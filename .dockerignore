@@ -1,0 +1,8 @@
+Dockerfile
+Jenkinsfile
+requirements.txt
+build.sh
+*.swp
+.gitignore
+kubernetes/*
+

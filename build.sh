@@ -112,7 +112,6 @@ if [ -z "$1" ];then
     echo " -  $PHASE"
   done
   echo " -  publish_image (optional)"
-  echo " -  cleanup_openjdk (optional)"
   exit 0
 fi
 

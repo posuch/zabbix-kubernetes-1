@@ -41,7 +41,10 @@ Testing and development
   ```
   ./build.sh default
   ```
-
+* Creat release
+  ```
+  ./build.sh publish_image
+  ```
 Run in Kubernetes
 =================
 

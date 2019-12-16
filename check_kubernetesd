@@ -413,6 +413,11 @@ if __name__ == '__main__':
         print("config file %s.py not found. ABORTING!" % config_name)
         sys.exit(1)
 
+    for key in [ "k8s_api_host", "k8s_api_token", "verify_ssl", "debug", "zabbix_server", "zabbix_host", "discovery_interval", "data_interval"]:
+        if key.upper in os.environ:
+            print("setting %s by environment variable %s" % (key,key.upper))
+            vars()[key] = os.environ[key.upper]
+
     if config.debug:
         stream.setLevel(logging.DEBUG)
         logger.setLevel(logging.DEBUG)
