@@ -29,11 +29,11 @@ exec_cmd(){
 VERSION="${VERSION:-$(git describe --abbrev=0 --tags)}"
 TIMESTAMP="$(date --date="today" "+%Y%m%d%H%M%S")"
 
-DOCKER_REPO_URL_RELEASE=""
-DOCKER_REPO_URL_SNAPSHOT=""
+DOCKER_REPO_URL_RELEASE="repo.vico-research.com:15000/repository/docker-release/sre"
+DOCKER_REPO_URL_SNAPSHOT="repo.vico-research.com:15001/repository/docker-snapshot/sre"
+
 DOCKER_SQUASH="${DOCKER_SQUASH:-true}"
 
-#DOCKER_REPO_URL_SNAPSHOT="docker-repo.vico-research.com/sre"
 
 DELAY="35"
 
@@ -62,7 +62,7 @@ test_container(){
    IDENT="${IMAGE_NAME}_test"
    docker kill $IDENT
    docker rm $IDENT
-   exec_cmd "docker run --rm --env ZABBIX_SERVER='localhost' --env ZABBIX_HOST='localhost' -d --name $IDENT ${IMAGE_BASE} configd_example"
+   exec_cmd "docker run --rm --env ZABBIX_SERVER='localhost' --env ZABBIX_HOST='localhost' -d --name $IDENT ${IMAGE_BASE} config_default"
    sleep 10
    echo "====== DOCKER LOGS"
    docker logs --until=50s $IDENT
@@ -72,6 +72,12 @@ test_container(){
    #exec_cmd "grep -q -P ': Tomcat started on port\(s\): 8080 \(http\) with context path' /tmp/$IDENT/javabase-test/spring.log"
    #exec_cmd "grep -q -P ': Started Application in .* seconds' /tmp/$IDENT/javabase-test/spring.log"
    #exec_cmd "grep -q -P 'Using G1' /tmp/$IDENT/javabase-test/the_container_name_*"
+}
+
+
+inspect(){
+   IDENT="${IMAGE_NAME}_test"
+   exec_cmd "docker run -ti --rm --env ZABBIX_SERVER='localhost' --env ZABBIX_HOST='localhost' --name $IDENT ${IMAGE_BASE} /bin/bash"
 }
 
 
@@ -85,11 +91,9 @@ cleanup(){
 publish_image(){
   TIMESTAMP="$(date --date="today" "+%Y-%m-%d_%H-%M-%S")"
 
-  exec_cmd "docker login -u $DOCKER_REPO_USER --password-stdin $DOCKER_REPO_URL_SNAPSHOT" <<< "$DOCKER_REPO_PASS"
   exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} $DOCKER_REPO_URL_SNAPSHOT/${IMAGE_NAME}:latest"
   exec_cmd "docker push $DOCKER_REPO_URL_SNAPSHOT/${IMAGE_NAME}:latest"
 
-  exec_cmd "docker login -u $DOCKER_REPO_USER --password-stdin $DOCKER_REPO_URL_RELEASE" <<< "$DOCKER_REPO_PASS"
   exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} $DOCKER_REPO_URL_RELEASE/${IMAGE_NAME}:${VERSION}.${TIMESTAMP}"
   exec_cmd "docker push $DOCKER_REPO_URL_RELEASE/${IMAGE_NAME}:${VERSION}.${TIMESTAMP}"
 }
