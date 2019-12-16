@@ -5,3 +5,4 @@ lib/__pycache__/*
 .idea
 config_*
 configd_*
+*.swp

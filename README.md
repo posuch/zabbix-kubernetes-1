@@ -27,27 +27,19 @@ Testing and development
   ```
   kubectl apply -f kubernetes/monitoring-user.yaml
   ```
-* Get API Key
+* Gather API Key
   ```
   kubectl get secrets -n monitoring
   kubectl describe secret -n monitoring <id>
   ```
-* Test 
+* Test
   ```
-  export API_KEY="FAKE-4uo7ahn0HaireePhohm.....7ahn0HaireePhohm"
-  export API_URL="http://k8s-api.foo.bar/bar"
-  export ZABBIX_URL="zabbix.api.foo.bar:10080"
-  ./check_kubernetes config_${CLUSTERNAME}
+  cp configd_example.py configd_c1.py
+  ./check_kubernetesd configd_c1
   ```
 * Test in docker
   ```
-  ```
-  docker build  -t kubernetes-zabbix:latest -f Dockerfile .
-  docker run --rm \
-    --env API_KEY="$API_KEY" \
-    --env API_URL="${API_URL}" \
-    --env ZABBIX_URL="${ZABBIX_URL}" \
-    --name zabbix-kubernetes kubernetes-zabbix:latest
+  ./build.sh default
   ```
 
 Run in Kubernetes

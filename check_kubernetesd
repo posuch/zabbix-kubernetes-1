@@ -68,23 +68,22 @@ class TimedThread(threading.Thread):
 
 class CheckKubernetesDaemon:
     def __init__(self, config, config_name):
-        self.server = 'https://%s:%s' % (config.host, config.port)
 
         self.config_name = config_name
 
         self.api_configuration = client.Configuration()
-        self.api_configuration.host = self.server
+        self.api_configuration.host = config.k8s_api_host
         self.api_configuration.verify_ssl = config.verify_ssl
-        self.api_configuration.api_key = {"authorization": "Bearer " + config.token}
+        self.api_configuration.api_key = {"authorization": "Bearer " + config.k8s_api_token}
 
         self.api_client = client.ApiClient(self.api_configuration)
         self.core_v1 = client.CoreV1Api(self.api_client)
         self.apps_v1 = client.AppsV1Api(self.api_client)
         self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
+        self.zabbix_host = config.zabbix_host
 
         self.data = dict()
         self.data_refreshed = None
-        self.refresh_lock = False
 
     def handler(self, signum, *args):
         logger.info('Signal handler called with signal %s... stopping (max %s seconds)' % (signum, 3))
@@ -115,20 +114,14 @@ class CheckKubernetesDaemon:
         return True
 
     def refresh_data(self):
-        if self.refresh_lock:
-            # already refreshing data
-            return False
 
-        self.refresh_lock = True
         for resource in KNOWN_RESOURCES:
             try:
                 self.data[resource] = self.get_data(resource)
             except ApiException as e:
                 logger.error('ApiException occured: %s' % str(e))
-                self.refresh_lock = False
                 return False
 
-        self.refresh_lock = False
         self.data_refreshed = datetime.now()
         return True
 
@@ -170,7 +163,7 @@ class CheckKubernetesDaemon:
         metrics = list()
         for resource in KNOWN_RESOURCES:
             zabbix_data = getattr(self, 'discover_' + resource)()
-            metrics.append(ZabbixMetric(config.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', zabbix_data))
+            metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', zabbix_data))
         if metrics:
             self.zabbix_sender.send(metrics)
 
@@ -187,7 +180,7 @@ class CheckKubernetesDaemon:
 
         if sended:
             # API is good
-            self.zabbix_sender.send([ZabbixMetric(config.zabbix_host, 'check_kubernetesd[discover,api]', 'OK')])
+            self.zabbix_sender.send([ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,api]', 'OK')])
 
     def discover_nodes(self):
         name_list = []
@@ -263,13 +256,13 @@ class CheckKubernetesDaemon:
             failed_conds = []
             for cond in node['status']['conditions']:
                 if cond['type'].lower() == "ready":
-                    data_to_send.append(ZabbixMetric(config.zabbix_host, 'check_kubernetesd[get,nodes,' + node_name + ',available_status]',
+                    data_to_send.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[get,nodes,' + node_name + ',available_status]',
                                                      'not available' if cond['status'] != 'True' else 'OK'))
                 else:
                     if cond['status'] == 'True':
                         failed_conds.append(cond['type'])
 
-            data_to_send.append(ZabbixMetric(config.zabbix_host, 'check_kubernetesd[get,nodes,' + node_name + ',condition_status_failed]',
+            data_to_send.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[get,nodes,' + node_name + ',condition_status_failed]',
                                              failed_conds if len(failed_conds) > 0 else 'OK'))
 
             for monitor_value in ['allocatable.cpu',
@@ -284,7 +277,7 @@ class CheckKubernetesDaemon:
                 for key in monitor_value.split("."):
                     current_indirection = current_indirection[key]
                 data_to_send.append(ZabbixMetric(
-                    config.zabbix_host, 'check_kubernetesd[get,nodes,%s,%s]' % (node_name, monitor_value),
+                    self.zabbix_host, 'check_kubernetesd[get,nodes,%s,%s]' % (node_name, monitor_value),
                     self.transform_value(current_indirection))
                 )
 
@@ -300,7 +293,7 @@ class CheckKubernetesDaemon:
                     continue
 
                 data_to_send.append(ZabbixMetric(
-                    config.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,%s]' % (deployment_namespace, deployment_name, status_type),
+                    self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,%s]' % (deployment_namespace, deployment_name, status_type),
                     self.transform_value(deployment['status'][status_type]))
                 )
 
@@ -310,7 +303,7 @@ class CheckKubernetesDaemon:
                     failed_conds.append(cond['type'])
 
             data_to_send.append(ZabbixMetric(
-                config.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,available_status]' % (deployment_namespace, deployment_name),
+                self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,available_status]' % (deployment_namespace, deployment_name),
                 failed_conds if len(failed_conds) > 0 else 'OK')
             )
         return data_to_send
@@ -351,15 +344,15 @@ class CheckKubernetesDaemon:
         for pods_namespace, pod_data in collect.items():
             for container_name, data in pod_data.items():
                 data_to_send.append(ZabbixMetric(
-                    config.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,ready]' % (pods_namespace, container_name),
+                    self.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,ready]' % (pods_namespace, container_name),
                     collect[pods_namespace][container_name]["ready"],
                 ))
                 data_to_send.append(ZabbixMetric(
-                    config.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,not_ready]' % (pods_namespace, container_name),
+                    self.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,not_ready]' % (pods_namespace, container_name),
                     collect[pods_namespace][container_name]["not_ready"],
                 ))
                 data_to_send.append(ZabbixMetric(
-                    config.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,restart_count]' % (pods_namespace, container_name),
+                    self.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,restart_count]' % (pods_namespace, container_name),
                     collect[pods_namespace][container_name]["restart_count"],
                 ))
 
@@ -375,7 +368,7 @@ class CheckKubernetesDaemon:
                     failed_conds.append(cond['type'])
 
             data_to_send.append(ZabbixMetric(
-                config.zabbix_host, 'check_kubernetesd[get,components,' + component_name + ',available_status]',
+                self.zabbix_host, 'check_kubernetesd[get,components,' + component_name + ',available_status]',
                 failed_conds if len(failed_conds) > 0 else 'OK')
             )
         return data_to_send
@@ -397,7 +390,7 @@ class CheckKubernetesDaemon:
             cert = x509.load_pem_x509_certificate(base64_decode, default_backend())
             expire_in = cert.not_valid_after - datetime.now()
             data_to_send.append(ZabbixMetric(
-                config.zabbix_host, 'check_kubernetesd[get,tls,' + tls_namespace + ',' + tls_name + ',valid_days]',
+                self.zabbix_host, 'check_kubernetesd[get,tls,' + tls_namespace + ',' + tls_name + ',valid_days]',
                 expire_in.days)
             )
         return data_to_send
@@ -405,7 +398,7 @@ class CheckKubernetesDaemon:
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("kubernetes <CONFIG_NAME>")
+        print("kubernetes <CONFIG_NAME>|<executable>")
         sys.exit(1)
 
     if sys.argv[1].startswith("/bin/"):
@@ -417,7 +410,7 @@ if __name__ == '__main__':
     try:
         config = importlib.import_module(config_name)
     except ImportError:
-        print("config file %s not found. ABORTING!" % config_name)
+        print("config file %s.py not found. ABORTING!" % config_name)
         sys.exit(1)
 
     if config.debug:

@@ -1,9 +1,0 @@
-host = 'example.kube-apiserver.com'
-port = 443
-verify_ssl = True
-debug = False
-token = ''
-zabbix_server = 'example.zabbix-server.com'
-zabbix_host = 'k8s-example-host'
-discovery_interval = 1800
-data_interval = 60
