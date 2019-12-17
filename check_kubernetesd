@@ -14,6 +14,8 @@ import logging
 import signal
 import time
 import threading
+from pprint import pprint
+
 
 from pyzabbix import ZabbixAPI, ZabbixMetric, ZabbixSender, ZabbixResponse, ZabbixAPIException
 from kubernetes import client, config
@@ -26,8 +28,11 @@ from cryptography.hazmat.backends import default_backend
 KNOWN_ACTIONS = ['discover', 'get']
 KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods', 'components', 'tls']
 
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 stream = logging.StreamHandler(sys.stdout)
-logger = logging.getLogger('pyzabbix')
+stream.setFormatter(formatter)
+
+logger = logging.getLogger('check_kubernetesd')
 
 exit_flag = threading.Event()
 
@@ -81,6 +86,9 @@ class CheckKubernetesDaemon:
         self.apps_v1 = client.AppsV1Api(self.api_client)
         self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
         self.zabbix_host = config.zabbix_host
+        logger.info("K8S API Server: %s" % self.api_configuration.host)
+        logger.info("Zabbix Server: %s" % config.zabbix_server)
+        logger.info("Zabbix Host: %s" % self.zabbix_host)
 
         self.data = dict()
         self.data_refreshed = None
@@ -164,23 +172,29 @@ class CheckKubernetesDaemon:
         for resource in KNOWN_RESOURCES:
             zabbix_data = getattr(self, 'discover_' + resource)()
             metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', zabbix_data))
-        if metrics:
-            self.zabbix_sender.send(metrics)
+        metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,api]', int(time.time())))
+        result = self.zabbix_sender.send(metrics)
+        if result.failed > 0:
+            logger.error("failed to sent %s discoveries" % len(metrics))
+        else:
+            logger.info("successfully sent %s discoveries" % len(metrics))
 
     def send_data_to_zabbix(self):
         if not self.check_or_refresh_data():
             return
 
-        sended = False
+        metrics = list()
         for resource in KNOWN_RESOURCES:
             data_to_send = getattr(self, 'get_' + resource)()
-            if data_to_send:
-                sended = True
-                self.zabbix_sender.send(data_to_send)
+            metrics += data_to_send
+        metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[get,items]', int(time.time())))
 
-        if sended:
-            # API is good
-            self.zabbix_sender.send([ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,api]', 'OK')])
+        result = self.zabbix_sender.send(metrics)
+
+        if result.failed > 0:
+            logger.error("failed to sent %s items" % len(metrics))
+        else:
+            logger.info("successfully sent %s items" % len(metrics))
 
     def discover_nodes(self):
         name_list = []
@@ -323,23 +337,24 @@ class CheckKubernetesDaemon:
             pods_namespace = pod['metadata']['namespace']
             container_name = None
 
-            for container in pod['status']['container_statuses']:
-                container_name = container['name']
-                collect.setdefault(pod['metadata']['namespace'], {})
-                collect[pod['metadata']['namespace']].setdefault(
-                    container_name,
-                    {
-                        "restart_count": 0,
-                        "ready": 0,
-                        "not_ready": 0,
-                    }
-                )
-                collect[pods_namespace][container_name]["restart_count"] += container['restart_count']
+            if "container_statuses" in pod['status'] and pod['status']['container_statuses']:
+              for container in pod['status']['container_statuses']:
+                  container_name = container['name']
+                  collect.setdefault(pod['metadata']['namespace'], {})
+                  collect[pod['metadata']['namespace']].setdefault(
+                      container_name,
+                      {
+                          "restart_count": 0,
+                          "ready": 0,
+                          "not_ready": 0,
+                      }
+                  )
+                  collect[pods_namespace][container_name]["restart_count"] += container['restart_count']
 
-                if container['ready'] is True:
-                    collect[pods_namespace][container_name]["ready"] += 1
-                else:
-                    collect[pods_namespace][container_name]["not_ready"] += 1
+                  if container['ready'] is True:
+                      collect[pods_namespace][container_name]["ready"] += 1
+                  else:
+                      collect[pods_namespace][container_name]["not_ready"] += 1
 
         for pods_namespace, pod_data in collect.items():
             for container_name, data in pod_data.items():
@@ -380,7 +395,7 @@ class CheckKubernetesDaemon:
             tls_namespace = tls_cert['metadata']['namespace']
 
             if 'data' not in tls_cert or not tls_cert['data']:
-                logger.warning('No data for tls_cert "' + tls_namespace + '/' + tls_name + '"', tls_cert)
+                logger.debug('No data for tls_cert "' + tls_namespace + '/' + tls_name + '"', tls_cert)
                 continue
 
             if "tls.crt" not in tls_cert["data"]:
@@ -398,7 +413,7 @@ class CheckKubernetesDaemon:
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("kubernetes <CONFIG_NAME>|<executable>")
+        print(sys.argv[0]+" <CONFIG_NAME>|<executable>")
         sys.exit(1)
 
     if sys.argv[1].startswith("/bin/"):
@@ -414,7 +429,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for key in [ "k8s_api_host", "k8s_api_token", "verify_ssl", "debug", "zabbix_server", "zabbix_host", "discovery_interval", "data_interval"]:
-        if key.upper in os.environ:
+        if key.upper() in os.environ:
             print("setting %s by environment variable %s" % (key,key.upper))
             vars()[key] = os.environ[key.upper]
 
