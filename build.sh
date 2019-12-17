@@ -69,9 +69,6 @@ test_container(){
    echo "=================="
    exec_cmd "docker ps |grep $IDENT"
    exec_cmd "docker kill $IDENT"
-   #exec_cmd "grep -q -P ': Tomcat started on port\(s\): 8080 \(http\) with context path' /tmp/$IDENT/javabase-test/spring.log"
-   #exec_cmd "grep -q -P ': Started Application in .* seconds' /tmp/$IDENT/javabase-test/spring.log"
-   #exec_cmd "grep -q -P 'Using G1' /tmp/$IDENT/javabase-test/the_container_name_*"
 }
 
 

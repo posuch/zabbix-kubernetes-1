@@ -15,4 +15,4 @@ RUN pip install -r /app/requirements.txt && \
 USER nobody
 WORKDIR /app
 
-ENTRYPOINT [ "/app/check_kubernetesd" ]
+ENTRYPOINT [ "/app/check_kubernetesd", "config_default" ]
