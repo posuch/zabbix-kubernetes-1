@@ -429,9 +429,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for key in [ "k8s_api_host", "k8s_api_token", "verify_ssl", "debug", "zabbix_server", "zabbix_host", "discovery_interval", "data_interval"]:
-        if key.upper() in os.environ:
-            print("setting %s by environment variable %s" % (key,key.upper))
-            vars()[key] = os.environ[key.upper]
+        if key.upper() in os.environ and os.environ[key.upper()] != "":
+            print("setting %s by environment variable %s" % (key,key.upper()))
+            vars()[key] = os.environ[key.upper()]
 
     if config.debug:
         stream.setLevel(logging.DEBUG)
