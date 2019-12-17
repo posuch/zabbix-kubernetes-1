@@ -31,6 +31,7 @@ pipeline {
         stage('Build and Test') {
             steps {
                 ansiColor('xterm') {
+                  sh 'git fetch --tags'
                   sh "./build.sh default"
                 }
             }
