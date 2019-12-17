@@ -46,7 +46,6 @@ build_image(){
       echo "ERROR: no git release tag available"
       exit 1
    fi
-   echo "$VERSION/$TIMESTAMP" > scripts/release-info
    if [ "$DOCKER_SQUASH" == "true" ];then
       SQUASH_OPT="--squash"
       notice "Squashing of image is enabled, you can disable that by 'export DOCKER_SQUASH=false'"
