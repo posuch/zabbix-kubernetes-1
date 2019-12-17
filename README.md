@@ -21,7 +21,9 @@ Testing and development
 * Clone Repo and install dependencies
   ```
   git clone git@github.com:vico-research-and-consulting/zabbix-kubernetes.git
-  pip3 install -r /opt/zabbix-kubernetes/requirements.txt
+  virtualenv -p python3 venv
+  source venv/bin/activate
+  pip3 install -r requirements.txt
   ```
 * Create monitoring account
   ```
@@ -34,6 +36,7 @@ Testing and development
   ```
 * Test
   ```
+  source venv/bin/activate
   cp configd_example.py configd_c1.py
   ./check_kubernetesd configd_c1
   ```
