@@ -81,7 +81,8 @@ Run in Kubernetes
 TODOs
 =====
 
-- services
+- use k8s watch api 
+- gather and send data in dedicated threads with different intervals
 
 Authors
 =======
