@@ -16,14 +16,12 @@ import time
 import threading
 from pprint import pprint
 
-
 from pyzabbix import ZabbixAPI, ZabbixMetric, ZabbixSender, ZabbixResponse, ZabbixAPIException
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from datetime import datetime, date, timedelta
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-
 
 KNOWN_ACTIONS = ['discover', 'get']
 KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods', 'components', 'tls']
@@ -337,23 +335,23 @@ class CheckKubernetesDaemon:
             container_name = None
 
             if "container_statuses" in pod['status'] and pod['status']['container_statuses']:
-              for container in pod['status']['container_statuses']:
-                  container_name = container['name']
-                  collect.setdefault(pod['metadata']['namespace'], {})
-                  collect[pod['metadata']['namespace']].setdefault(
-                      container_name,
-                      {
-                          "restart_count": 0,
-                          "ready": 0,
-                          "not_ready": 0,
-                      }
-                  )
-                  collect[pods_namespace][container_name]["restart_count"] += container['restart_count']
+                for container in pod['status']['container_statuses']:
+                    container_name = container['name']
+                    collect.setdefault(pod['metadata']['namespace'], {})
+                    collect[pod['metadata']['namespace']].setdefault(
+                        container_name,
+                        {
+                            "restart_count": 0,
+                            "ready": 0,
+                            "not_ready": 0,
+                        }
+                    )
+                    collect[pods_namespace][container_name]["restart_count"] += container['restart_count']
 
-                  if container['ready'] is True:
-                      collect[pods_namespace][container_name]["ready"] += 1
-                  else:
-                      collect[pods_namespace][container_name]["not_ready"] += 1
+                    if container['ready'] is True:
+                        collect[pods_namespace][container_name]["ready"] += 1
+                    else:
+                        collect[pods_namespace][container_name]["not_ready"] += 1
 
         for pods_namespace, pod_data in collect.items():
             for container_name, data in pod_data.items():
@@ -412,7 +410,7 @@ class CheckKubernetesDaemon:
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print(sys.argv[0]+" <CONFIG_NAME>|<executable>")
+        print(sys.argv[0] + " <CONFIG_NAME>|<executable>")
         sys.exit(1)
 
     if sys.argv[1].startswith("/bin/"):
@@ -427,9 +425,9 @@ if __name__ == '__main__':
         print("config file %s.py not found. ABORTING!" % config_name)
         sys.exit(1)
 
-    for key in [ "k8s_api_host", "k8s_api_token", "verify_ssl", "debug", "zabbix_server", "zabbix_host", "discovery_interval", "data_interval"]:
+    for key in ["k8s_api_host", "k8s_api_token", "verify_ssl", "debug", "zabbix_server", "zabbix_host", "discovery_interval", "data_interval"]:
         if key.upper() in os.environ and os.environ[key.upper()] != "":
-            print("setting %s by environment variable %s" % (key,key.upper()))
+            print("setting %s by environment variable %s" % (key, key.upper()))
             vars()[key] = os.environ[key.upper()]
 
     if config.debug:
