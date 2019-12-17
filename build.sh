@@ -74,7 +74,7 @@ test_container(){
 
 inspect(){
    IDENT="${IMAGE_NAME}_test"
-   exec_cmd "docker run -ti --rm --env ZABBIX_SERVER='localhost' --env ZABBIX_HOST='localhost' --name $IDENT ${IMAGE_BASE} /bin/bash"
+   exec_cmd "docker run -ti --rm --env ZABBIX_SERVER='localhost' --env ZABBIX_HOST='localhost' --name $IDENT ${IMAGE_BASE} /bin/sh"
 }
 
 
