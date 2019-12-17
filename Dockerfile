@@ -14,7 +14,7 @@ RUN  apk update && \
        apk add build-base libffi-dev libffi openssl-dev && \
        pip install -r /app/requirements.txt && \
        apk upgrade --update-cache --available && \
-       apt del build-base openssl-dev libffi-dev && \
+       apk del build-base openssl-dev libffi-dev && \
        rm -rf /var/cache/apk/ && \
        mv /app/config_example.py /app/config_default.py 
 
