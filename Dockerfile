@@ -1,4 +1,5 @@
 FROM python:3.7-alpine
+LABEL maintainer="operations@vico-research.com"
 LABEL Description="zabbix-kubernetes - efficent kubernetes monitoring for zabbix"
 
 MAINTAINER operations@vico-research.com
@@ -15,8 +16,7 @@ RUN  apk update && \
        pip install -r /app/requirements.txt && \
        apk upgrade --update-cache --available && \
        apk del build-base openssl-dev libffi-dev && \
-       rm -rf /var/cache/apk/ && \
-       mv /app/config_example.py /app/config_default.py 
+       rm -rf /var/cache/apk/
 
 USER nobody
 WORKDIR /app
