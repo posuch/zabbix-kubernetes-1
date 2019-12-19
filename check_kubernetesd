@@ -24,9 +24,8 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
 KNOWN_ACTIONS = ['discover', 'get']
-KNOWN_RESOURCES = ['nodes', 'deployments', 'services', 'pods', 'components', 'tls']
 
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(threadName)s : %(name)s - %(levelname)s - %(message)s')
 stream = logging.StreamHandler(sys.stdout)
 stream.setFormatter(formatter)
 
@@ -69,9 +68,11 @@ class TimedThread(threading.Thread):
 
 
 class CheckKubernetesDaemon:
-    def __init__(self, config, config_name):
+    def __init__(self, config, config_name, resources, discovery_interval, data_interval):
 
         self.config_name = config_name
+        self.discovery_interval = discovery_interval
+        self.data_interval = data_interval
 
         self.api_configuration = client.Configuration()
         self.api_configuration.host = config.k8s_api_host
@@ -83,6 +84,9 @@ class CheckKubernetesDaemon:
         self.apps_v1 = client.AppsV1Api(self.api_client)
         self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
         self.zabbix_host = config.zabbix_host
+
+        self.resources = resources
+
         logger.info("K8S API Server: %s" % self.api_configuration.host)
         logger.info("Zabbix Server: %s" % config.zabbix_server)
         logger.info("Zabbix Host: %s" % self.zabbix_host)
@@ -99,9 +103,9 @@ class CheckKubernetesDaemon:
         sys.exit(0)
 
     def run(self):
-        self.discover_thread = TimedThread('discover_thread', config.discovery_interval, exit_flag,
+        self.discover_thread = TimedThread('discover_thread', self.discovery_interval, exit_flag,
                                            daemon=self, daemon_method='send_discovery_to_zabbix')
-        self.data_thread = TimedThread('data_thread', config.data_interval, exit_flag,
+        self.data_thread = TimedThread('data_thread', self.data_interval, exit_flag,
                                        daemon=self, daemon_method='send_data_to_zabbix')
 
         self.discover_thread.start()
@@ -120,7 +124,7 @@ class CheckKubernetesDaemon:
 
     def refresh_data(self):
 
-        for resource in KNOWN_RESOURCES:
+        for resource in self.resources:
             try:
                 self.data[resource] = self.get_data(resource)
             except ApiException as e:
@@ -166,8 +170,10 @@ class CheckKubernetesDaemon:
             return
 
         metrics = list()
-        for resource in KNOWN_RESOURCES:
+        for resource in self.resources:
             zabbix_data = getattr(self, 'discover_' + resource)()
+            if len(zabbix_data) == 0:
+                continue
             metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', zabbix_data))
         metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,api]', int(time.time())))
         result = self.zabbix_sender.send(metrics)
@@ -181,7 +187,7 @@ class CheckKubernetesDaemon:
             return
 
         metrics = list()
-        for resource in KNOWN_RESOURCES:
+        for resource in self.resources:
             data_to_send = getattr(self, 'get_' + resource)()
             metrics += data_to_send
         metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[get,items]', int(time.time())))
@@ -213,13 +219,14 @@ class CheckKubernetesDaemon:
 
     def discover_services(self):
         name_list = []
-        for service in self.data.get('services').get('items'):
-            name_list.append({
-                "{#NAME}": service['metadata']['name'],
-                "{#NAMESPACE}": service['metadata']['namespace'],
-                "{#SLUG}": slugit(service['metadata']['namespace'] + "/" + service['metadata']['name'], 40),
-            })
-        return json.dumps({"data": name_list})
+        return name_list
+        #for service in self.data.get('services').get('items'):
+        #    name_list.append({
+        #        "{#NAME}": service['metadata']['name'],
+        #        "{#NAMESPACE}": service['metadata']['namespace'],
+        #        "{#SLUG}": slugit(service['metadata']['namespace'] + "/" + service['metadata']['name'], 40),
+        #    })
+        #return json.dumps({"data": name_list})
 
     def discover_pods(self):
         collect = {}
@@ -321,9 +328,17 @@ class CheckKubernetesDaemon:
 
     def get_services(self):
         data_to_send = list()
+        num_services = 0
+        num_ingress_services = 0
         for service in self.data.get('services').get('items'):
+            num_services += 1
             service_name = service['metadata']['name']
             service_namespace = service['metadata']['namespace']
+            if service["status"]["load_balancer"]["ingress"] is not None:
+                num_ingress_services += 1
+
+        data_to_send.append(ZabbixMetric(self.zabbix_host, 'check_kubernetes[get,services,num_services]', num_services))
+        data_to_send.append(ZabbixMetric(self.zabbix_host, 'check_kubernetes[get,services,num_ingress_services]', num_ingress_services))
         return data_to_send
 
     def get_pods(self):
@@ -425,7 +440,9 @@ if __name__ == '__main__':
         print("config file %s.py not found. ABORTING!" % config_name)
         sys.exit(1)
 
-    for key in ["k8s_api_host", "k8s_api_token", "verify_ssl", "debug", "zabbix_server", "zabbix_host", "discovery_interval", "data_interval"]:
+    for key in ["k8s_api_host", "k8s_api_token", "verify_ssl", "debug", "zabbix_server", "zabbix_host",
+                "discovery_interval_slow", "data_interval_slow",
+                "discovery_interval_fast", "data_interval_fast"]:
         if key.upper() in os.environ and os.environ[key.upper()] != "":
             print("setting %s by environment variable %s" % (key, key.upper()))
             vars()[key] = os.environ[key.upper()]
@@ -437,9 +454,18 @@ if __name__ == '__main__':
         logger.setLevel(logging.INFO)
     logger.addHandler(stream)
 
-    daemon = CheckKubernetesDaemon(config, config_name)
+    daemons = list()
+
+    daemons.append(CheckKubernetesDaemon(config, config_name, ['nodes', 'components', 'tls', 'services'],
+                                         config.discovery_interval_slow, config.data_interval_slow))
+
+    daemons.append(CheckKubernetesDaemon(config, config_name, ['deployments', 'pods'],
+                                         config.discovery_interval_slow, config.data_interval_fast))
+
     try:
-        daemon.run()
+        logger.info("Starting daemon threads now")
+        for daemon in daemons:
+            daemon.run()
         while True:
             time.sleep(10)
     except KeyboardInterrupt:
