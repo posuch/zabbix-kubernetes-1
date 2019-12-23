@@ -4,6 +4,7 @@ verify_ssl = True
 debug = False
 zabbix_server = 'example.zabbix-server.com'
 zabbix_host = 'k8s-example-host'
+zabbix_debug = False
 
 discovery_interval_fast = 600
 data_interval_fast = 60 * 2

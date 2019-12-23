@@ -12,27 +12,40 @@ import importlib.util
 import logging
 import signal
 import time
+import argparse
 
 from modules.daemon_thread import CheckKubernetesDaemon
 
 KNOWN_ACTIONS = ['discover', 'get']
 
-formatter = logging.Formatter('%(asctime)s - %(threadName)s : %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(threadName)s : %(levelname)s : %(name)s - %(message)s')
 stream = logging.StreamHandler(sys.stdout)
 stream.setFormatter(formatter)
 
 logger = logging.getLogger()
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print(sys.argv[0] + " <CONFIG_NAME>|<executable>")
+
+    parser = argparse.ArgumentParser(
+        description='Monitoring daemon for kubernetes'
+    )
+
+    parser.add_argument(
+        '--zabbix_debug',
+        help='show zabbix debug info',
+        action='store_true', )
+
+    args, remaining_args = parser.parse_known_args()
+
+    if len(remaining_args) < 1:
+        parser.error('add <CONFIG_NAME> or <executable>')
         sys.exit(1)
 
-    if sys.argv[1].startswith("/bin/"):
-        os.system(sys.argv[1])
+    if remaining_args[0].startswith("/bin/"):
+        os.system(remaining_args[0])
         sys.exit(1)
 
-    config_name = sys.argv[1]
+    config_name = remaining_args[0]
 
     try:
         config = importlib.import_module(config_name)
@@ -41,11 +54,15 @@ if __name__ == '__main__':
         sys.exit(1)
 
     for key in ["k8s_api_host", "k8s_api_token", "verify_ssl", "debug", "zabbix_server", "zabbix_host",
-                "discovery_interval_slow", "data_interval_slow",
+                "zabbix_debug", "discovery_interval_slow", "data_interval_slow",
                 "discovery_interval_fast", "data_interval_fast"]:
         if key.upper() in os.environ and os.environ[key.upper()] != "":
             print("setting %s by environment variable %s" % (key, key.upper()))
             vars()[key] = os.environ[key.upper()]
+
+    if args.zabbix_debug:
+        logger.info("starting with zabbix debug")
+        config.zabbix_debug = True
 
     if config.debug:
         stream.setLevel(logging.DEBUG)
