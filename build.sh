@@ -29,9 +29,6 @@ exec_cmd(){
 VERSION="${VERSION:-$(git describe --abbrev=0 --tags)}"
 TIMESTAMP="$(date --date="today" "+%Y%m%d%H%M%S")"
 
-DOCKER_REPO_URL_RELEASE="repo.vico-research.com:15000/repository/docker-release/sre"
-DOCKER_REPO_URL_SNAPSHOT="repo.vico-research.com:15001/repository/docker-snapshot/sre"
-
 DOCKER_SQUASH="${DOCKER_SQUASH:-true}"
 
 
@@ -86,12 +83,10 @@ cleanup(){
 
 publish_image(){
   TIMESTAMP="$(date --date="today" "+%Y-%m-%d_%H-%M-%S")"
-
-  exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} $DOCKER_REPO_URL_SNAPSHOT/${IMAGE_NAME}:latest"
-  exec_cmd "docker push $DOCKER_REPO_URL_SNAPSHOT/${IMAGE_NAME}:latest"
-
-  exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} $DOCKER_REPO_URL_RELEASE/${IMAGE_NAME}:${VERSION}.${TIMESTAMP}"
-  exec_cmd "docker push $DOCKER_REPO_URL_RELEASE/${IMAGE_NAME}:${VERSION}.${TIMESTAMP}"
+  exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:${VERSION}.${TIMESTAMP}"
+  exec_cmd "docker push ${IMAGE_NAME}:${VERSION}.${TIMESTAMP}"
+  exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} ${IMAGE_NAME}:latest"
+  exec_cmd "docker push ${IMAGE_NAME}:latest"
 }
 
 DEFAULT_PHASES="cleanup build_image test_container"
@@ -121,7 +116,7 @@ do
   fi
 done
 
-IMAGE_NAME="kubernetes-zabbix"
+IMAGE_NAME="k8s-zabbix"
 IMAGE_BASE="${IMAGE_NAME}:${VERSION}"
 
 for PHASE in $PHASES;
