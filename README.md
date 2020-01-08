@@ -1,7 +1,7 @@
 k8s-zabbix
 =================
 
-This project enhances zabbix with a externalscript which provides the following functionality:
+This project provides kubernetes monitoring capability for zabbix.
 
 * apiserver : Check and discover apiservers
 * components : Check and discover health of k8s components (etcd, controller-manager, scheduler etc.)
