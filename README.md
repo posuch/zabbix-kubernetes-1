@@ -1,7 +1,7 @@
 k8s-zabbix
 =================
 
-This project provides kubernetes monitoring capability for zabbix.
+This project provides kubernetes monitoring capabilities for zabbix.
 
 * apiserver : Check and discover apiservers
 * components : Check and discover health of k8s components (etcd, controller-manager, scheduler etc.)
