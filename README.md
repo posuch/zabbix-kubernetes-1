@@ -57,10 +57,10 @@ Run in Kubernetes
   ```
 * Clone Repo and install dependencies
   ```
-  docker build  -t k8s-zabbix:latest -f Dockerfile .
-  docker inspect k8s-zabbix:latest --format='{{.Size}}MB'
-  docker tag k8s-zabbix:latest docker-registry.foo.bar:k8s-zabbix:latest
-  docker push docker-registry.foo.bar:k8s-zabbix:latest
+  ./build.sh default
+  MY_PRIVATE_REGISTRY="docker-registry.foo.bar"
+  docker tag k8s-zabbix:latest $MY_PRIVATE_REGISTRY:k8s-zabbix:latest
+  docker push $MY_PRIVATE_REGISTRY:k8s-zabbix:latest
   ```
 * Get API Key
   ```
@@ -74,7 +74,7 @@ Run in Kubernetes
   ```
 * Create and apply deployment
   ```
-  vi kubernetes/deployment.yaml
+  vi kubernetes/deployment.yaml # modify docker repo
   kubectl apply -f kubernetes/deployment.yaml
   ```
 

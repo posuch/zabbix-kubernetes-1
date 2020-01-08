@@ -14,8 +14,10 @@ spec:
         app: zabbix-kubernetes
     spec:
       containers:
-        - name: zabbix-kubernetes
-          image: zabbix-kubernetes:latest
+        - name: k8s-zabbix
+          # add your
+          #image: your-repo.foo.bar:k8s-zabbix:latest
+          image: k8s-zabbix:latest
           env:
              - name: "K8S_API_HOST"
                value: "http://k8s-api.foo.bar/bar"
