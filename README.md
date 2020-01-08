@@ -1,4 +1,4 @@
-zabbix-kubernetes
+k8s-zabbix
 =================
 
 This project enhances zabbix with a externalscript which provides the following functionality:
@@ -12,7 +12,7 @@ This project enhances zabbix with a externalscript which provides the following 
 * replicasets: Check and discover replicasets readiness
 * tls: Check tls secrets expiration dates
 
-For details of the monitored kubernetes attributes, have a look at the [documentation](http://htmlpreview.github.io/?https://github.com/vico-research-and-consulting/zabbix-kubernetes/blob/master/template/documentation/custom_service_kubernetes.html)
+For details of the monitored kubernetes attributes, have a look at the [documentation](http://htmlpreview.github.io/?https://github.com/zabbix-tooling/k8s-zabbix/blob/master/template/documentation/custom_service_kubernetes.html)
 
 Testing and development
 =======================
@@ -20,7 +20,7 @@ Testing and development
 
 * Clone Repo and install dependencies
   ```
-  git clone git@github.com:vico-research-and-consulting/zabbix-kubernetes.git
+  git clone git@github.com:zabbix-tooling/k8s-zabbix.git
   virtualenv -p python3 venv
   source venv/bin/activate
   pip3 install -r requirements.txt
@@ -53,14 +53,14 @@ Run in Kubernetes
 
 * Clone Repo and install dependencies
   ```
-  git clone git@github.com:vico-research-and-consulting/zabbix-kubernetes.git
+  git clone git@github.com:zabbix-tooling/k8s-zabbix.git
   ```
 * Clone Repo and install dependencies
   ```
-  docker build  -t kubernetes-zabbix:latest -f Dockerfile .
-  docker inspect kubernetes-zabbix:latest --format='{{.Size}}MB'
-  docker tag kubernetes-zabbix:latest docker-registry.foo.bar:kubernetes-zabbix:latest
-  docker push docker-registry.foo.bar:kubernetes-zabbix:latest
+  docker build  -t k8s-zabbix:latest -f Dockerfile .
+  docker inspect k8s-zabbix:latest --format='{{.Size}}MB'
+  docker tag k8s-zabbix:latest docker-registry.foo.bar:k8s-zabbix:latest
+  docker push docker-registry.foo.bar:k8s-zabbix:latest
   ```
 * Get API Key
   ```
