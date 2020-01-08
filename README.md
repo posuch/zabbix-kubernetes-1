@@ -14,6 +14,8 @@ This project provides kubernetes monitoring capabilities for zabbix.
 
 For details of the monitored kubernetes attributes, have a look at the [documentation](http://htmlpreview.github.io/?https://github.com/zabbix-tooling/k8s-zabbix/blob/master/template/documentation/custom_service_kubernetes.html)
 
+The current docker image is published on https://hub.docker.com/repository/docker/scoopex666/k8s-zabbix/
+
 Testing and development
 =======================
 
