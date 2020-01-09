@@ -58,7 +58,7 @@ if __name__ == '__main__':
                 "discovery_interval_fast", "data_interval_fast"]:
         if key.upper() in os.environ and os.environ[key.upper()] != "":
             print("setting %s by environment variable %s" % (key, key.upper()))
-            vars()[key] = os.environ[key.upper()]
+            setattr(config, key, os.environ[key.upper()])
 
     if args.zabbix_debug:
         logger.info("starting with zabbix debug")
