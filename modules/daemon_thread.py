@@ -42,9 +42,8 @@ class CheckKubernetesDaemon:
 
         self.resources = resources
 
-        self.logger.info("K8S API Server: %s" % self.api_configuration.host)
-        self.logger.info("Zabbix Server: %s" % config.zabbix_server)
-        self.logger.info("Zabbix Host: %s" % self.zabbix_host)
+        self.logger.info("INIT ==> K8S API Server: %s, Zabbix Server: %s, Zabbix Host: %s : %s" % 
+                (self.api_configuration.host,config.zabbix_server,self.zabbix_host,",".join(self.resources)))
 
         self.data = dict()
         self.data_refreshed = None
