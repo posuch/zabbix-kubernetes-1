@@ -57,17 +57,15 @@
 <tr>
 <th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
 </tr>
-<tr>
-<td>Cluster Discovery</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[discover,api].nodata(15m)}=1</tt></td><td><tt></tt></td>
-</tr>
-<tr>
-<td>Cluster Items Send</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[get,items].nodata(90m)}=0</tt></td><td><tt></tt></td>
-</tr>
 </table>
 <h2>Graph Overview</h2>
 <table class="pretty">
 <tr>
 <th>Name</th><th>Elements</th>
+</tr>
+<tr>
+<td>Services</td><td><tt>check_kubernetes[get,services,num_ingress_services]<br>check_kubernetes[get,services,num_services]<br>
+</tt></td>
 </tr>
 </table>
 <h2>Item Overview</h2>
@@ -77,13 +75,23 @@
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
+<p class="desc">ERROR - Unknown</p>
 </td><td>Cluster Discovery</td><td><tt>check_kubernetesd[discover,api]</tt></td><td></td><td>0</td><td>14d</td><td>0d</td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
+<p class="desc">ERROR - Unknown</p>
 </td><td>Cluster Items Send</td><td><tt>check_kubernetesd[get,items]</tt></td><td></td><td>0</td><td>14d</td><td>0d</td>
+</tr>
+<tr>
+<td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>Number of ingress services</td><td><tt>check_kubernetes[get,services,num_ingress_services]</tt></td><td></td><td>0</td><td>7d</td><td></td>
+</tr>
+<tr>
+<td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>Number of services</td><td><tt>check_kubernetes[get,services,num_services]</tt></td><td></td><td>0</td><td>7d</td><td></td>
 </tr>
 </table>
 <h1>Discovery rule "Custom - Service - Kubernetes - Components"</h1>
@@ -99,7 +107,7 @@
 </tr>
 <tr>
 <td>Type</td><td>
-<p class="desc">Zabbix Trapper</p>
+<p class="desc">ERROR - Unknown</p>
 </td>
 </tr>
 <tr>
@@ -110,9 +118,6 @@
 <table class="pretty">
 <tr>
 <th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
-</tr>
-<tr>
-<td>Component   {#NAME} - available_status failed: {ITEM.LASTVALUE1}</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[get,components,{#NAME},available_status].str("OK")}&lt;&gt;1</tt></td><td><tt></tt></td>
 </tr>
 </table>
 <h2>Graph Overview</h2>
@@ -128,8 +133,8 @@
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>Component {#NAME} - available_status</td><td><tt>check_kubernetesd[get,components,{#NAME},available_status]</tt></td><td></td><td>0</td><td>90d</td><td>0</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>Component {#NAME} - available_status</td><td><tt>check_kubernetesd[get,components,{#NAME},available_status]</tt></td><td></td><td>0</td><td></td><td>0</td>
 </tr>
 </table>
 <h1>Discovery rule "Custom - Service - Kubernetes - Deployments"</h1>
@@ -145,7 +150,7 @@
 </tr>
 <tr>
 <td>Type</td><td>
-<p class="desc">Zabbix Trapper</p>
+<p class="desc">ERROR - Unknown</p>
 </td>
 </tr>
 <tr>
@@ -156,9 +161,6 @@
 <table class="pretty">
 <tr>
 <th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
-</tr>
-<tr>
-<td>Deployment {#NAMESPACE} / {#NAME} - available_status failed: {ITEM.LASTVALUE1}</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},available_status].str("OK")}&lt;&gt;1</tt></td><td><tt></tt></td>
 </tr>
 </table>
 <h2>Graph Overview</h2>
@@ -182,43 +184,43 @@
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAMESPACE} / {#NAME} - available_replicas</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},available_replicas]</tt></td><td></td><td>0</td><td>3d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - available_replicas</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},available_replicas]</tt></td><td></td><td>0</td><td>3d</td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
+<p class="desc">ERROR - Unknown</p>
 </td><td>{#NAMESPACE} / {#NAME} - available_status</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},available_status]</tt></td><td></td><td>0</td><td>5d</td><td>0</td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAMESPACE} / {#NAME} - collision_count</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},collision_count]</tt></td><td></td><td>0</td><td>3d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - collision_count</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},collision_count]</tt></td><td></td><td>0</td><td>3d</td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAMESPACE} / {#NAME} - observed_generation</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},observed_generation]</tt></td><td></td><td>0</td><td>3d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - observed_generation</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},observed_generation]</tt></td><td></td><td>0</td><td>3d</td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAMESPACE} / {#NAME} - ready_replicas</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},ready_replicas]</tt></td><td></td><td>0</td><td>3d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - ready_replicas</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},ready_replicas]</tt></td><td></td><td>0</td><td>3d</td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAMESPACE} / {#NAME} - replicas</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},replicas]</tt></td><td></td><td>0</td><td>3d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - replicas</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},replicas]</tt></td><td></td><td>0</td><td>3d</td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAMESPACE} / {#NAME} - unavailable_replicas</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},unavailable_replicas]</tt></td><td></td><td>0</td><td>3d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - unavailable_replicas</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},unavailable_replicas]</tt></td><td></td><td>0</td><td>3d</td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAMESPACE} / {#NAME} - updated_replicas</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},updated_replicas]</tt></td><td></td><td>0</td><td>3d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - updated_replicas</td><td><tt>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},updated_replicas]</tt></td><td></td><td>0</td><td>3d</td><td></td>
 </tr>
 </table>
 <h1>Discovery rule "Custom - Service - Kubernetes - Nodes"</h1>
@@ -234,7 +236,7 @@
 </tr>
 <tr>
 <td>Type</td><td>
-<p class="desc">Zabbix Trapper</p>
+<p class="desc">ERROR - Unknown</p>
 </td>
 </tr>
 <tr>
@@ -245,12 +247,6 @@
 <table class="pretty">
 <tr>
 <th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
-</tr>
-<tr>
-<td>Node {#NAME} condition_status_failed: {ITEM.LASTVALUE1}</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[get,nodes,{#NAME},condition_status_failed].str(OK)}&lt;&gt;1</tt></td><td><tt></tt></td>
-</tr>
-<tr>
-<td>Node {#NAME} not ready: {ITEM.LASTVALUE1}</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[get,nodes,{#NAME},available_status].str(OK)}&lt;&gt;1</tt></td><td><tt></tt></td>
 </tr>
 </table>
 <h2>Graph Overview</h2>
@@ -282,53 +278,53 @@
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAME} - allocatable.cpus</td><td><tt>check_kubernetesd[get,nodes,{#NAME},allocatable.cpu]</tt></td><td></td><td>0</td><td>90d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAME} - allocatable.cpus</td><td><tt>check_kubernetesd[get,nodes,{#NAME},allocatable.cpu]</tt></td><td></td><td>0</td><td></td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAME} - allocatable.ephemeral-storage</td><td><tt>check_kubernetesd[get,nodes,{#NAME},allocatable.ephemeral-storage]</tt></td><td></td><td>0</td><td>90d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAME} - allocatable.ephemeral-storage</td><td><tt>check_kubernetesd[get,nodes,{#NAME},allocatable.ephemeral-storage]</tt></td><td></td><td>0</td><td></td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAME} - allocatable.memory</td><td><tt>check_kubernetesd[get,nodes,{#NAME},allocatable.memory]</tt></td><td></td><td>0</td><td>90d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAME} - allocatable.memory</td><td><tt>check_kubernetesd[get,nodes,{#NAME},allocatable.memory]</tt></td><td></td><td>0</td><td></td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAME} - allocatable.pods</td><td><tt>check_kubernetesd[get,nodes,{#NAME},allocatable.pods]</tt></td><td></td><td>0</td><td>90d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAME} - allocatable.pods</td><td><tt>check_kubernetesd[get,nodes,{#NAME},allocatable.pods]</tt></td><td></td><td>0</td><td></td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAME} - available_status</td><td><tt>check_kubernetesd[get,nodes,{#NAME},available_status]</tt></td><td></td><td>0</td><td>90d</td><td>0</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAME} - available_status</td><td><tt>check_kubernetesd[get,nodes,{#NAME},available_status]</tt></td><td></td><td>0</td><td></td><td>0</td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAME} - capacity.cpus</td><td><tt>check_kubernetesd[get,nodes,{#NAME},capacity.cpu]</tt></td><td></td><td>0</td><td>90d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAME} - capacity.cpus</td><td><tt>check_kubernetesd[get,nodes,{#NAME},capacity.cpu]</tt></td><td></td><td>0</td><td></td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAME} - capacity.ephemeral-storage</td><td><tt>check_kubernetesd[get,nodes,{#NAME},capacity.ephemeral-storage]</tt></td><td></td><td>0</td><td>90d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAME} - capacity.ephemeral-storage</td><td><tt>check_kubernetesd[get,nodes,{#NAME},capacity.ephemeral-storage]</tt></td><td></td><td>0</td><td></td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAME} - capacity.memory</td><td><tt>check_kubernetesd[get,nodes,{#NAME},capacity.memory]</tt></td><td></td><td>0</td><td>90d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAME} - capacity.memory</td><td><tt>check_kubernetesd[get,nodes,{#NAME},capacity.memory]</tt></td><td></td><td>0</td><td></td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAME} - capacity.pods</td><td><tt>check_kubernetesd[get,nodes,{#NAME},capacity.pods]</tt></td><td></td><td>0</td><td>90d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAME} - capacity.pods</td><td><tt>check_kubernetesd[get,nodes,{#NAME},capacity.pods]</tt></td><td></td><td>0</td><td></td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAME} - condition_status_failed</td><td><tt>check_kubernetesd[get,nodes,{#NAME},condition_status_failed]</tt></td><td></td><td>0</td><td>90d</td><td>0</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAME} - condition_status_failed</td><td><tt>check_kubernetesd[get,nodes,{#NAME},condition_status_failed]</tt></td><td></td><td>0</td><td></td><td>0</td>
 </tr>
 </table>
 <h1>Discovery rule "Custom - Service - Kubernetes - Pods"</h1>
@@ -344,7 +340,7 @@
 </tr>
 <tr>
 <td>Type</td><td>
-<p class="desc">Zabbix Trapper</p>
+<p class="desc">ERROR - Unknown</p>
 </td>
 </tr>
 <tr>
@@ -355,15 +351,6 @@
 <table class="pretty">
 <tr>
 <th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
-</tr>
-<tr>
-<td>Pod {#NAMESPACE} / {#NAME} - not ready pods for 30minutes</td><td></td><td style="background-color:#FFFF00;">Warning</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},not_ready].min(35m)}&lt;&gt;0</tt></td><td><tt></tt></td>
-</tr>
-<tr>
-<td>Pod {#NAMESPACE} / {#NAME} - restart_count &gt; 0</td><td></td><td style="background-color:#FFFF00;">Warning</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},restart_count].last()}&gt;0</tt></td><td><tt></tt></td>
-</tr>
-<tr>
-<td>Pod {#NAMESPACE} / {#NAME} - restart_count &gt; {$POD_RESTART_AVERAGE_LIMIT_30M}  in 30m</td><td></td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},restart_count].sum(30m)}&gt;{$POD_RESTART_AVERAGE_LIMIT_30M}</tt></td><td><tt></tt></td>
 </tr>
 </table>
 <h2>Graph Overview</h2>
@@ -383,18 +370,23 @@
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAMESPACE} / {#NAME} - not_ready</td><td><tt>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},not_ready]</tt></td><td></td><td>0</td><td>14d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - not_ready</td><td><tt>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},not_ready]</tt></td><td></td><td>0</td><td>14d</td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAMESPACE} / {#NAME} - ready</td><td><tt>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},ready]</tt></td><td></td><td>0</td><td>14d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - ready</td><td><tt>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},ready]</tt></td><td></td><td>0</td><td>14d</td><td></td>
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>{#NAMESPACE} / {#NAME} - restart_count</td><td><tt>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},restart_count]</tt></td><td></td><td>0</td><td>14d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - restart_count</td><td><tt>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},restart_count]</tt></td><td></td><td>0</td><td>14d</td><td></td>
+</tr>
+<tr>
+<td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>{#NAMESPACE} / {#NAME} - status</td><td><tt>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},status]</tt></td><td></td><td>0</td><td>14d</td><td>0</td>
 </tr>
 </table>
 <h1>Discovery rule "Custom - Service - Kubernetes - Services"</h1>
@@ -410,7 +402,7 @@
 </tr>
 <tr>
 <td>Type</td><td>
-<p class="desc">Zabbix Trapper</p>
+<p class="desc">ERROR - Unknown</p>
 </td>
 </tr>
 <tr>
@@ -448,7 +440,7 @@
 </tr>
 <tr>
 <td>Type</td><td>
-<p class="desc">Zabbix Trapper</p>
+<p class="desc">ERROR - Unknown</p>
 </td>
 </tr>
 <tr>
@@ -459,9 +451,6 @@
 <table class="pretty">
 <tr>
 <th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
-</tr>
-<tr>
-<td>TLS {#NAMESPACE} / {#NAME} - tls valid_seconds &lt; {$TLS_MIN_VALID_DAYS}</td><td></td><td style="background-color:#FFFF00;">Warning</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[get,tls,{#NAMESPACE},{#NAME},valid_days].last()}&lt;{$TLS_MIN_VALID_DAYS}</tt></td><td><tt></tt></td>
 </tr>
 </table>
 <h2>Graph Overview</h2>
@@ -477,8 +466,8 @@
 </tr>
 <tr>
 <td>
-<p class="desc">Zabbix Trapper</p>
-</td><td>TLS {#NAMESPACE} / {#NAME}  - tls valid_days</td><td><tt>check_kubernetesd[get,tls,{#NAMESPACE},{#NAME},valid_days]</tt></td><td></td><td>0</td><td>3d</td><td>365d</td>
+<p class="desc">ERROR - Unknown</p>
+</td><td>TLS {#NAMESPACE} / {#NAME}  - tls valid_days</td><td><tt>check_kubernetesd[get,tls,{#NAMESPACE},{#NAME},valid_days]</tt></td><td></td><td>0</td><td>3d</td><td></td>
 </tr>
 </table>
 </body>

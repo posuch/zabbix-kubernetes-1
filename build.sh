@@ -77,7 +77,6 @@ inspect(){
 cleanup(){
   exec_cmd "rm -rf /tmp/${IMAGE_NAME}*"
   exec_cmd "docker rmi ${IMAGE_NAME} --force"
-  exec_cmd "docker rmi ${IMAGE_NAME}-test --force"
 }
 
 

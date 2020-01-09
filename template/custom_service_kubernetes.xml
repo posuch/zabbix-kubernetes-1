@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
-    <version>3.4</version>
-    <date>2019-12-17T16:34:27Z</date>
+    <version>4.4</version>
+    <date>2019-12-23T10:17:17Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -11,7 +11,6 @@
         <template>
             <template>Custom - Service - Kubernetes</template>
             <name>Custom - Service - Kubernetes</name>
-            <description/>
             <groups>
                 <group>
                     <name>Templates</name>
@@ -34,604 +33,242 @@
                     <name>Custom - Service - Kubernetes - Pods</name>
                 </application>
                 <application>
+                    <name>Custom - Service - Kubernetes - Services</name>
+                </application>
+                <application>
                     <name>Custom - Service - Kubernetes - TLS</name>
                 </application>
             </applications>
             <items>
                 <item>
                     <name>Cluster Discovery</name>
-                    <type>2</type>
-                    <snmp_community/>
-                    <snmp_oid/>
+                    <type>TRAP</type>
                     <key>check_kubernetesd[discover,api]</key>
                     <delay>0</delay>
                     <history>14d</history>
                     <trends>0d</trends>
-                    <status>0</status>
-                    <value_type>3</value_type>
-                    <allowed_hosts/>
-                    <units/>
-                    <snmpv3_contextname/>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                    <snmpv3_privpassphrase/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
-                    <inventory_link>0</inventory_link>
                     <applications>
                         <application>
                             <name>Custom - Service - Kubernetes - Global</name>
                         </application>
                     </applications>
-                    <valuemap/>
-                    <logtimefmt/>
-                    <preprocessing/>
-                    <jmx_endpoint/>
-                    <master_item/>
+                    <request_method>POST</request_method>
+                    <triggers>
+                        <trigger>
+                            <expression>{nodata(90m)}=1</expression>
+                            <name>Cluster Discovery</name>
+                            <priority>AVERAGE</priority>
+                        </trigger>
+                    </triggers>
                 </item>
                 <item>
                     <name>Cluster Items Send</name>
-                    <type>2</type>
-                    <snmp_community/>
-                    <snmp_oid/>
+                    <type>TRAP</type>
                     <key>check_kubernetesd[get,items]</key>
                     <delay>0</delay>
                     <history>14d</history>
                     <trends>0d</trends>
-                    <status>0</status>
-                    <value_type>3</value_type>
-                    <allowed_hosts/>
-                    <units/>
-                    <snmpv3_contextname/>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                    <snmpv3_privpassphrase/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
-                    <inventory_link>0</inventory_link>
                     <applications>
                         <application>
                             <name>Custom - Service - Kubernetes - Global</name>
                         </application>
                     </applications>
-                    <valuemap/>
-                    <logtimefmt/>
-                    <preprocessing/>
-                    <jmx_endpoint/>
-                    <master_item/>
+                    <request_method>POST</request_method>
+                    <triggers>
+                        <trigger>
+                            <expression>{nodata(90m)}=1</expression>
+                            <name>Cluster Items Send</name>
+                            <priority>AVERAGE</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <name>Number of ingress services</name>
+                    <type>TRAP</type>
+                    <key>check_kubernetes[get,services,num_ingress_services]</key>
+                    <delay>0</delay>
+                    <history>7d</history>
+                    <applications>
+                        <application>
+                            <name>Custom - Service - Kubernetes - Services</name>
+                        </application>
+                    </applications>
+                </item>
+                <item>
+                    <name>Number of services</name>
+                    <type>TRAP</type>
+                    <key>check_kubernetes[get,services,num_services]</key>
+                    <delay>0</delay>
+                    <history>7d</history>
+                    <applications>
+                        <application>
+                            <name>Custom - Service - Kubernetes - Services</name>
+                        </application>
+                    </applications>
                 </item>
             </items>
             <discovery_rules>
                 <discovery_rule>
                     <name>Custom - Service - Kubernetes - Components</name>
-                    <type>2</type>
-                    <snmp_community/>
-                    <snmp_oid/>
+                    <type>TRAP</type>
                     <key>check_kubernetesd[discover,components]</key>
                     <delay>0</delay>
-                    <status>0</status>
-                    <allowed_hosts/>
-                    <snmpv3_contextname/>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                    <snmpv3_privpassphrase/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <filter>
-                        <evaltype>0</evaltype>
-                        <formula/>
-                        <conditions/>
-                    </filter>
                     <lifetime>4h</lifetime>
-                    <description/>
                     <item_prototypes>
                         <item_prototype>
                             <name>Component {#NAME} - available_status</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,components,{#NAME},available_status]</key>
                             <delay>0</delay>
-                            <history>90d</history>
                             <trends>0</trends>
-                            <status>0</status>
-                            <value_type>1</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
+                            <value_type>CHAR</value_type>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Components</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{str(&quot;OK&quot;)}&lt;&gt;1</expression>
+                                    <name>Component   {#NAME} - available_status failed: {ITEM.LASTVALUE1}</name>
+                                    <priority>AVERAGE</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
                         </item_prototype>
                     </item_prototypes>
-                    <trigger_prototypes>
-                        <trigger_prototype>
-                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,components,{#NAME},available_status].str(&quot;OK&quot;)}&lt;&gt;1</expression>
-                            <recovery_mode>0</recovery_mode>
-                            <recovery_expression/>
-                            <name>Component   {#NAME} - available_status failed: {ITEM.LASTVALUE1}</name>
-                            <correlation_mode>0</correlation_mode>
-                            <correlation_tag/>
-                            <url/>
-                            <status>0</status>
-                            <priority>3</priority>
-                            <description/>
-                            <type>0</type>
-                            <manual_close>0</manual_close>
-                            <dependencies/>
-                            <tags/>
-                        </trigger_prototype>
-                    </trigger_prototypes>
-                    <graph_prototypes/>
-                    <host_prototypes/>
-                    <jmx_endpoint/>
+                    <request_method>POST</request_method>
                 </discovery_rule>
                 <discovery_rule>
                     <name>Custom - Service - Kubernetes - Deployments</name>
-                    <type>2</type>
-                    <snmp_community/>
-                    <snmp_oid/>
+                    <type>TRAP</type>
                     <key>check_kubernetesd[discover,deployments]</key>
                     <delay>0</delay>
-                    <status>0</status>
-                    <allowed_hosts/>
-                    <snmpv3_contextname/>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                    <snmpv3_privpassphrase/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <filter>
-                        <evaltype>0</evaltype>
-                        <formula/>
-                        <conditions/>
-                    </filter>
                     <lifetime>4h</lifetime>
-                    <description/>
                     <item_prototypes>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - available_replicas</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},available_replicas]</key>
                             <delay>0</delay>
                             <history>3d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Deployments</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - available_status</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},available_status]</key>
                             <delay>0</delay>
                             <history>5d</history>
                             <trends>0</trends>
-                            <status>0</status>
-                            <value_type>4</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
+                            <value_type>TEXT</value_type>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Deployments</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{str(&quot;OK&quot;)}&lt;&gt;1</expression>
+                                    <name>Deployment {#NAMESPACE} / {#NAME} - available_status failed: {ITEM.LASTVALUE1}</name>
+                                    <priority>AVERAGE</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - collision_count</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},collision_count]</key>
                             <delay>0</delay>
                             <history>3d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Deployments</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - observed_generation</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},observed_generation]</key>
                             <delay>0</delay>
                             <history>3d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Deployments</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - ready_replicas</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},ready_replicas]</key>
                             <delay>0</delay>
                             <history>3d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Deployments</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - replicas</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},replicas]</key>
                             <delay>0</delay>
                             <history>3d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Deployments</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - unavailable_replicas</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},unavailable_replicas]</key>
                             <delay>0</delay>
                             <history>3d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Deployments</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - updated_replicas</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},updated_replicas]</key>
                             <delay>0</delay>
                             <history>3d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Deployments</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                     </item_prototypes>
-                    <trigger_prototypes>
-                        <trigger_prototype>
-                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},available_status].str(&quot;OK&quot;)}&lt;&gt;1</expression>
-                            <recovery_mode>0</recovery_mode>
-                            <recovery_expression/>
-                            <name>Deployment {#NAMESPACE} / {#NAME} - available_status failed: {ITEM.LASTVALUE1}</name>
-                            <correlation_mode>0</correlation_mode>
-                            <correlation_tag/>
-                            <url/>
-                            <status>0</status>
-                            <priority>3</priority>
-                            <description/>
-                            <type>0</type>
-                            <manual_close>0</manual_close>
-                            <dependencies/>
-                            <tags/>
-                        </trigger_prototype>
-                    </trigger_prototypes>
                     <graph_prototypes>
                         <graph_prototype>
                             <name>Deployment {#NAMESPACE} / {#NAME} - Misc</name>
-                            <width>900</width>
                             <height>300</height>
-                            <yaxismin>0.0000</yaxismin>
-                            <yaxismax>100.0000</yaxismax>
-                            <show_work_period>1</show_work_period>
-                            <show_triggers>1</show_triggers>
-                            <type>0</type>
-                            <show_legend>1</show_legend>
-                            <show_3d>0</show_3d>
-                            <percent_left>0.0000</percent_left>
-                            <percent_right>0.0000</percent_right>
-                            <ymin_type_1>1</ymin_type_1>
-                            <ymax_type_1>0</ymax_type_1>
-                            <ymin_item_1>0</ymin_item_1>
-                            <ymax_item_1>0</ymax_item_1>
+                            <ymin_type_1>FIXED</ymin_type_1>
                             <graph_items>
                                 <graph_item>
-                                    <sortorder>0</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>1A7C11</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>7</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>ALL</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},collision_count]</key>
@@ -639,11 +276,9 @@
                                 </graph_item>
                                 <graph_item>
                                     <sortorder>1</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>F63100</color>
-                                    <yaxisside>1</yaxisside>
-                                    <calc_fnc>7</calc_fnc>
-                                    <type>0</type>
+                                    <yaxisside>RIGHT</yaxisside>
+                                    <calc_fnc>ALL</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},observed_generation]</key>
@@ -653,29 +288,12 @@
                         </graph_prototype>
                         <graph_prototype>
                             <name>Deployment {#NAMESPACE} / {#NAME} - Replicas</name>
-                            <width>900</width>
                             <height>300</height>
-                            <yaxismin>0.0000</yaxismin>
-                            <yaxismax>100.0000</yaxismax>
-                            <show_work_period>1</show_work_period>
-                            <show_triggers>1</show_triggers>
-                            <type>0</type>
-                            <show_legend>1</show_legend>
-                            <show_3d>0</show_3d>
-                            <percent_left>0.0000</percent_left>
-                            <percent_right>0.0000</percent_right>
-                            <ymin_type_1>1</ymin_type_1>
-                            <ymax_type_1>0</ymax_type_1>
-                            <ymin_item_1>0</ymin_item_1>
-                            <ymax_item_1>0</ymax_item_1>
+                            <ymin_type_1>FIXED</ymin_type_1>
                             <graph_items>
                                 <graph_item>
-                                    <sortorder>0</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>1A7C11</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>7</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>ALL</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},ready_replicas]</key>
@@ -683,11 +301,8 @@
                                 </graph_item>
                                 <graph_item>
                                     <sortorder>1</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>CCCC00</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>7</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>ALL</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},replicas]</key>
@@ -695,11 +310,8 @@
                                 </graph_item>
                                 <graph_item>
                                     <sortorder>2</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>EE0000</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>7</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>ALL</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},unavailable_replicas]</key>
@@ -708,522 +320,173 @@
                             </graph_items>
                         </graph_prototype>
                     </graph_prototypes>
-                    <host_prototypes/>
-                    <jmx_endpoint/>
+                    <request_method>POST</request_method>
                 </discovery_rule>
                 <discovery_rule>
                     <name>Custom - Service - Kubernetes - Nodes</name>
-                    <type>2</type>
-                    <snmp_community/>
-                    <snmp_oid/>
+                    <type>TRAP</type>
                     <key>check_kubernetesd[discover,nodes]</key>
                     <delay>0</delay>
-                    <status>0</status>
-                    <allowed_hosts/>
-                    <snmpv3_contextname/>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                    <snmpv3_privpassphrase/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <filter>
-                        <evaltype>0</evaltype>
-                        <formula/>
-                        <conditions/>
-                    </filter>
                     <lifetime>4h</lifetime>
-                    <description/>
                     <item_prototypes>
                         <item_prototype>
                             <name>{#NAME} - allocatable.cpus</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,nodes,{#NAME},allocatable.cpu]</key>
                             <delay>0</delay>
-                            <history>90d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>0</value_type>
-                            <allowed_hosts/>
+                            <value_type>FLOAT</value_type>
                             <units>cpus</units>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Nodes</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAME} - allocatable.ephemeral-storage</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,nodes,{#NAME},allocatable.ephemeral-storage]</key>
                             <delay>0</delay>
-                            <history>90d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
                             <units>B</units>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Nodes</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAME} - allocatable.memory</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,nodes,{#NAME},allocatable.memory]</key>
                             <delay>0</delay>
-                            <history>90d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
                             <units>B</units>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Nodes</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAME} - allocatable.pods</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,nodes,{#NAME},allocatable.pods]</key>
                             <delay>0</delay>
-                            <history>90d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
                             <units>pods</units>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Nodes</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAME} - available_status</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,nodes,{#NAME},available_status]</key>
                             <delay>0</delay>
-                            <history>90d</history>
                             <trends>0</trends>
-                            <status>0</status>
-                            <value_type>4</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
+                            <value_type>TEXT</value_type>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Nodes</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{str(OK)}&lt;&gt;1</expression>
+                                    <name>Node {#NAME} not ready: {ITEM.LASTVALUE1}</name>
+                                    <priority>AVERAGE</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAME} - capacity.cpus</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,nodes,{#NAME},capacity.cpu]</key>
                             <delay>0</delay>
-                            <history>90d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>0</value_type>
-                            <allowed_hosts/>
+                            <value_type>FLOAT</value_type>
                             <units>cpus</units>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Nodes</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAME} - capacity.ephemeral-storage</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,nodes,{#NAME},capacity.ephemeral-storage]</key>
                             <delay>0</delay>
-                            <history>90d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
                             <units>B</units>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Nodes</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAME} - capacity.memory</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,nodes,{#NAME},capacity.memory]</key>
                             <delay>0</delay>
-                            <history>90d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
                             <units>B</units>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Nodes</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAME} - capacity.pods</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,nodes,{#NAME},capacity.pods]</key>
                             <delay>0</delay>
-                            <history>90d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
                             <units>pods</units>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Nodes</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAME} - condition_status_failed</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,nodes,{#NAME},condition_status_failed]</key>
                             <delay>0</delay>
-                            <history>90d</history>
                             <trends>0</trends>
-                            <status>0</status>
-                            <value_type>4</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
+                            <value_type>TEXT</value_type>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Nodes</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{str(OK)}&lt;&gt;1</expression>
+                                    <name>Node {#NAME} condition_status_failed: {ITEM.LASTVALUE1}</name>
+                                    <priority>AVERAGE</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
                         </item_prototype>
                     </item_prototypes>
-                    <trigger_prototypes>
-                        <trigger_prototype>
-                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,nodes,{#NAME},condition_status_failed].str(OK)}&lt;&gt;1</expression>
-                            <recovery_mode>0</recovery_mode>
-                            <recovery_expression/>
-                            <name>Node {#NAME} condition_status_failed: {ITEM.LASTVALUE1}</name>
-                            <correlation_mode>0</correlation_mode>
-                            <correlation_tag/>
-                            <url/>
-                            <status>0</status>
-                            <priority>3</priority>
-                            <description/>
-                            <type>0</type>
-                            <manual_close>0</manual_close>
-                            <dependencies/>
-                            <tags/>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,nodes,{#NAME},available_status].str(OK)}&lt;&gt;1</expression>
-                            <recovery_mode>0</recovery_mode>
-                            <recovery_expression/>
-                            <name>Node {#NAME} not ready: {ITEM.LASTVALUE1}</name>
-                            <correlation_mode>0</correlation_mode>
-                            <correlation_tag/>
-                            <url/>
-                            <status>0</status>
-                            <priority>3</priority>
-                            <description/>
-                            <type>0</type>
-                            <manual_close>0</manual_close>
-                            <dependencies/>
-                            <tags/>
-                        </trigger_prototype>
-                    </trigger_prototypes>
                     <graph_prototypes>
                         <graph_prototype>
                             <name>Node {#NAME} - CPUs</name>
-                            <width>900</width>
                             <height>300</height>
-                            <yaxismin>0.0000</yaxismin>
-                            <yaxismax>100.0000</yaxismax>
-                            <show_work_period>1</show_work_period>
-                            <show_triggers>1</show_triggers>
-                            <type>0</type>
-                            <show_legend>1</show_legend>
-                            <show_3d>0</show_3d>
-                            <percent_left>0.0000</percent_left>
-                            <percent_right>0.0000</percent_right>
-                            <ymin_type_1>1</ymin_type_1>
-                            <ymax_type_1>0</ymax_type_1>
-                            <ymin_item_1>0</ymin_item_1>
-                            <ymax_item_1>0</ymax_item_1>
+                            <ymin_type_1>FIXED</ymin_type_1>
                             <graph_items>
                                 <graph_item>
-                                    <sortorder>0</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>00BB00</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>4</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>MAX</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,nodes,{#NAME},allocatable.cpu]</key>
@@ -1231,11 +494,8 @@
                                 </graph_item>
                                 <graph_item>
                                     <sortorder>1</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>CC0000</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>4</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>MAX</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,nodes,{#NAME},capacity.cpu]</key>
@@ -1245,29 +505,11 @@
                         </graph_prototype>
                         <graph_prototype>
                             <name>Node {#NAME} - Ephemeral-Storage</name>
-                            <width>900</width>
-                            <height>200</height>
-                            <yaxismin>0.0000</yaxismin>
-                            <yaxismax>100.0000</yaxismax>
-                            <show_work_period>1</show_work_period>
-                            <show_triggers>1</show_triggers>
-                            <type>0</type>
-                            <show_legend>1</show_legend>
-                            <show_3d>0</show_3d>
-                            <percent_left>0.0000</percent_left>
-                            <percent_right>0.0000</percent_right>
-                            <ymin_type_1>1</ymin_type_1>
-                            <ymax_type_1>0</ymax_type_1>
-                            <ymin_item_1>0</ymin_item_1>
-                            <ymax_item_1>0</ymax_item_1>
+                            <ymin_type_1>FIXED</ymin_type_1>
                             <graph_items>
                                 <graph_item>
-                                    <sortorder>0</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>1A7C11</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>4</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>MAX</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,nodes,{#NAME},allocatable.ephemeral-storage]</key>
@@ -1275,11 +517,8 @@
                                 </graph_item>
                                 <graph_item>
                                     <sortorder>1</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>F63100</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>4</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>MAX</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,nodes,{#NAME},capacity.ephemeral-storage]</key>
@@ -1289,29 +528,11 @@
                         </graph_prototype>
                         <graph_prototype>
                             <name>Node {#NAME} - Memory</name>
-                            <width>900</width>
                             <height>300</height>
-                            <yaxismin>0.0000</yaxismin>
-                            <yaxismax>100.0000</yaxismax>
-                            <show_work_period>1</show_work_period>
-                            <show_triggers>1</show_triggers>
-                            <type>0</type>
-                            <show_legend>1</show_legend>
-                            <show_3d>0</show_3d>
-                            <percent_left>0.0000</percent_left>
-                            <percent_right>0.0000</percent_right>
-                            <ymin_type_1>0</ymin_type_1>
-                            <ymax_type_1>0</ymax_type_1>
-                            <ymin_item_1>0</ymin_item_1>
-                            <ymax_item_1>0</ymax_item_1>
                             <graph_items>
                                 <graph_item>
-                                    <sortorder>0</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>1A7C11</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>4</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>MAX</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,nodes,{#NAME},allocatable.memory]</key>
@@ -1319,11 +540,8 @@
                                 </graph_item>
                                 <graph_item>
                                     <sortorder>1</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>F63100</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>4</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>MAX</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,nodes,{#NAME},capacity.memory]</key>
@@ -1333,29 +551,12 @@
                         </graph_prototype>
                         <graph_prototype>
                             <name>Node {#NAME} - Pods</name>
-                            <width>900</width>
                             <height>300</height>
-                            <yaxismin>0.0000</yaxismin>
-                            <yaxismax>100.0000</yaxismax>
-                            <show_work_period>1</show_work_period>
-                            <show_triggers>1</show_triggers>
-                            <type>0</type>
-                            <show_legend>1</show_legend>
-                            <show_3d>0</show_3d>
-                            <percent_left>0.0000</percent_left>
-                            <percent_right>0.0000</percent_right>
-                            <ymin_type_1>1</ymin_type_1>
-                            <ymax_type_1>0</ymax_type_1>
-                            <ymin_item_1>0</ymin_item_1>
-                            <ymax_item_1>0</ymax_item_1>
+                            <ymin_type_1>FIXED</ymin_type_1>
                             <graph_items>
                                 <graph_item>
-                                    <sortorder>0</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>1A7C11</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>4</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>MAX</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,nodes,{#NAME},allocatable.pods]</key>
@@ -1363,11 +564,8 @@
                                 </graph_item>
                                 <graph_item>
                                     <sortorder>1</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>F63100</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>4</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>MAX</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,nodes,{#NAME},capacity.pods]</key>
@@ -1376,249 +574,111 @@
                             </graph_items>
                         </graph_prototype>
                     </graph_prototypes>
-                    <host_prototypes/>
-                    <jmx_endpoint/>
+                    <request_method>POST</request_method>
                 </discovery_rule>
                 <discovery_rule>
                     <name>Custom - Service - Kubernetes - Pods</name>
-                    <type>2</type>
-                    <snmp_community/>
-                    <snmp_oid/>
+                    <type>TRAP</type>
                     <key>check_kubernetesd[discover,pods]</key>
                     <delay>0</delay>
-                    <status>0</status>
-                    <allowed_hosts/>
-                    <snmpv3_contextname/>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                    <snmpv3_privpassphrase/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <filter>
-                        <evaltype>0</evaltype>
-                        <formula/>
-                        <conditions/>
-                    </filter>
                     <lifetime>4h</lifetime>
-                    <description/>
                     <item_prototypes>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - not_ready</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},not_ready]</key>
                             <delay>0</delay>
                             <history>14d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Pods</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{min(35m)}&lt;&gt;0</expression>
+                                    <name>Pod {#NAMESPACE} / {#NAME} - not ready pods for 30minutes</name>
+                                    <priority>WARNING</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - ready</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},ready]</key>
                             <delay>0</delay>
                             <history>14d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units/>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Pods</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - restart_count</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},restart_count]</key>
                             <delay>0</delay>
                             <history>14d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
-                            <units>restarts</units>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - Pods</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
                             <preprocessing>
                                 <step>
-                                    <type>9</type>
+                                    <type>SIMPLE_CHANGE</type>
                                     <params/>
                                 </step>
                             </preprocessing>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last()}&gt;0</expression>
+                                    <name>Pod {#NAMESPACE} / {#NAME} - restart_count &gt; 0</name>
+                                    <priority>WARNING</priority>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <expression>{sum(30m)}&gt;{$POD_RESTART_AVERAGE_LIMIT_30M}</expression>
+                                    <name>Pod {#NAMESPACE} / {#NAME} - restart_count &gt; {$POD_RESTART_AVERAGE_LIMIT_30M}  in 30m</name>
+                                    <priority>AVERAGE</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>{#NAMESPACE} / {#NAME} - status</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},status]</key>
+                            <delay>0</delay>
+                            <history>14d</history>
+                            <trends>0</trends>
+                            <value_type>CHAR</value_type>
+                            <applications>
+                                <application>
+                                    <name>Custom - Service - Kubernetes - Pods</name>
+                                </application>
+                            </applications>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{str(&quot;ERROR&quot;)}=1</expression>
+                                    <name>Pod {#NAMESPACE} / {#NAME} - status - {ITEM.VALUE}</name>
+                                    <opdata>{ITEM.VALUE}</opdata>
+                                    <priority>WARNING</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
                         </item_prototype>
                     </item_prototypes>
-                    <trigger_prototypes>
-                        <trigger_prototype>
-                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},not_ready].min(35m)}&lt;&gt;0</expression>
-                            <recovery_mode>0</recovery_mode>
-                            <recovery_expression/>
-                            <name>Pod {#NAMESPACE} / {#NAME} - not ready pods for 30minutes</name>
-                            <correlation_mode>0</correlation_mode>
-                            <correlation_tag/>
-                            <url/>
-                            <status>0</status>
-                            <priority>2</priority>
-                            <description/>
-                            <type>0</type>
-                            <manual_close>0</manual_close>
-                            <dependencies/>
-                            <tags/>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},restart_count].last()}&gt;0</expression>
-                            <recovery_mode>0</recovery_mode>
-                            <recovery_expression/>
-                            <name>Pod {#NAMESPACE} / {#NAME} - restart_count &gt; 0</name>
-                            <correlation_mode>0</correlation_mode>
-                            <correlation_tag/>
-                            <url/>
-                            <status>0</status>
-                            <priority>2</priority>
-                            <description/>
-                            <type>0</type>
-                            <manual_close>0</manual_close>
-                            <dependencies/>
-                            <tags/>
-                        </trigger_prototype>
-                        <trigger_prototype>
-                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},restart_count].sum(30m)}&gt;{$POD_RESTART_AVERAGE_LIMIT_30M}</expression>
-                            <recovery_mode>0</recovery_mode>
-                            <recovery_expression/>
-                            <name>Pod {#NAMESPACE} / {#NAME} - restart_count &gt; {$POD_RESTART_AVERAGE_LIMIT_30M}  in 30m</name>
-                            <correlation_mode>0</correlation_mode>
-                            <correlation_tag/>
-                            <url/>
-                            <status>0</status>
-                            <priority>3</priority>
-                            <description/>
-                            <type>0</type>
-                            <manual_close>0</manual_close>
-                            <dependencies/>
-                            <tags/>
-                        </trigger_prototype>
-                    </trigger_prototypes>
                     <graph_prototypes>
                         <graph_prototype>
                             <name>Pod {#NAMESPACE} / {#NAME} - Launch Statistics</name>
-                            <width>900</width>
                             <height>300</height>
-                            <yaxismin>0.0000</yaxismin>
-                            <yaxismax>100.0000</yaxismax>
-                            <show_work_period>1</show_work_period>
-                            <show_triggers>1</show_triggers>
-                            <type>0</type>
-                            <show_legend>1</show_legend>
-                            <show_3d>0</show_3d>
-                            <percent_left>0.0000</percent_left>
-                            <percent_right>0.0000</percent_right>
-                            <ymin_type_1>1</ymin_type_1>
-                            <ymax_type_1>0</ymax_type_1>
-                            <ymin_item_1>0</ymin_item_1>
-                            <ymax_item_1>0</ymax_item_1>
+                            <ymin_type_1>FIXED</ymin_type_1>
                             <graph_items>
                                 <graph_item>
-                                    <sortorder>0</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>008800</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>7</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>ALL</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},ready]</key>
@@ -1626,11 +686,8 @@
                                 </graph_item>
                                 <graph_item>
                                     <sortorder>1</sortorder>
-                                    <drawtype>0</drawtype>
                                     <color>EE0000</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>7</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>ALL</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},not_ready]</key>
@@ -1638,11 +695,9 @@
                                 </graph_item>
                                 <graph_item>
                                     <sortorder>2</sortorder>
-                                    <drawtype>5</drawtype>
+                                    <drawtype>GRADIENT_LINE</drawtype>
                                     <color>2774A4</color>
-                                    <yaxisside>0</yaxisside>
-                                    <calc_fnc>7</calc_fnc>
-                                    <type>0</type>
+                                    <calc_fnc>ALL</calc_fnc>
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},restart_count]</key>
@@ -1651,145 +706,48 @@
                             </graph_items>
                         </graph_prototype>
                     </graph_prototypes>
-                    <host_prototypes/>
-                    <jmx_endpoint/>
+                    <request_method>POST</request_method>
                 </discovery_rule>
                 <discovery_rule>
                     <name>Custom - Service - Kubernetes - Services</name>
-                    <type>2</type>
-                    <snmp_community/>
-                    <snmp_oid/>
+                    <type>TRAP</type>
                     <key>check_kubernetesd[discover,services]</key>
                     <delay>0</delay>
-                    <status>0</status>
-                    <allowed_hosts/>
-                    <snmpv3_contextname/>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                    <snmpv3_privpassphrase/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <filter>
-                        <evaltype>0</evaltype>
-                        <formula/>
-                        <conditions/>
-                    </filter>
                     <lifetime>4h</lifetime>
-                    <description/>
-                    <item_prototypes/>
-                    <trigger_prototypes/>
-                    <graph_prototypes/>
-                    <host_prototypes/>
-                    <jmx_endpoint/>
+                    <request_method>POST</request_method>
                 </discovery_rule>
                 <discovery_rule>
                     <name>Custom - Service - Kubernetes - TLS</name>
-                    <type>2</type>
-                    <snmp_community/>
-                    <snmp_oid/>
+                    <type>TRAP</type>
                     <key>check_kubernetesd[discover,tls]</key>
                     <delay>0</delay>
-                    <status>0</status>
-                    <allowed_hosts/>
-                    <snmpv3_contextname/>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                    <snmpv3_privpassphrase/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <filter>
-                        <evaltype>0</evaltype>
-                        <formula/>
-                        <conditions/>
-                    </filter>
                     <lifetime>4h</lifetime>
-                    <description/>
                     <item_prototypes>
                         <item_prototype>
                             <name>TLS {#NAMESPACE} / {#NAME}  - tls valid_days</name>
-                            <type>2</type>
-                            <snmp_community/>
-                            <snmp_oid/>
+                            <type>TRAP</type>
                             <key>check_kubernetesd[get,tls,{#NAMESPACE},{#NAME},valid_days]</key>
                             <delay>0</delay>
                             <history>3d</history>
-                            <trends>365d</trends>
-                            <status>0</status>
-                            <value_type>3</value_type>
-                            <allowed_hosts/>
                             <units>d</units>
-                            <snmpv3_contextname/>
-                            <snmpv3_securityname/>
-                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
-                            <snmpv3_authpassphrase/>
-                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
-                            <snmpv3_privpassphrase/>
-                            <params/>
-                            <ipmi_sensor/>
-                            <authtype>0</authtype>
-                            <username/>
-                            <password/>
-                            <publickey/>
-                            <privatekey/>
-                            <port/>
-                            <description/>
-                            <inventory_link>0</inventory_link>
                             <applications>
                                 <application>
                                     <name>Custom - Service - Kubernetes - TLS</name>
                                 </application>
                             </applications>
-                            <valuemap/>
-                            <logtimefmt/>
-                            <preprocessing/>
-                            <jmx_endpoint/>
-                            <application_prototypes/>
-                            <master_item_prototype/>
+                            <request_method>POST</request_method>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last()}&lt;{$TLS_MIN_VALID_DAYS}</expression>
+                                    <name>TLS {#NAMESPACE} / {#NAME} - tls valid_seconds &lt; {$TLS_MIN_VALID_DAYS}</name>
+                                    <priority>WARNING</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
                         </item_prototype>
                     </item_prototypes>
-                    <trigger_prototypes>
-                        <trigger_prototype>
-                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,tls,{#NAMESPACE},{#NAME},valid_days].last()}&lt;{$TLS_MIN_VALID_DAYS}</expression>
-                            <recovery_mode>0</recovery_mode>
-                            <recovery_expression/>
-                            <name>TLS {#NAMESPACE} / {#NAME} - tls valid_seconds &lt; {$TLS_MIN_VALID_DAYS}</name>
-                            <correlation_mode>0</correlation_mode>
-                            <correlation_tag/>
-                            <url/>
-                            <status>0</status>
-                            <priority>2</priority>
-                            <description/>
-                            <type>0</type>
-                            <manual_close>0</manual_close>
-                            <dependencies/>
-                            <tags/>
-                        </trigger_prototype>
-                    </trigger_prototypes>
-                    <graph_prototypes/>
-                    <host_prototypes/>
-                    <jmx_endpoint/>
+                    <request_method>POST</request_method>
                 </discovery_rule>
             </discovery_rules>
-            <httptests/>
             <macros>
                 <macro>
                     <macro>{$CONFIG_NAME}</macro>
@@ -1808,7 +766,6 @@
                     <value>35</value>
                 </macro>
             </macros>
-            <templates/>
             <screens>
                 <screen>
                     <name>Custom - Service - Kubernetes - Deployments</name>
@@ -1817,6 +774,11 @@
                     <screen_items>
                         <screen_item>
                             <resourcetype>20</resourcetype>
+                            <style>0</style>
+                            <resource>
+                                <name>Deployment {#NAMESPACE} / {#NAME} - Replicas</name>
+                                <host>Custom - Service - Kubernetes</host>
+                            </resource>
                             <width>700</width>
                             <height>300</height>
                             <x>0</x>
@@ -1826,19 +788,19 @@
                             <elements>0</elements>
                             <valign>1</valign>
                             <halign>0</halign>
-                            <style>0</style>
-                            <url/>
                             <dynamic>0</dynamic>
                             <sort_triggers>0</sort_triggers>
-                            <resource>
-                                <name>Deployment {#NAMESPACE} / {#NAME} - Replicas</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <max_columns>1</max_columns>
+                            <url/>
                             <application/>
+                            <max_columns>1</max_columns>
                         </screen_item>
                         <screen_item>
                             <resourcetype>20</resourcetype>
+                            <style>0</style>
+                            <resource>
+                                <name>Deployment {#NAMESPACE} / {#NAME} - Misc</name>
+                                <host>Custom - Service - Kubernetes</host>
+                            </resource>
                             <width>700</width>
                             <height>300</height>
                             <x>1</x>
@@ -1848,16 +810,40 @@
                             <elements>0</elements>
                             <valign>1</valign>
                             <halign>0</halign>
-                            <style>0</style>
-                            <url/>
                             <dynamic>0</dynamic>
                             <sort_triggers>0</sort_triggers>
+                            <url/>
+                            <application/>
+                            <max_columns>1</max_columns>
+                        </screen_item>
+                    </screen_items>
+                </screen>
+                <screen>
+                    <name>Custom - Service - Kubernetes - Global</name>
+                    <hsize>1</hsize>
+                    <vsize>1</vsize>
+                    <screen_items>
+                        <screen_item>
+                            <resourcetype>0</resourcetype>
+                            <style>0</style>
                             <resource>
-                                <name>Deployment {#NAMESPACE} / {#NAME} - Misc</name>
+                                <name>Services</name>
                                 <host>Custom - Service - Kubernetes</host>
                             </resource>
-                            <max_columns>1</max_columns>
+                            <width>900</width>
+                            <height>300</height>
+                            <x>0</x>
+                            <y>0</y>
+                            <colspan>1</colspan>
+                            <rowspan>1</rowspan>
+                            <elements>0</elements>
+                            <valign>0</valign>
+                            <halign>0</halign>
+                            <dynamic>0</dynamic>
+                            <sort_triggers>0</sort_triggers>
+                            <url/>
                             <application/>
+                            <max_columns>3</max_columns>
                         </screen_item>
                     </screen_items>
                 </screen>
@@ -1868,6 +854,11 @@
                     <screen_items>
                         <screen_item>
                             <resourcetype>20</resourcetype>
+                            <style>0</style>
+                            <resource>
+                                <name>Node {#NAME} - CPUs</name>
+                                <host>Custom - Service - Kubernetes</host>
+                            </resource>
                             <width>900</width>
                             <height>300</height>
                             <x>0</x>
@@ -1877,16 +868,11 @@
                             <elements>0</elements>
                             <valign>0</valign>
                             <halign>0</halign>
-                            <style>0</style>
-                            <url/>
                             <dynamic>0</dynamic>
                             <sort_triggers>0</sort_triggers>
-                            <resource>
-                                <name>Node {#NAME} - CPUs</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <max_columns>1</max_columns>
+                            <url/>
                             <application/>
+                            <max_columns>1</max_columns>
                         </screen_item>
                     </screen_items>
                 </screen>
@@ -1897,6 +883,11 @@
                     <screen_items>
                         <screen_item>
                             <resourcetype>20</resourcetype>
+                            <style>0</style>
+                            <resource>
+                                <name>Node {#NAME} - Ephemeral-Storage</name>
+                                <host>Custom - Service - Kubernetes</host>
+                            </resource>
                             <width>900</width>
                             <height>300</height>
                             <x>0</x>
@@ -1906,16 +897,11 @@
                             <elements>0</elements>
                             <valign>0</valign>
                             <halign>0</halign>
-                            <style>0</style>
-                            <url/>
                             <dynamic>0</dynamic>
                             <sort_triggers>0</sort_triggers>
-                            <resource>
-                                <name>Node {#NAME} - Ephemeral-Storage</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <max_columns>1</max_columns>
+                            <url/>
                             <application/>
+                            <max_columns>1</max_columns>
                         </screen_item>
                     </screen_items>
                 </screen>
@@ -1926,6 +912,11 @@
                     <screen_items>
                         <screen_item>
                             <resourcetype>20</resourcetype>
+                            <style>0</style>
+                            <resource>
+                                <name>Node {#NAME} - Memory</name>
+                                <host>Custom - Service - Kubernetes</host>
+                            </resource>
                             <width>900</width>
                             <height>300</height>
                             <x>0</x>
@@ -1935,16 +926,11 @@
                             <elements>0</elements>
                             <valign>0</valign>
                             <halign>0</halign>
-                            <style>0</style>
-                            <url/>
                             <dynamic>0</dynamic>
                             <sort_triggers>0</sort_triggers>
-                            <resource>
-                                <name>Node {#NAME} - Memory</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <max_columns>1</max_columns>
+                            <url/>
                             <application/>
+                            <max_columns>1</max_columns>
                         </screen_item>
                     </screen_items>
                 </screen>
@@ -1955,6 +941,11 @@
                     <screen_items>
                         <screen_item>
                             <resourcetype>20</resourcetype>
+                            <style>0</style>
+                            <resource>
+                                <name>Node {#NAME} - Pods</name>
+                                <host>Custom - Service - Kubernetes</host>
+                            </resource>
                             <width>900</width>
                             <height>300</height>
                             <x>0</x>
@@ -1964,16 +955,11 @@
                             <elements>0</elements>
                             <valign>0</valign>
                             <halign>0</halign>
-                            <style>0</style>
-                            <url/>
                             <dynamic>0</dynamic>
                             <sort_triggers>0</sort_triggers>
-                            <resource>
-                                <name>Node {#NAME} - Pods</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <max_columns>1</max_columns>
+                            <url/>
                             <application/>
+                            <max_columns>1</max_columns>
                         </screen_item>
                     </screen_items>
                 </screen>
@@ -1984,6 +970,11 @@
                     <screen_items>
                         <screen_item>
                             <resourcetype>20</resourcetype>
+                            <style>0</style>
+                            <resource>
+                                <name>Pod {#NAMESPACE} / {#NAME} - Launch Statistics</name>
+                                <host>Custom - Service - Kubernetes</host>
+                            </resource>
                             <width>900</width>
                             <height>300</height>
                             <x>0</x>
@@ -1993,54 +984,40 @@
                             <elements>0</elements>
                             <valign>0</valign>
                             <halign>0</halign>
-                            <style>0</style>
-                            <url/>
                             <dynamic>0</dynamic>
                             <sort_triggers>0</sort_triggers>
-                            <resource>
-                                <name>Pod {#NAMESPACE} / {#NAME} - Launch Statistics</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <max_columns>1</max_columns>
+                            <url/>
                             <application/>
+                            <max_columns>1</max_columns>
                         </screen_item>
                     </screen_items>
                 </screen>
             </screens>
         </template>
     </templates>
-    <triggers>
-        <trigger>
-            <expression>{Custom - Service - Kubernetes:check_kubernetesd[discover,api].nodata(15m)}=1</expression>
-            <recovery_mode>0</recovery_mode>
-            <recovery_expression/>
-            <name>Cluster Discovery</name>
-            <correlation_mode>0</correlation_mode>
-            <correlation_tag/>
-            <url/>
-            <status>0</status>
-            <priority>3</priority>
-            <description/>
-            <type>0</type>
-            <manual_close>0</manual_close>
-            <dependencies/>
-            <tags/>
-        </trigger>
-        <trigger>
-            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,items].nodata(90m)}=0</expression>
-            <recovery_mode>0</recovery_mode>
-            <recovery_expression/>
-            <name>Cluster Items Send</name>
-            <correlation_mode>0</correlation_mode>
-            <correlation_tag/>
-            <url/>
-            <status>0</status>
-            <priority>3</priority>
-            <description/>
-            <type>0</type>
-            <manual_close>0</manual_close>
-            <dependencies/>
-            <tags/>
-        </trigger>
-    </triggers>
+    <graphs>
+        <graph>
+            <name>Services</name>
+            <height>300</height>
+            <graph_items>
+                <graph_item>
+                    <color>388E3C</color>
+                    <calc_fnc>MAX</calc_fnc>
+                    <item>
+                        <host>Custom - Service - Kubernetes</host>
+                        <key>check_kubernetes[get,services,num_ingress_services]</key>
+                    </item>
+                </graph_item>
+                <graph_item>
+                    <sortorder>1</sortorder>
+                    <color>512DA8</color>
+                    <calc_fnc>MAX</calc_fnc>
+                    <item>
+                        <host>Custom - Service - Kubernetes</host>
+                        <key>check_kubernetes[get,services,num_services]</key>
+                    </item>
+                </graph_item>
+            </graph_items>
+        </graph>
+    </graphs>
 </zabbix_export>
