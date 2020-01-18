@@ -140,7 +140,7 @@ class CheckKubernetesDaemon:
         metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,api]', int(time.time())))
         result = self.zabbix_sender.send(metrics)
         if result.failed > 0:
-            self.self.logger.error("failed to sent %s discoveries" % len(metrics))
+            self.logger.error("failed to sent %s discoveries" % len(metrics))
         else:
             self.logger.info("successfully sent %s discoveries" % len(metrics))
 
