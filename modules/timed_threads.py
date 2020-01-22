@@ -1,6 +1,7 @@
 import logging
 import threading
 
+
 class TimedThread(threading.Thread):
     stop_thread = False
     daemon = None

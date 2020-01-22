@@ -1,4 +1,3 @@
-
 import re
 import sys
 import json
@@ -18,7 +17,6 @@ from cryptography.hazmat.backends import default_backend
 from modules.timed_threads import TimedThread
 
 exit_flag = threading.Event()
-
 
 
 class CheckKubernetesDaemon:
@@ -42,8 +40,8 @@ class CheckKubernetesDaemon:
 
         self.resources = resources
 
-        self.logger.info("INIT ==> K8S API Server: %s, Zabbix Server: %s, Zabbix Host: %s : %s" % 
-                (self.api_configuration.host,config.zabbix_server,self.zabbix_host,",".join(self.resources)))
+        self.logger.info("INIT ==> K8S API Server: %s, Zabbix Server: %s, Zabbix Host: %s : %s" %
+                         (self.api_configuration.host, config.zabbix_server, self.zabbix_host, ",".join(self.resources)))
 
         self.data = dict()
         self.data_refreshed = None
@@ -182,13 +180,13 @@ class CheckKubernetesDaemon:
     def discover_services(self):
         name_list = []
         return name_list
-        #for service in self.data.get('services').get('items'):
+        # for service in self.data.get('services').get('items'):
         #    name_list.append({
         #        "{#NAME}": service['metadata']['name'],
         #        "{#NAMESPACE}": service['metadata']['namespace'],
         #        "{#SLUG}": CheckKubernetesDaemon.slugit(service['metadata']['namespace'] + "/" + service['metadata']['name'], 40),
         #    })
-        #return json.dumps({"data": name_list})
+        # return json.dumps({"data": name_list})
 
     def discover_pods(self):
         collect = {}
