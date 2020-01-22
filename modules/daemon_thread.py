@@ -138,10 +138,12 @@ class CheckKubernetesDaemon:
 
         w = watch.Watch()
         if resource == 'nodes':
-            for event in w.stream(api.list_node, _request_timeout=60):
-                print(event)
-        # elif resource == 'deployments':
-        #     return api.list_deployment_for_all_namespaces(watch=False).to_dict()
+            for s in w.stream(api.list_node, _request_timeout=60):
+                self.watch_event_handler(resource, s)
+
+        elif resource == 'deployments':
+            for s in w.stream(api.list_deployment_for_all_namespaces, _request_timeout=60):
+                self.watch_event_handler(resource, s)
         # elif resource == 'components':
         #     return api.list_component_status(watch=False).to_dict()
         # elif resource == 'tls':
@@ -151,6 +153,16 @@ class CheckKubernetesDaemon:
         #         print(event)
         # elif resource == 'services':
         #     return api.list_service_for_all_namespaces(watch=False).to_dict()
+
+    def watch_event_handler(self, resource, event):
+        event_type = event['type']
+        obj = event['object'].to_dict()
+        self.logger.debug(event_type + ': ' + obj['metadata']['name'])
+        if resource not in self.data:
+            self.data[resource] = list()
+
+        if event_type == 'ADDED':
+            self.data[resource].append(obj)
 
     @staticmethod
     def transform_value(value):
