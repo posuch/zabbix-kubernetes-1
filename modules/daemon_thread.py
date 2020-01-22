@@ -37,6 +37,7 @@ class CheckKubernetesDaemon:
         self.apps_v1 = client.AppsV1Api(self.api_client)
         self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
         self.zabbix_host = config.zabbix_host
+        self.zabbix_debug = config.zabbix_debug
 
         self.resources = resources
 
@@ -117,7 +118,8 @@ class CheckKubernetesDaemon:
         elif resource == 'services':
             return api.list_service_for_all_namespaces(watch=False).to_dict()
 
-    def transform_value(self, value):
+    @staticmethod
+    def transform_value(value):
         if value is None:
             return 0
         m = re.match(r"^(\d+)Ki$", str(value))
@@ -152,12 +154,17 @@ class CheckKubernetesDaemon:
             metrics += data_to_send
         metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[get,items]', int(time.time())))
 
-        result = self.zabbix_sender.send(metrics)
-
-        if result.failed > 0:
-            self.logger.error("failed to sent %s items" % len(metrics))
+        if self.zabbix_debug:
+            for metric in metrics:
+                result = self.zabbix_sender.send([metric])
+                if result.failed > 0:
+                    self.logger.error("failed to sent items: %s", metric)
         else:
-            self.logger.info("successfully sent %s items" % len(metrics))
+            result = self.zabbix_sender.send(metrics)
+            if result.failed > 0:
+                self.logger.error("failed to sent %s items of %s items" % (result.failed, result.processed))
+            else:
+                self.logger.info("successfully sent %s items" % len(metrics))
 
     def discover_nodes(self):
         name_list = []
@@ -256,7 +263,7 @@ class CheckKubernetesDaemon:
                     current_indirection = current_indirection[key]
                 data_to_send.append(ZabbixMetric(
                     self.zabbix_host, 'check_kubernetesd[get,nodes,%s,%s]' % (node_name, monitor_value),
-                    self.transform_value(current_indirection))
+                    CheckKubernetesDaemon.transform_value(current_indirection))
                 )
 
         return data_to_send
@@ -272,7 +279,7 @@ class CheckKubernetesDaemon:
 
                 data_to_send.append(ZabbixMetric(
                     self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,%s]' % (deployment_namespace, deployment_name, status_type),
-                    self.transform_value(deployment['status'][status_type]))
+                    CheckKubernetesDaemon.transform_value(deployment['status'][status_type]))
                 )
 
             failed_conds = []
@@ -319,6 +326,7 @@ class CheckKubernetesDaemon:
                             "restart_count": 0,
                             "ready": 0,
                             "not_ready": 0,
+                            "status" : "OK",
                         }
                     )
                     collect[pods_namespace][container_name]["restart_count"] += container['restart_count']
@@ -327,6 +335,15 @@ class CheckKubernetesDaemon:
                         collect[pods_namespace][container_name]["ready"] += 1
                     else:
                         collect[pods_namespace][container_name]["not_ready"] += 1
+
+                    if container["state"] and len(container["state"]) > 0:
+                        status_values = []
+                        for status, data in container["state"].items():
+                            if data and status != "running":
+                                status_values.append(status)
+
+                        if len(status_values) > 0:
+                            collect[pods_namespace][container_name]["status"] = "ERROR: " + (",".join(status_values))
 
         for pods_namespace, pod_data in collect.items():
             for container_name, data in pod_data.items():
@@ -341,6 +358,10 @@ class CheckKubernetesDaemon:
                 data_to_send.append(ZabbixMetric(
                     self.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,restart_count]' % (pods_namespace, container_name),
                     collect[pods_namespace][container_name]["restart_count"],
+                ))
+                data_to_send.append(ZabbixMetric(
+                    self.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,status]' % (pods_namespace, container_name),
+                    collect[pods_namespace][container_name]["status"],
                 ))
 
         return data_to_send
