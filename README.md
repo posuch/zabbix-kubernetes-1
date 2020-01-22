@@ -39,7 +39,7 @@ Testing and development
 * Test
   ```
   source venv/bin/activate
-  cp config_example.py configd_c1.py
+  cp config_default.py configd_c1.py
   ./check_kubernetesd configd_c1
   ```
 * Test in docker
