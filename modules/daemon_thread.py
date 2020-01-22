@@ -9,18 +9,25 @@ import threading
 from pprint import pprint
 
 from pyzabbix import ZabbixAPI, ZabbixMetric, ZabbixSender, ZabbixResponse, ZabbixAPIException
-from kubernetes import client, config
+from kubernetes import client, config, watch
 from kubernetes.client.rest import ApiException
 from datetime import datetime, date, timedelta
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from modules.timed_threads import TimedThread
+from modules.watcher_thread import WatcherThread
 
 exit_flag = threading.Event()
 
 
+class DryResult:
+    pass
+
+
 class CheckKubernetesDaemon:
     def __init__(self, config, config_name, resources, discovery_interval, data_interval):
+        self.manage_threads = []
+        self.data = {}
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config_name = config_name
@@ -38,13 +45,13 @@ class CheckKubernetesDaemon:
         self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
         self.zabbix_host = config.zabbix_host
         self.zabbix_debug = config.zabbix_debug
+        self.zabbix_dry_run = config.zabbix_dry_run
 
         self.resources = resources
 
         self.logger.info("INIT ==> K8S API Server: %s, Zabbix Server: %s, Zabbix Host: %s : %s" %
                          (self.api_configuration.host, config.zabbix_server, self.zabbix_host, ",".join(self.resources)))
 
-        self.data = dict()
         self.data_refreshed = None
 
     @staticmethod
@@ -59,20 +66,35 @@ class CheckKubernetesDaemon:
     def handler(self, signum, *args):
         self.logger.info('Signal handler called with signal %s... stopping (max %s seconds)' % (signum, 3))
         exit_flag.set()
-        self.discover_thread.join(timeout=3)
-        self.data_thread.join(timeout=3)
+        for thread in self.manage_threads:
+            thread.join(timeout=3)
         self.self.logger.info('All threads exited... exit check_kubernetesd')
         sys.exit(0)
 
     def run(self):
-        self.discover_thread = TimedThread('discover_thread', self.discovery_interval, exit_flag,
-                                           daemon=self, daemon_method='send_discovery_to_zabbix')
-        self.data_thread = TimedThread('data_thread', self.data_interval, exit_flag,
-                                       daemon=self, daemon_method='send_data_to_zabbix')
+        # self.discover_thread = TimedThread('discover_thread', self.discovery_interval, exit_flag,
+        #                                    daemon=self, daemon_method='send_discovery_to_zabbix')
+        # self.data_thread = TimedThread('data_thread', self.data_interval, exit_flag,
+        #                                daemon=self, daemon_method='send_data_to_zabbix')
+        #
+        # self.manage_threads.append(self.discover_thread)
+        # self.manage_threads.append(self.data_thread)
+        #
+        # self.discover_thread.start()
+        # time.sleep(5)
+        # self.data_thread.start()
+        self.start_watcher_threads()
 
-        self.discover_thread.start()
-        time.sleep(5)
-        self.data_thread.start()
+    def get_api_for_resource(self, resource):
+        if resource in ['nodes', 'components', 'tls', 'pods', 'services']:
+            # use core_v1
+            api = self.core_v1
+        elif resource in ['deployments']:
+            # use apps_v1
+            api = self.apps_v1
+        else:
+            raise AttributeError('No valid resource found: %s' % resource)
+        return api
 
     def check_or_refresh_data(self):
         now = datetime.now()
@@ -96,14 +118,7 @@ class CheckKubernetesDaemon:
         return True
 
     def get_data(self, resource):
-        if resource in ['nodes', 'components', 'tls', 'pods', 'services']:
-            # use core_v1
-            api = self.core_v1
-        elif resource in ['deployments']:
-            # use apps_v1
-            api = self.apps_v1
-        else:
-            raise AttributeError('No valid resource found: %s' % resource)
+        api = self.get_api_for_resource(resource)
 
         if resource == 'nodes':
             return api.list_node(watch=False).to_dict()
@@ -118,6 +133,25 @@ class CheckKubernetesDaemon:
         elif resource == 'services':
             return api.list_service_for_all_namespaces(watch=False).to_dict()
 
+    def watch_data(self, resource):
+        api = self.get_api_for_resource(resource)
+
+        w = watch.Watch()
+        if resource == 'nodes':
+            for event in w.stream(api.list_node, _request_timeout=60):
+                print(event)
+        # elif resource == 'deployments':
+        #     return api.list_deployment_for_all_namespaces(watch=False).to_dict()
+        # elif resource == 'components':
+        #     return api.list_component_status(watch=False).to_dict()
+        # elif resource == 'tls':
+        #     return api.list_secret_for_all_namespaces(watch=False).to_dict()
+        # elif resource == 'pods':
+        #     for event in w.stream(api.list_pod_for_all_namespaces, _request_timeout=60):
+        #         print(event)
+        # elif resource == 'services':
+        #     return api.list_service_for_all_namespaces(watch=False).to_dict()
+
     @staticmethod
     def transform_value(value):
         if value is None:
@@ -126,6 +160,22 @@ class CheckKubernetesDaemon:
         if m:
             return int(m.group(1)) * 1024
         return value
+
+    def start_watcher_threads(self):
+        for resource in self.resources:
+            thread = WatcherThread(resource, exit_flag,
+                                   daemon=self, daemon_method='watch_data')
+            self.manage_threads.append(thread)
+            thread.start()
+
+    def send_to_zabbix(self, metrics):
+        if self.zabbix_dry_run:
+            self.logger.info(metrics)
+            result = DryResult()
+            result.failed = 0
+        else:
+            result = self.zabbix_sender.send(metrics)
+        return result
 
     def send_discovery_to_zabbix(self):
         if not self.check_or_refresh_data():
@@ -138,7 +188,8 @@ class CheckKubernetesDaemon:
                 continue
             metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', zabbix_data))
         metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,api]', int(time.time())))
-        result = self.zabbix_sender.send(metrics)
+
+        result = self.send_to_zabbix(metrics)
         if result.failed > 0:
             self.logger.error("failed to sent %s discoveries" % len(metrics))
         else:
@@ -156,11 +207,11 @@ class CheckKubernetesDaemon:
 
         if self.zabbix_debug:
             for metric in metrics:
-                result = self.zabbix_sender.send([metric])
+                result = self.send_to_zabbix([metric])
                 if result.failed > 0:
                     self.logger.error("failed to sent items: %s", metric)
         else:
-            result = self.zabbix_sender.send(metrics)
+            result = self.send_to_zabbix(metrics)
             if result.failed > 0:
                 self.logger.error("failed to sent %s items of %s items" % (result.failed, result.processed))
             else:
