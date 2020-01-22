@@ -68,7 +68,7 @@ class CheckKubernetesDaemon:
         exit_flag.set()
         for thread in self.manage_threads:
             thread.join(timeout=3)
-        self.self.logger.info('All threads exited... exit check_kubernetesd')
+        self.logger.info('All threads exited... exit check_kubernetesd')
         sys.exit(0)
 
     def run(self):
