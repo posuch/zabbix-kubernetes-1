@@ -326,7 +326,7 @@ class CheckKubernetesDaemon:
                             "restart_count": 0,
                             "ready": 0,
                             "not_ready": 0,
-                            "status" : "OK",
+                            "status": "OK",
                         }
                     )
                     collect[pods_namespace][container_name]["restart_count"] += container['restart_count']
