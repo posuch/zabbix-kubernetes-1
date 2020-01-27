@@ -25,7 +25,6 @@ stream.setFormatter(formatter)
 logger = logging.getLogger()
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(
         description='Monitoring daemon for kubernetes'
     )

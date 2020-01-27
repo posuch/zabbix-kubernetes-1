@@ -19,5 +19,5 @@ class WatcherThread(threading.Thread):
         self.stop_thread = True
 
     def run(self):
-        self.logger.info('starting watcher thread %s' % self.thread_name)
+        self.logger.info('starting looping watcher thread %s' % self.thread_name)
         getattr(self.daemon, self.daemon_method)(self.thread_name)
