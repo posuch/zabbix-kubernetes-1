@@ -73,6 +73,11 @@ class CheckKubernetesDaemon:
         self.zabbix_debug = config.zabbix_debug
         self.zabbix_dry_run = config.zabbix_dry_run
 
+        self.web_api_enable = config.web_api_enable
+        self.web_api_host = config.web_api_host
+        self.web_api_token = config.web_api_token
+        self.web_api_verify_ssl = config.web_api_verify_ssl
+
         self.resources = resources
 
         self.logger.info("INIT ==> K8S API Server: %s, Zabbix Server: %s, Zabbix Host: %s : %s" %
@@ -127,6 +132,12 @@ class CheckKubernetesDaemon:
             raise AttributeError('No valid resource found: %s' % resource)
         return api
 
+    def get_web_api(self):
+        if not hasattr(self, '_web_api'):
+            from .web_api import WebApi
+            self._web_api = WebApi(self.web_api_host, self.web_api_token, verify_ssl=self.web_api_verify_ssl)
+        return self._web_api
+
     def watch_data(self, resource):
         api = self.get_api_for_resource(resource)
 
@@ -158,6 +169,7 @@ class CheckKubernetesDaemon:
         if event_type == 'ADDED':
             self.data[resource].append(obj)
             self.send_discovery_to_zabbix(resource, obj)
+            self.send_to_web_api(resource, obj, event_type)
 
     @staticmethod
     def transform_value(value):
@@ -229,6 +241,11 @@ class CheckKubernetesDaemon:
                 self.logger.error("failed to sent %s items of %s items" % (result.failed, result.processed))
             else:
                 self.logger.info("successfully sent %s items" % len(metrics))
+
+    def send_to_web_api(self, resource, obj, action):
+        if self.web_api_enable:
+            api = self.get_web_api()
+            api.send_data(resource, obj, action)
 
     def discover_nodes(self):
         name_list = []
