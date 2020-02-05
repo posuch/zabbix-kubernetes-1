@@ -1,4 +1,7 @@
 import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class WebApi:
@@ -13,10 +16,14 @@ class WebApi:
         }
 
     def get_url(self, resource, obj):
+        api_resource = resource
+        if resource.endswith('s'):
+            api_resource = resource[:-1]
+
         url = self.api_host
         if not url.endswith('/'):
             url += '/'
-        return self.api_host + resource + '/'
+        return url + api_resource + '/'
 
     def prepare_data(self, resource, obj, token):
         return dict()
@@ -26,12 +33,15 @@ class WebApi:
         data = self.prepare_data(resource, obj, action)
 
         if action.lower() == 'added':
-            requests.post(url,
-                          data=data,
-                          headers=self.get_headers(),
-                          verify=self.verify_ssl)
+            func = requests.post
         elif action.lower() == 'modified':
-            requests.put(url,
-                         data=data,
-                         headers=self.get_headers(),
-                         verify=self.verify_ssl)
+            func = requests.put
+        else:
+            return
+
+        r = func(url,
+                 data=data,
+                 headers=self.get_headers(),
+                 verify=self.verify_ssl)
+
+        logger.debug('[%s] %s: %s' % (r.status_code, url, data))
