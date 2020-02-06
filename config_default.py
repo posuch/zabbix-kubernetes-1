@@ -11,6 +11,7 @@ web_api_enable = False
 web_api_verify_ssl = True
 web_api_host = "https://example.api.com/api/v1/k8s"
 web_api_token = ""
+web_api_cluster = 'k8s-test-cluster'
 
 discovery_interval_fast = 600
 data_interval_fast = 60 * 2

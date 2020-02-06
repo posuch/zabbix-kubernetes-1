@@ -76,6 +76,7 @@ class CheckKubernetesDaemon:
         self.web_api_enable = config.web_api_enable
         self.web_api_host = config.web_api_host
         self.web_api_token = config.web_api_token
+        self.web_api_cluster = config.web_api_cluster
         self.web_api_verify_ssl = config.web_api_verify_ssl
 
         self.resources = resources
@@ -135,7 +136,7 @@ class CheckKubernetesDaemon:
     def get_web_api(self):
         if not hasattr(self, '_web_api'):
             from .web_api import WebApi
-            self._web_api = WebApi(self.web_api_host, self.web_api_token, verify_ssl=self.web_api_verify_ssl)
+            self._web_api = WebApi(self.web_api_host, self.web_api_token, self.web_api_cluster, verify_ssl=self.web_api_verify_ssl)
         return self._web_api
 
     def watch_data(self, resource):
