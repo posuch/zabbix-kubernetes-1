@@ -136,7 +136,7 @@ class CheckKubernetesDaemon:
     def get_web_api(self):
         if not hasattr(self, '_web_api'):
             from .web_api import WebApi
-            self._web_api = WebApi(self.web_api_host, self.web_api_token, self.web_api_cluster, verify_ssl=self.web_api_verify_ssl)
+            self._web_api = WebApi(self.web_api_host, self.web_api_token, verify_ssl=self.web_api_verify_ssl)
         return self._web_api
 
     def watch_data(self, resource):
@@ -246,7 +246,33 @@ class CheckKubernetesDaemon:
     def send_to_web_api(self, resource, obj, action):
         if self.web_api_enable:
             api = self.get_web_api()
-            api.send_data(resource, obj, action)
+            data_to_send = self.get_data_for_resource(resource, obj)
+            data_to_send['cluster'] = self.web_api_cluster
+            api.send_data(resource, data_to_send, action)
+
+    def get_data_for_resource(self, resource, obj):
+        d = dict(
+            name=obj['metadata']['name'],
+            name_space=obj['metadata']['namespace'],
+        )
+
+        if resource == 'deployments':
+            d.update(self.get_data_for_resource_deployment(obj))
+        return d
+
+    def get_data_for_resource_deployment(self, obj):
+        d = dict()
+        for status_type in obj['status']:
+            if status_type == 'conditions':
+                continue
+            d.update({status_type: CheckKubernetesDaemon.transform_value(obj['status'][status_type])})
+
+        failed_conds = []
+        for cond in [x for x in obj['status']['conditions'] if x['type'].lower() == "available"]:
+            if cond['status'] != 'True':
+                failed_conds.append(cond['type'])
+        d.update({'failed cons': failed_conds})
+        return d
 
     def discover_nodes(self):
         name_list = []
