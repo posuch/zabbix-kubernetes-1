@@ -1,9 +1,12 @@
 import logging
 import threading
 
+from urllib3.exceptions import ProtocolError
+
 
 class WatcherThread(threading.Thread):
     stop_thread = False
+    restart_thread = False
     daemon = None
 
     def __init__(self, thread_name, exit_flag, daemon, daemon_method):
@@ -20,4 +23,8 @@ class WatcherThread(threading.Thread):
 
     def run(self):
         self.logger.info('starting looping watcher thread %s' % self.thread_name)
-        getattr(self.daemon, self.daemon_method)(self.thread_name)
+        try:
+            getattr(self.daemon, self.daemon_method)(self.thread_name)
+        except ProtocolError as e:
+            self.logger.error(e)
+            self.restart_thread = True

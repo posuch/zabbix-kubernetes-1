@@ -81,8 +81,15 @@ class CheckKubernetesDaemon:
 
         self.resources = resources
 
-        self.logger.info("INIT ==> K8S API Server: %s, Zabbix Server: %s, Zabbix Host: %s : %s" %
-                         (self.api_configuration.host, config.zabbix_server, self.zabbix_host, ",".join(self.resources)))
+        init_msg = "INIT K8S-ZABBIX Watcher\n<===>\n" \
+                   "K8S API Server: %s\n" \
+                   "Zabbix Server: %s\n" \
+                   "Zabbix Host: %s\n" \
+                   "Resources watching: %s\n" \
+                   "web_api_enable => %s\n" \
+                   "<===>" \
+                   % (self.api_configuration.host, config.zabbix_server, self.zabbix_host, ",".join(self.resources), self.web_api_enable)
+        self.logger.info(init_msg)
 
     @staticmethod
     def slugit(name, maxlen):
@@ -144,14 +151,16 @@ class CheckKubernetesDaemon:
 
         w = watch.Watch()
         if resource == 'nodes':
-            for s in w.stream(api.list_node, _request_timeout=60):
+            for s in w.stream(api.list_node):
                 self.watch_event_handler(resource, s)
         elif resource == 'deployments':
-            for s in w.stream(api.list_deployment_for_all_namespaces, _request_timeout=60):
+            for s in w.stream(api.list_deployment_for_all_namespaces):
                 self.watch_event_handler(resource, s)
         elif resource == 'components':
-            for s in w.stream(api.list_component_status, _request_timeout=60):
-                self.watch_event_handler(resource, s)
+            # not supported
+            pass
+            # for s in w.stream(api.list_component_status, _request_timeout=60):
+            #     self.watch_event_handler(resource, s)
         # elif resource == 'tls':
         #     return api.list_secret_for_all_namespaces(watch=False).to_dict()
         # elif resource == 'pods':
