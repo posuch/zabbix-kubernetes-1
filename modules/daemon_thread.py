@@ -6,7 +6,6 @@ import logging
 
 import time
 import threading
-from pprint import pprint
 
 from pyzabbix import ZabbixAPI, ZabbixMetric, ZabbixSender, ZabbixResponse, ZabbixAPIException
 from kubernetes import client, config, watch
@@ -14,8 +13,10 @@ from kubernetes.client.rest import ApiException
 from datetime import datetime, date, timedelta
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
+
 from modules.timed_threads import TimedThread
 from modules.watcher_thread import WatcherThread
+from k8sobjects import K8sResourceManager, Pod, Deployment
 
 exit_flag = threading.Event()
 
@@ -52,6 +53,7 @@ data_refreshed = dict(api=datetime.now() - timedelta(hours=1),
 
 class CheckKubernetesDaemon:
     def __init__(self, config, config_name, resources, discovery_interval, data_interval):
+        self.dirty_threads = False
         self.manage_threads = []
         self.data = {}
 
@@ -109,25 +111,34 @@ class CheckKubernetesDaemon:
         sys.exit(0)
 
     def run(self):
-        # self.discover_thread = TimedThread('discover_thread', self.discovery_interval, exit_flag,
-        #                                    daemon=self, daemon_method='send_discovery_to_zabbix')
-        # self.data_thread = TimedThread('data_thread', self.data_interval, exit_flag,
-        #                                daemon=self, daemon_method='send_data_to_zabbix')
-        #
-        # self.manage_threads.append(self.discover_thread)
-        # self.manage_threads.append(self.data_thread)
-        #
-        # self.discover_thread.start()
-        # time.sleep(5)
-        # self.data_thread.start()
         self.start_watcher_threads()
 
     def start_watcher_threads(self):
         for resource in self.resources:
             thread = WatcherThread(resource, exit_flag,
+                                   daemon=self, daemon_method='watch_data',
+                                   discovery=True)
+            self.manage_threads.append(thread)
+            thread.start()
+
+    def restart_dirty_threads(self):
+        found_thread = None
+        for thread in self.manage_threads:
+            if thread.restart_thread:
+                found_thread = thread
+
+        if found_thread:
+            self.logger.info('thread must be restarted: %s' % found_thread)
+
+            resource = found_thread.resource
+            found_thread.join()
+
+            self.manage_threads = [x for x in self.manage_threads if x.resource != resource]
+            thread = WatcherThread(resource, exit_flag,
                                    daemon=self, daemon_method='watch_data')
             self.manage_threads.append(thread)
             thread.start()
+            del found_thread
 
     def get_api_for_resource(self, resource):
         if resource in ['nodes', 'components', 'tls', 'pods', 'services']:
@@ -146,16 +157,16 @@ class CheckKubernetesDaemon:
             self._web_api = WebApi(self.web_api_host, self.web_api_token, verify_ssl=self.web_api_verify_ssl)
         return self._web_api
 
-    def watch_data(self, resource):
+    def watch_data(self, resource, discovery=False):
         api = self.get_api_for_resource(resource)
 
         w = watch.Watch()
         if resource == 'nodes':
             for s in w.stream(api.list_node):
-                self.watch_event_handler(resource, s)
+                self.watch_event_handler(resource, s, discovery=discovery)
         elif resource == 'deployments':
             for s in w.stream(api.list_deployment_for_all_namespaces):
-                self.watch_event_handler(resource, s)
+                self.watch_event_handler(resource, s, discovery=discovery)
         elif resource == 'components':
             # not supported
             pass
@@ -169,17 +180,21 @@ class CheckKubernetesDaemon:
         # elif resource == 'services':
         #     return api.list_service_for_all_namespaces(watch=False).to_dict()
 
-    def watch_event_handler(self, resource, event):
+    def watch_event_handler(self, resource, event, discovery=False):
         event_type = event['type']
         obj = event['object'].to_dict()
         # self.logger.debug(event_type + ': ' + obj['metadata']['name'])
-        if resource not in self.data:
-            self.data[resource] = list()
+        self.data.setdefault(resource, K8sResourceManager(resource))
 
         if event_type == 'ADDED':
-            self.data[resource].append(obj)
-            self.send_discovery_to_zabbix(resource, obj)
-            self.send_to_web_api(resource, obj, event_type)
+            resourced_obj = self.data[resource].add_obj(obj)
+            if resourced_obj.is_dirty:
+                self.send_object(resource, resourced_obj, event_type)
+
+    def send_object(self, resource, resourced_obj, event_type):
+        """ send object with resourced values, set dirty flag """
+        self.send_discovery_to_zabbix(resource, resourced_obj)
+        self.send_to_web_api(resource, resourced_obj, event_type)
 
     @staticmethod
     def transform_value(value):

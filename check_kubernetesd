@@ -83,7 +83,10 @@ if __name__ == '__main__':
         for daemon in daemons:
             daemon.run()
         while True:
-            time.sleep(10)
+            for daemon in daemons:
+                if daemon.dirty_threads:
+                    daemon.restart_dirty_threads()
+            time.sleep(3)
     except KeyboardInterrupt:
         daemon.handler(signal.SIGTERM)
         time.sleep(3)
