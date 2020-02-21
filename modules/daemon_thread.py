@@ -215,7 +215,7 @@ class CheckKubernetesDaemon:
         return result
 
     def send_discovery_to_zabbix(self, resource, obj):
-        obj_name = obj['metadata']['name']
+        obj_name = obj.data['metadata']['name']
         global data_refreshed
 
         # initial
@@ -244,7 +244,7 @@ class CheckKubernetesDaemon:
 
     def send_data_to_zabbix(self, resource, obj):
         global data_refreshed
-        obj_name = obj['metadata']['name']
+        obj_name = obj.data['metadata']['name']
 
         if resource not in data_refreshed['data']:
             data_refreshed['data'][resource] = dict()
@@ -276,8 +276,8 @@ class CheckKubernetesDaemon:
 
     def get_data_for_resource(self, resource, obj):
         d = dict(
-            name=obj['metadata']['name'],
-            name_space=obj['metadata']['namespace'],
+            name=obj.data['metadata']['name'],
+            name_space=obj.data['metadata']['namespace'],
         )
 
         if resource == 'deployments':
@@ -286,13 +286,13 @@ class CheckKubernetesDaemon:
 
     def get_data_for_resource_deployment(self, obj):
         d = dict()
-        for status_type in obj['status']:
+        for status_type in obj.data['status']:
             if status_type == 'conditions':
                 continue
-            d.update({status_type: CheckKubernetesDaemon.transform_value(obj['status'][status_type])})
+            d.update({status_type: CheckKubernetesDaemon.transform_value(obj.data['status'][status_type])})
 
         failed_conds = []
-        for cond in [x for x in obj['status']['conditions'] if x['type'].lower() == "available"]:
+        for cond in [x for x in obj.data['status']['conditions'] if x['type'].lower() == "available"]:
             if cond['status'] != 'True':
                 failed_conds.append(cond['type'])
         d.update({'failed cons': failed_conds})

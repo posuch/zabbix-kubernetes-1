@@ -1,6 +1,12 @@
+import datetime
 import importlib
 import hashlib
 import json
+
+
+def json_encoder(obj):
+    if isinstance(obj, (datetime.date, datetime.datetime)):
+        return obj.isoformat()
 
 
 class K8sResourceManager:
@@ -40,21 +46,24 @@ class K8sObject:
         self.data = obj_data
         self.data_checksum = self.calculate_checksum()
 
-    def __hash__(self):
+    def calculate_checksum(self):
+        return hashlib.md5(
+            json.dumps(
+                self.data,
+                sort_keys=True,
+                default=json_encoder,
+            ).encode('utf-8')
+        ).hexdigest()
+
+    def uid(self):
         name_space = self.data.get('metadata', {}).get('name')
         name = self.data.get('metadata', {}).get('name')
         if not hasattr(self, 'object_type'):
             raise AttributeError('No object_type set! Dont use K8sObject itself!')
         elif not name_space or not name:
-            raise AttributeError('No name_space or name set for __hash__! name_space: %s, name: %s' % (name_space, name))
+            raise AttributeError('No name_space or name set for uid()! name_space: %s, name: %s' % (name_space, name))
 
         return self.object_type + '_' + name_space + '_' + name
-
-    def calculate_checksum(self):
-        return hashlib.md5(json.dumps(self.data, sort_keys=True)).hexdigest()
-
-    def uid(self):
-        return self.__hash__()
 
 
 class Node(K8sObject):
