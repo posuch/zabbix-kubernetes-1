@@ -115,6 +115,8 @@ class CheckKubernetesDaemon:
 
     def start_watcher_threads(self):
         for resource in self.resources:
+            self.data.setdefault(resource, K8sResourceManager(resource))
+
             thread = WatcherThread(resource, exit_flag,
                                    daemon=self, daemon_method='watch_data',
                                    discovery=True)
@@ -184,7 +186,6 @@ class CheckKubernetesDaemon:
         event_type = event['type']
         obj = event['object'].to_dict()
         # self.logger.debug(event_type + ': ' + obj['metadata']['name'])
-        self.data.setdefault(resource, K8sResourceManager(resource))
 
         if event_type == 'ADDED':
             resourced_obj = self.data[resource].add_obj(obj)
@@ -195,6 +196,7 @@ class CheckKubernetesDaemon:
         """ send object with resourced values, set dirty flag """
         self.send_discovery_to_zabbix(resource, resourced_obj)
         self.send_to_web_api(resource, resourced_obj, event_type)
+        resourced_obj.is_dirty = False
 
     @staticmethod
     def transform_value(value):

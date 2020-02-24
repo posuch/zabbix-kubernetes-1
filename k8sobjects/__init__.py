@@ -2,6 +2,9 @@ import datetime
 import importlib
 import hashlib
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def json_encoder(obj):
@@ -19,7 +22,7 @@ class K8sResourceManager:
         if class_label.endswith('s'):
             class_label = class_label[:-1]
 
-        self.resource_class = getattr(mod, class_label.capitalize())
+        self.resource_class = getattr(mod, class_label.capitalize(), None)
 
     def add_obj(self, obj):
         new_obj = self.resource_class(obj)
@@ -46,6 +49,20 @@ class K8sObject:
         self.data = obj_data
         self.data_checksum = self.calculate_checksum()
 
+    def __str__(self):
+        return self.uid
+
+    @property
+    def uid(self):
+        name_space = self.data.get('metadata', {}).get('name')
+        name = self.data.get('metadata', {}).get('name')
+        if not hasattr(self, 'object_type'):
+            raise AttributeError('No object_type set! Dont use K8sObject itself!')
+        elif not name_space or not name:
+            raise AttributeError('No name_space or name set for K8sObject.uid! name_space: %s, name: %s' % (name_space, name))
+
+        return self.object_type + '_' + name_space + '_' + name
+
     def calculate_checksum(self):
         return hashlib.md5(
             json.dumps(
@@ -54,16 +71,6 @@ class K8sObject:
                 default=json_encoder,
             ).encode('utf-8')
         ).hexdigest()
-
-    def uid(self):
-        name_space = self.data.get('metadata', {}).get('name')
-        name = self.data.get('metadata', {}).get('name')
-        if not hasattr(self, 'object_type'):
-            raise AttributeError('No object_type set! Dont use K8sObject itself!')
-        elif not name_space or not name:
-            raise AttributeError('No name_space or name set for uid()! name_space: %s, name: %s' % (name_space, name))
-
-        return self.object_type + '_' + name_space + '_' + name
 
 
 class Node(K8sObject):
