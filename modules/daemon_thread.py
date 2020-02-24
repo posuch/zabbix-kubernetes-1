@@ -112,6 +112,7 @@ class CheckKubernetesDaemon:
 
     def run(self):
         self.start_watcher_threads()
+        self.start_loop_send_discovery_threads()
 
     def start_watcher_threads(self):
         for resource in self.resources:
@@ -122,6 +123,13 @@ class CheckKubernetesDaemon:
                                    discovery=True)
             self.manage_threads.append(thread)
             thread.start()
+
+    def start_loop_send_discovery_threads(self):
+        for resource in self.resources:
+            send_discovery_thread = TimedThread(resource, self.discovery_interval, exit_flag,
+                                                daemon=self, daemon_method='send_discovery', delay=True)
+            self.manage_threads.append(send_discovery_thread)
+            send_discovery_thread.start()
 
     def restart_dirty_threads(self):
         found_thread = None
@@ -197,6 +205,12 @@ class CheckKubernetesDaemon:
         self.send_discovery_to_zabbix(resource, resourced_obj)
         self.send_to_web_api(resource, resourced_obj, event_type)
         resourced_obj.is_dirty = False
+        resourced_obj.last_sent = datetime.now()
+
+    def send_discovery(self, resource):
+        if resource in self.data:
+            for obj_uid, obj in self.data[resource].objects.items():
+                self.send_object(resource, obj, 'ADDED')
 
     @staticmethod
     def transform_value(value):
