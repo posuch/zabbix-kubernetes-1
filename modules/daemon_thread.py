@@ -46,11 +46,6 @@ class KubernetesApi:
             self.apps_v1 = client.AppsV1Api(api_client)
 
 
-data_refreshed = dict(api=datetime.now() - timedelta(hours=1),
-                      discovery=dict(),
-                      data=dict())
-
-
 class CheckKubernetesDaemon:
     def __init__(self, config, config_name, resources, discovery_interval, data_interval):
         self.dirty_threads = False
@@ -62,6 +57,7 @@ class CheckKubernetesDaemon:
         self.discovery_interval = discovery_interval
         self.data_interval = data_interval
 
+        self.api_zabbix_interval = 60
         self.api_configuration = client.Configuration()
         self.api_configuration.host = config.k8s_api_host
         self.api_configuration.verify_ssl = config.verify_ssl
@@ -112,6 +108,7 @@ class CheckKubernetesDaemon:
 
     def run(self):
         self.start_watcher_threads()
+        self.start_api_info_threads()
         self.start_loop_send_discovery_threads()
 
     def start_watcher_threads(self):
@@ -123,6 +120,12 @@ class CheckKubernetesDaemon:
                                    send_discovery=True)
             self.manage_threads.append(thread)
             thread.start()
+
+    def start_api_info_threads(self):
+        thread = TimedThread('api_info', self.api_zabbix_interval, exit_flag,
+                             daemon=self, daemon_method='send_api_info')
+        self.manage_threads.append(thread)
+        thread.start()
 
     def start_loop_send_discovery_threads(self):
         for resource in self.resources:
@@ -201,10 +204,10 @@ class CheckKubernetesDaemon:
                 self.send_object(resource, resourced_obj, event_type, send_discovery=send_discovery)
 
     def send_object(self, resource, resourced_obj, event_type, send_discovery=False):
-        # if send_discovery:
-        #     self.send_discovery_to_zabbix(resource, resourced_obj)
-        #
-        # self.send_data_to_zabbix(resource, resourced_obj)
+        if send_discovery:
+            self.send_discovery_to_zabbix(resource, resourced_obj)
+
+        self.send_data_to_zabbix(resource, resourced_obj)
         self.send_to_web_api(resource, resourced_obj, event_type)
         resourced_obj.is_dirty = False
         resourced_obj.last_sent = datetime.now()
@@ -216,14 +219,14 @@ class CheckKubernetesDaemon:
             for obj_uid, obj in self.data[resource].objects.items():
                 self.send_object(resource, obj, 'ADDED')
 
-    @staticmethod
-    def transform_value(value):
-        if value is None:
-            return 0
-        m = re.match(r"^(\d+)Ki$", str(value))
-        if m:
-            return int(m.group(1)) * 1024
-        return value
+    def send_api_info(self):
+        result = self.send_to_zabbix([
+            ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,api]', int(time.time()))
+        ])
+        if result.failed > 0:
+            self.logger.error("failed to api info")
+        else:
+            self.logger.info("successfully sent api info")
 
     def send_to_zabbix(self, metrics):
         if self.zabbix_dry_run:
@@ -234,32 +237,14 @@ class CheckKubernetesDaemon:
         return result
 
     def send_discovery_to_zabbix(self, resource, obj):
-        obj_name = obj.data['metadata']['name']
-        global data_refreshed
+        obj_name = obj.data['name']
+        data = json.dumps({"data": {"{#NAME}": obj_name}})
 
-        # initial
-        metrics = list()
-        if resource not in data_refreshed['discovery']:
-            data_refreshed['discovery'][resource] = dict()
-        if obj_name not in data_refreshed['discovery'][resource]:
-            data_refreshed['discovery'][resource][obj_name] = datetime.now() - timedelta(hours=1)
-
-        # discovery
-        if data_refreshed['discovery'][resource][obj_name] < get_discovery_timeout_datetime():
-            data = json.dumps({"data": {"{#NAME}": obj_name}})
-            metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', data))
-            data_refreshed['discovery'][resource][obj_name] = datetime.now()
-
-        if data_refreshed['api'] < get_data_timeout_datetime():
-            metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,api]', int(time.time())))
-            data_refreshed['api'] = datetime.now()
-
-        if metrics:
-            result = self.send_to_zabbix(metrics)
-            if result.failed > 0:
-                self.logger.error("failed to sent discoveries: %s" % metrics)
-            else:
-                self.logger.info("successfully sent discoveries: %s" % metrics)
+        result = self.send_to_zabbix([ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', data)])
+        if result.failed > 0:
+            self.logger.error("failed to sent discoveries: %s [%s]" % (resource, obj_name))
+        else:
+            self.logger.info("successfully sent discoveries: %s [%s]" % (resource, obj_name))
 
     def send_data_to_zabbix(self, resource, obj):
         global data_refreshed
@@ -289,34 +274,9 @@ class CheckKubernetesDaemon:
     def send_to_web_api(self, resource, obj, action):
         if self.web_api_enable:
             api = self.get_web_api()
-            # data_to_send = self.get_data_for_resource(resource, obj)
             data_to_send = obj.resource_data
             data_to_send['cluster'] = self.web_api_cluster
             api.send_data(resource, data_to_send, action)
-
-    def get_data_for_resource(self, resource, obj):
-        d = dict(
-            name=obj.data['metadata']['name'],
-            name_space=obj.data['metadata']['namespace'],
-        )
-
-        if resource == 'deployments':
-            d.update(self.get_data_for_resource_deployment(obj))
-        return d
-
-    def get_data_for_resource_deployment(self, obj):
-        d = dict()
-        for status_type in obj.data['status']:
-            if status_type == 'conditions':
-                continue
-            d.update({status_type: CheckKubernetesDaemon.transform_value(obj.data['status'][status_type])})
-
-        failed_conds = []
-        for cond in [x for x in obj.data['status']['conditions'] if x['type'].lower() == "available"]:
-            if cond['status'] != 'True':
-                failed_conds.append(cond['type'])
-        d.update({'failed cons': failed_conds})
-        return d
 
     def discover_nodes(self):
         name_list = []
@@ -420,30 +380,30 @@ class CheckKubernetesDaemon:
 
         return data_to_send
 
-    def get_deployments(self):
-        data_to_send = list()
-        for deployment in self.data.get('deployments').get('items'):
-            deployment_name = deployment['metadata']['name']
-            deployment_namespace = deployment['metadata']['namespace']
-            for status_type in deployment['status']:
-                if status_type == 'conditions':
-                    continue
-
-                data_to_send.append(ZabbixMetric(
-                    self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,%s]' % (deployment_namespace, deployment_name, status_type),
-                    CheckKubernetesDaemon.transform_value(deployment['status'][status_type]))
-                )
-
-            failed_conds = []
-            for cond in [x for x in deployment['status']['conditions'] if x['type'].lower() == "available"]:
-                if cond['status'] != 'True':
-                    failed_conds.append(cond['type'])
-
-            data_to_send.append(ZabbixMetric(
-                self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,available_status]' % (deployment_namespace, deployment_name),
-                failed_conds if len(failed_conds) > 0 else 'OK')
-            )
-        return data_to_send
+    # def get_deployments(self):
+    #     data_to_send = list()
+    #     for deployment in self.data.get('deployments').get('items'):
+    #         deployment_name = deployment['metadata']['name']
+    #         deployment_namespace = deployment['metadata']['namespace']
+    #         for status_type in deployment['status']:
+    #             if status_type == 'conditions':
+    #                 continue
+    #
+    #             data_to_send.append(ZabbixMetric(
+    #                 self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,%s]' % (deployment_namespace, deployment_name, status_type),
+    #                 CheckKubernetesDaemon.transform_value(deployment['status'][status_type]))
+    #             )
+    #
+    #         failed_conds = []
+    #         for cond in [x for x in deployment['status']['conditions'] if x['type'].lower() == "available"]:
+    #             if cond['status'] != 'True':
+    #                 failed_conds.append(cond['type'])
+    #
+    #         data_to_send.append(ZabbixMetric(
+    #             self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,available_status]' % (deployment_namespace, deployment_name),
+    #             failed_conds if len(failed_conds) > 0 else 'OK')
+    #         )
+    #     return data_to_send
 
     def get_services(self):
         data_to_send = list()

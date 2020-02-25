@@ -1,3 +1,4 @@
+import re
 import datetime
 import importlib
 import hashlib
@@ -21,6 +22,15 @@ def get_k8s_class_identifier(resource):
         pods='pod',
         tls='tls',
     )[resource]
+
+
+def transform_value(value):
+    if value is None:
+        return 0
+    m = re.match(r"^(\d+)Ki$", str(value))
+    if m:
+        return int(m.group(1)) * 1024
+    return value
 
 
 class K8sResourceManager:
@@ -58,6 +68,7 @@ class K8sObject:
 
     @property
     def resource_data(self):
+        """ customized values for k8s objects """
         return dict(
             name=self.data['metadata']['name'],
             name_space=self.data['metadata']['namespace'],
@@ -87,10 +98,36 @@ class K8sObject:
 class Node(K8sObject):
     object_type = 'node'
 
+    @property
+    def resource_data(self):
+        data = super().resource_data
+        return data
+
 
 class Pod(K8sObject):
     object_type = 'pod'
 
+    @property
+    def resource_data(self):
+        data = super().resource_data
+        return data
+
 
 class Deployment(K8sObject):
     object_type = 'deployment'
+
+    @property
+    def resource_data(self):
+        data = super().resource_data
+
+        for status_type in self.data['status']:
+            if status_type == 'conditions':
+                continue
+            data.update({status_type: transform_value(self.data['status'][status_type])})
+
+        failed_conds = []
+        for cond in [x for x in self.data['status']['conditions'] if x['type'].lower() == "available"]:
+            if cond['status'] != 'True':
+                failed_conds.append(cond['type'])
+        data.update({'failed cons': failed_conds})
+        return data
