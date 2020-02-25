@@ -120,7 +120,7 @@ class CheckKubernetesDaemon:
 
             thread = WatcherThread(resource, exit_flag,
                                    daemon=self, daemon_method='watch_data',
-                                   discovery=True)
+                                   send_discovery=True)
             self.manage_threads.append(thread)
             thread.start()
 
@@ -167,16 +167,16 @@ class CheckKubernetesDaemon:
             self._web_api = WebApi(self.web_api_host, self.web_api_token, verify_ssl=self.web_api_verify_ssl)
         return self._web_api
 
-    def watch_data(self, resource, discovery=False):
+    def watch_data(self, resource, send_discovery=False):
         api = self.get_api_for_resource(resource)
 
         w = watch.Watch()
         if resource == 'nodes':
             for s in w.stream(api.list_node):
-                self.watch_event_handler(resource, s, discovery=discovery)
+                self.watch_event_handler(resource, s, send_discovery=send_discovery)
         elif resource == 'deployments':
             for s in w.stream(api.list_deployment_for_all_namespaces):
-                self.watch_event_handler(resource, s, discovery=discovery)
+                self.watch_event_handler(resource, s, send_discovery=send_discovery)
         elif resource == 'components':
             # not supported
             pass
@@ -190,7 +190,7 @@ class CheckKubernetesDaemon:
         # elif resource == 'services':
         #     return api.list_service_for_all_namespaces(watch=False).to_dict()
 
-    def watch_event_handler(self, resource, event, discovery=False):
+    def watch_event_handler(self, resource, event, send_discovery=False):
         event_type = event['type']
         obj = event['object'].to_dict()
         # self.logger.debug(event_type + ': ' + obj['metadata']['name'])
@@ -198,17 +198,21 @@ class CheckKubernetesDaemon:
         if event_type == 'ADDED':
             resourced_obj = self.data[resource].add_obj(obj)
             if resourced_obj.is_dirty:
-                self.send_object(resource, resourced_obj, event_type)
+                self.send_object(resource, resourced_obj, event_type, send_discovery=send_discovery)
 
-    def send_object(self, resource, resourced_obj, event_type):
-        """ send object with resourced values, set dirty flag """
-        self.send_discovery_to_zabbix(resource, resourced_obj)
+    def send_object(self, resource, resourced_obj, event_type, send_discovery=False):
+        # if send_discovery:
+        #     self.send_discovery_to_zabbix(resource, resourced_obj)
+        #
+        # self.send_data_to_zabbix(resource, resourced_obj)
         self.send_to_web_api(resource, resourced_obj, event_type)
         resourced_obj.is_dirty = False
         resourced_obj.last_sent = datetime.now()
 
     def send_discovery(self, resource):
-        if resource in self.data:
+        if resource in self.data and len(self.data[resource].objects) > 0:
+            self.logger.debug('sending discovery for %s [%s] (%s)'
+                              % (resource, self.data[resource].objects.keys(), len(self.data[resource].objects)))
             for obj_uid, obj in self.data[resource].objects.items():
                 self.send_object(resource, obj, 'ADDED')
 
@@ -223,7 +227,6 @@ class CheckKubernetesDaemon:
 
     def send_to_zabbix(self, metrics):
         if self.zabbix_dry_run:
-            self.logger.info('send to zabbix: %s' % metrics)
             result = DryResult()
             result.failed = 0
         else:
@@ -286,7 +289,8 @@ class CheckKubernetesDaemon:
     def send_to_web_api(self, resource, obj, action):
         if self.web_api_enable:
             api = self.get_web_api()
-            data_to_send = self.get_data_for_resource(resource, obj)
+            # data_to_send = self.get_data_for_resource(resource, obj)
+            data_to_send = obj.resource_data
             data_to_send['cluster'] = self.web_api_cluster
             api.send_data(resource, data_to_send, action)
 

@@ -1,6 +1,8 @@
 import requests
 import logging
 
+from k8sobjects import get_k8s_class_identifier
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,9 +18,7 @@ class WebApi:
         }
 
     def get_url(self, resource):
-        api_resource = resource
-        if resource.endswith('s'):
-            api_resource = resource[:-1]
+        api_resource = get_k8s_class_identifier(resource)
 
         url = self.api_host
         if not url.endswith('/'):
@@ -40,6 +40,8 @@ class WebApi:
                  headers=self.get_headers(),
                  verify=self.verify_ssl)
 
-        logger.debug('[%s] %s: %s' % (r.status_code, url, data))
         if r.status_code > 399:
+            logger.warning('[%s] %s sended %s data -> %s' % (r.status_code, url, resource, data))
             logger.warning(r.text)
+        else:
+            logger.debug('[%s] sended %s [%s]' % (r.status_code, resource, data['name']))

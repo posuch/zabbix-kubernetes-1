@@ -12,20 +12,28 @@ def json_encoder(obj):
         return obj.isoformat()
 
 
-class K8sResourceManager:
-    resource_class = None
-    objects = dict()
+def get_k8s_class_identifier(resource):
+    return dict(
+        nodes='node',
+        components='component',
+        services='service',
+        deployments='deployment',
+        pods='pod',
+        tls='tls',
+    )[resource]
 
+
+class K8sResourceManager:
     def __init__(self, resource):
+        self.objects = dict()
+        self.resource = resource
         mod = importlib.import_module('k8sobjects')
-        class_label = resource
-        if class_label.endswith('s'):
-            class_label = class_label[:-1]
+        class_label = get_k8s_class_identifier(resource)
 
         self.resource_class = getattr(mod, class_label.capitalize(), None)
 
     def add_obj(self, obj):
-        new_obj = self.resource_class(obj)
+        new_obj = self.resource_class(obj, self.resource)
         if new_obj.uid not in self.objects:
             # new object
             self.objects[new_obj.uid] = new_obj
@@ -38,19 +46,22 @@ class K8sResourceManager:
 
 
 class K8sObject:
-    name_space = ''
-    name = ''
-    last_sent = 0
-    is_dirty = True
-    data = dict()
-    data_checksum = ''
-
-    def __init__(self, obj_data):
+    def __init__(self, obj_data, resource):
+        self.is_dirty = True
+        self.last_sent = 0
+        self.resource = resource
         self.data = obj_data
         self.data_checksum = self.calculate_checksum()
 
     def __str__(self):
         return self.uid
+
+    @property
+    def resource_data(self):
+        return dict(
+            name=self.data['metadata']['name'],
+            name_space=self.data['metadata']['namespace'],
+        )
 
     @property
     def uid(self):
