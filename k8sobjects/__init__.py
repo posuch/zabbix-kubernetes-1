@@ -85,6 +85,10 @@ class K8sObject:
 
         return self.object_type + '_' + name_space + '_' + name
 
+    @property
+    def name(self):
+        return self.data.get('metadata', {}).get('name')
+
     def calculate_checksum(self):
         return hashlib.md5(
             json.dumps(

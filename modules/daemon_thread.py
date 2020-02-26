@@ -219,7 +219,7 @@ class CheckKubernetesDaemon:
             for obj_uid, obj in self.data[resource].objects.items():
                 self.send_object(resource, obj, 'ADDED')
 
-    def send_api_info(self):
+    def send_api_info(self, *args):
         result = self.send_to_zabbix([
             ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,api]', int(time.time()))
         ])
@@ -237,7 +237,7 @@ class CheckKubernetesDaemon:
         return result
 
     def send_discovery_to_zabbix(self, resource, obj):
-        obj_name = obj.data['name']
+        obj_name = obj.name
         data = json.dumps({"data": {"{#NAME}": obj_name}})
 
         result = self.send_to_zabbix([ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', data)])
@@ -247,16 +247,10 @@ class CheckKubernetesDaemon:
             self.logger.info("successfully sent discoveries: %s [%s]" % (resource, obj_name))
 
     def send_data_to_zabbix(self, resource, obj):
-        global data_refreshed
-        obj_name = obj.data['metadata']['name']
-
-        if resource not in data_refreshed['data']:
-            data_refreshed['data'][resource] = dict()
+        obj_name = obj.name
 
         metrics = list()
-        for resource in self.resources:
-            data_to_send = getattr(self, 'get_' + resource)()
-            metrics += data_to_send
+        data_to_send = obj.resource_data
         metrics.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[get,items]', int(time.time())))
 
         if self.zabbix_debug:
