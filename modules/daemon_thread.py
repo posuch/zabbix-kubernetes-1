@@ -258,6 +258,8 @@ class CheckKubernetesDaemon:
                 result = self.send_to_zabbix([metric])
                 if result.failed > 0:
                     self.logger.error("failed to sent items: %s", metric)
+                else:
+                    self.logger.info("successfully sent items: %s", metric)
         else:
             result = self.send_to_zabbix(metrics)
             if result.failed > 0:
