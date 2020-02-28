@@ -29,11 +29,6 @@ if __name__ == '__main__':
         description='Monitoring daemon for kubernetes'
     )
 
-    parser.add_argument(
-        '--zabbix_debug',
-        help='show zabbix debug info',
-        action='store_true', )
-
     args, remaining_args = parser.parse_known_args()
 
     if len(remaining_args) < 1:
@@ -59,9 +54,11 @@ if __name__ == '__main__':
             print("setting %s by environment variable %s" % (key, key.upper()))
             setattr(config, key, os.environ[key.upper()])
 
-    if args.zabbix_debug:
+    if config.zabbix_debug:
         logger.info("starting with zabbix debug")
         config.zabbix_debug = True
+        log = logging.getLogger('pyzabbix')
+        log.setLevel(logging.DEBUG)
 
     if config.debug:
         stream.setLevel(logging.DEBUG)
