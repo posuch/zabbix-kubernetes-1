@@ -22,7 +22,7 @@ class TimedThread(threading.Thread):
         self.stop_thread = True
 
     def run(self):
-        self.logger.info('starting thread %s | interval: %s' % (self.resource, self.cycle_interval_seconds))
+        self.logger.debug('starting thread %s | interval: %s' % (self.resource, self.cycle_interval_seconds))
         if not self.delay:
             getattr(self.daemon, self.daemon_method)(self.resource)
 

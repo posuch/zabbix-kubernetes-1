@@ -58,6 +58,7 @@ class CheckKubernetesDaemon:
         self.data_interval = data_interval
 
         self.api_zabbix_interval = 60
+        self.rate_limit_resend_interval = 10
         self.api_configuration = client.Configuration()
         self.api_configuration.host = config.k8s_api_host
         self.api_configuration.verify_ssl = config.verify_ssl
@@ -110,6 +111,7 @@ class CheckKubernetesDaemon:
         self.start_watcher_threads()
         self.start_api_info_threads()
         self.start_loop_send_discovery_threads()
+        self.start_rate_limit_resend_threads()
 
     def start_watcher_threads(self):
         for resource in self.resources:
@@ -122,6 +124,10 @@ class CheckKubernetesDaemon:
             thread.start()
 
     def start_api_info_threads(self):
+        if 'nodes' not in self.resources:
+            # only send api heartbeat once
+            return
+
         thread = TimedThread('api_info', self.api_zabbix_interval, exit_flag,
                              daemon=self, daemon_method='send_api_info')
         self.manage_threads.append(thread)
@@ -133,6 +139,12 @@ class CheckKubernetesDaemon:
                                                 daemon=self, daemon_method='send_discovery', delay=True)
             self.manage_threads.append(send_discovery_thread)
             send_discovery_thread.start()
+
+    def start_rate_limit_resend_threads(self):
+        rate_limit_resend_thread = TimedThread('rate_limited_resend_thread', self.rate_limit_resend_interval, exit_flag,
+                                               daemon=self, daemon_method='resend_dirty_rate_limited', delay=True)
+        self.manage_threads.append(rate_limit_resend_thread)
+        rate_limit_resend_thread.start()
 
     def restart_dirty_threads(self):
         found_thread = None
@@ -152,6 +164,13 @@ class CheckKubernetesDaemon:
             self.manage_threads.append(thread)
             thread.start()
             del found_thread
+
+    def resend_dirty_rate_limited(self, resources):
+        for resource in self.resources:
+            if resource in self.data and len(self.data[resource].objects) > 0:
+                for obj_uid, obj in self.data[resource].objects.items():
+                    if obj.is_dirty:
+                        self.send_object(resource, obj, 'MODIFIED')
 
     def get_api_for_resource(self, resource):
         if resource in ['nodes', 'components', 'tls', 'pods', 'services']:
@@ -198,12 +217,23 @@ class CheckKubernetesDaemon:
         obj = event['object'].to_dict()
         # self.logger.debug(event_type + ': ' + obj['metadata']['name'])
 
-        if event_type == 'ADDED':
+        if event_type.lower() in ['added', 'modified']:
             resourced_obj = self.data[resource].add_obj(obj)
             if resourced_obj.is_dirty:
                 self.send_object(resource, resourced_obj, event_type, send_discovery=send_discovery)
+        elif event_type.lower() == 'deleted':
+            resourced_obj = self.data[resource].del_obj(obj)
+            self.delete_object(resource, resourced_obj)
+            self.data[resource].delete_obj(obj)
+        else:
+            self.logger.info('event type "%s" not watched' % event_type)
 
     def send_object(self, resource, resourced_obj, event_type, send_discovery=False):
+        self.logger.debug('send obj %s (last_sent %s)' % (resourced_obj.name, resourced_obj.last_sent))
+        if resourced_obj.last_sent is not 0 and resourced_obj.last_sent > datetime.now() - timedelta(seconds=10):
+            self.logger.info('obj %s not sending! rate limited (10s)' % resourced_obj.name)
+            return
+
         if send_discovery:
             self.send_discovery_to_zabbix(resource, resourced_obj)
 
@@ -211,6 +241,9 @@ class CheckKubernetesDaemon:
         self.send_to_web_api(resource, resourced_obj, event_type)
         resourced_obj.is_dirty = False
         resourced_obj.last_sent = datetime.now()
+
+    def delete_object(self, resource, resourced_obj):
+        pass
 
     def send_discovery(self, resource):
         if resource in self.data and len(self.data[resource].objects) > 0:

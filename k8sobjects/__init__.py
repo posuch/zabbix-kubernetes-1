@@ -49,10 +49,25 @@ class K8sResourceManager:
             self.objects[new_obj.uid] = new_obj
         elif self.objects[new_obj.uid].data_checksum != new_obj.data_checksum:
             # existing object with modified data
+            new_obj.last_sent = self.objects[new_obj.uid].last_sent
+            new_obj.is_dirty = True
             self.objects[new_obj.uid] = new_obj
 
         # return created or updated object
         return self.objects[new_obj.uid]
+
+    def del_obj(self, obj):
+        deleted_obj = None
+        if obj.uid in self.objects:
+            deleted_obj = json.loads(
+                json.dumps(
+                    self.objects[obj.uid],
+                    sort_keys=True,
+                    default=json_encoder,
+                )
+            )
+            del self.objects[obj.uid]
+        return deleted_obj
 
 
 class K8sObject:
@@ -130,8 +145,10 @@ class Deployment(K8sObject):
             data.update({status_type: transform_value(self.data['status'][status_type])})
 
         failed_conds = []
-        for cond in [x for x in self.data['status']['conditions'] if x['type'].lower() == "available"]:
-            if cond['status'] != 'True':
-                failed_conds.append(cond['type'])
+        available_conds = [x for x in self.data['status']['conditions'] if x['type'].lower() == "available"]
+        if available_conds:
+            for cond in available_conds:
+                if cond['status'] != 'True':
+                    failed_conds.append(cond['type'])
         data.update({'failed cons': failed_conds})
         return data
