@@ -270,14 +270,17 @@ class CheckKubernetesDaemon:
         return result
 
     def send_discovery_to_zabbix(self, resource, obj):
-        obj_name = obj.name
-        data = json.dumps({"data": {"{#NAME}": obj_name}})
+        data = json.dumps({
+            "{#NAME}": obj.name,
+            "{#NAMESPACE}": obj.name_space,
+            "{#SLUG}": CheckKubernetesDaemon.slugit(obj.name_space + "/" + obj.name, 40),
+        })
 
         result = self.send_to_zabbix([ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', data)])
         if result.failed > 0:
-            self.logger.error("failed to sent discoveries: %s [%s]" % (resource, obj_name))
+            self.logger.error("failed to sent discoveries: %s [%s]" % (resource, obj.name))
         else:
-            self.logger.info("successfully sent discoveries: %s [%s]" % (resource, obj_name))
+            self.logger.info("successfully sent discoveries: %s [%s]" % (resource, obj.name))
 
     def send_data_to_zabbix(self, resource, obj):
         obj_name = obj.name
