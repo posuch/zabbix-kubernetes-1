@@ -199,11 +199,11 @@ class CheckKubernetesDaemon:
 
         w = watch.Watch()
         if resource == 'nodes':
-            for s in w.stream(api.list_node):
-                self.watch_event_handler(resource, s, send_discovery=send_discovery)
+            for obj in w.stream(api.list_node):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
         elif resource == 'deployments':
-            for s in w.stream(api.list_deployment_for_all_namespaces):
-                self.watch_event_handler(resource, s, send_discovery=send_discovery)
+            for obj in w.stream(api.list_deployment_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
         elif resource == 'components':
             # not supported
             pass
@@ -211,9 +211,9 @@ class CheckKubernetesDaemon:
             #     self.watch_event_handler(resource, s)
         # elif resource == 'tls':
         #     return api.list_secret_for_all_namespaces(watch=False).to_dict()
-        # elif resource == 'pods':
-        #     for event in w.stream(api.list_pod_for_all_namespaces, _request_timeout=60):
-        #         print(event)
+        elif resource == 'pods':
+            for obj in w.stream(api.list_pod_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
         # elif resource == 'services':
         #     return api.list_service_for_all_namespaces(watch=False).to_dict()
 
