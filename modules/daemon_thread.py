@@ -33,6 +33,20 @@ def get_discovery_timeout_datetime():
     return datetime.now() - timedelta(hours=1)
 
 
+def slugit(name_space, name, maxlen):
+    if name_space:
+        slug = name_space + '/' + name
+    else:
+        slug = name
+
+    if len(slug) <= maxlen:
+        return slug
+
+    prefix_pos = int((maxlen / 2) - 1)
+    suffix_pos = len(slug) - int(maxlen / 2) - 2
+    return slug[:prefix_pos] + "~" + slug[suffix_pos:]
+
+
 class KubernetesApi:
     __shared_state = dict(core_v1=None,
                           apps_v1=None)
@@ -89,15 +103,6 @@ class CheckKubernetesDaemon:
                    "<===>" \
                    % (self.api_configuration.host, config.zabbix_server, self.zabbix_host, ",".join(self.resources), self.web_api_enable)
         self.logger.info(init_msg)
-
-    @staticmethod
-    def slugit(name, maxlen):
-        if len(name) <= maxlen:
-            return name
-
-        prefix_pos = int((maxlen / 2) - 1)
-        suffix_pos = len(name) - int(maxlen / 2) - 2
-        return name[:prefix_pos] + "~" + name[suffix_pos:]
 
     def handler(self, signum, *args):
         self.logger.info('Signal handler called with signal %s... stopping (max %s seconds)' % (signum, 3))
@@ -273,7 +278,7 @@ class CheckKubernetesDaemon:
         data = json.dumps({
             "{#NAME}": obj.name,
             "{#NAMESPACE}": obj.name_space,
-            "{#SLUG}": CheckKubernetesDaemon.slugit(obj.name_space + "/" + obj.name, 40),
+            "{#SLUG}": slugit(obj.name_space, obj.name, 40),
         })
 
         result = self.send_to_zabbix([ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', data)])

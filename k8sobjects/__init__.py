@@ -102,11 +102,17 @@ class K8sObject:
 
     @property
     def name(self):
-        return self.data.get('metadata', {}).get('name')
+        name = self.data.get('metadata', {}).get('name')
+        if not name:
+            logger.warning('Could not find name for obj %s' % self)
+        return name
 
     @property
     def name_space(self):
-        return self.data.get('metadata', {}).get('namespace')
+        name_space = self.data.get('metadata', {}).get('namespace')
+        if not name_space:
+            logger.warning('Could not find name_space for obj %s' % self)
+        return name_space
 
     def calculate_checksum(self):
         return hashlib.md5(
