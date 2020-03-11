@@ -12,17 +12,27 @@ class WebApi:
         self.api_token = api_token
         self.verify_ssl = verify_ssl
 
+        url = self.get_url()
+        r = requests.head(url)
+        if r.status_code in [301, 302]:
+            self.api_host = r.headers['location']
+
     def get_headers(self):
         return {
             'Authorization': self.api_token,
         }
 
-    def get_url(self, resource):
-        api_resource = get_k8s_class_identifier(resource)
+    def get_url(self, resource=None):
+        api_resource = None
+        if resource:
+            api_resource = get_k8s_class_identifier(resource)
 
         url = self.api_host
         if not url.endswith('/'):
             url += '/'
+
+        if not api_resource:
+            return url
         return url + api_resource + '/'
 
     def send_data(self, resource, data, action):
@@ -35,13 +45,15 @@ class WebApi:
         else:
             return
 
+        # empty variables are NOT sent!
         r = func(url,
                  data=data,
                  headers=self.get_headers(),
-                 verify=self.verify_ssl)
+                 verify=self.verify_ssl,
+                 allow_redirects=True)
 
         if r.status_code > 399:
-            logger.warning('[%s] %s sended %s data -> %s' % (r.status_code, url, resource, data))
+            logger.warning('%s [%s] sended %s data -> %s' % (url, r.status_code, resource, data))
             logger.warning(r.text)
         else:
-            logger.debug('[%s] sended %s [%s]' % (r.status_code, resource, data['name']))
+            logger.debug('%s [%s] sended %s [%s]' % (url, r.status_code, resource, data['name']))

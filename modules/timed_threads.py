@@ -27,5 +27,5 @@ class TimedThread(threading.Thread):
             getattr(self.daemon, self.daemon_method)(self.resource)
 
         while not self.exit_flag.wait(self.cycle_interval_seconds):
-            self.logger.info('starting new run on thread ' + self.resource + '.' + self.daemon_method)
+            self.logger.debug('starting new run on thread ' + self.resource + '.' + self.daemon_method)
             getattr(self.daemon, self.daemon_method)(self.resource)
