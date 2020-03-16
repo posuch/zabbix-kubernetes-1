@@ -171,11 +171,14 @@ class CheckKubernetesDaemon:
             del found_thread
 
     def resend_dirty_rate_limited(self, resources):
-        for resource in self.resources:
-            if resource in self.data and len(self.data[resource].objects) > 0:
-                for obj_uid, obj in self.data[resource].objects.items():
-                    if obj.is_dirty:
-                        self.send_object(resource, obj, 'MODIFIED')
+        try:
+            for resource in self.resources:
+                if resource in self.data and len(self.data[resource].objects) > 0:
+                    for obj_uid, obj in self.data[resource].objects.items():
+                        if obj.is_dirty:
+                            self.send_object(resource, obj, 'MODIFIED')
+        except RuntimeError as e:
+            self.logger.warning(str(e))
 
     def get_api_for_resource(self, resource):
         if resource in ['nodes', 'components', 'tls', 'pods', 'services']:

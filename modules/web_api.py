@@ -53,7 +53,7 @@ class WebApi:
                  allow_redirects=True)
 
         if r.status_code > 399:
-            logger.warning('%s [%s] sended %s data -> %s' % (url, r.status_code, resource, data))
+            logger.warning('%s [%s] %s sended %s data -> %s' % (self.api_host, r.status_code, url, resource, data))
             logger.warning(r.text)
         else:
             logger.debug('%s [%s] sended %s [%s]' % (url, r.status_code, resource, data['name']))
