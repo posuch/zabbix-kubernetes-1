@@ -294,6 +294,9 @@ class CheckKubernetesDaemon:
         obj_name = obj.name
 
         metrics = obj.get_zabbix_metrics(self.zabbix_host)
+        if not metrics:
+            self.logger.debug('No metrics to send for %s [%s]: %s' % (obj.name, resource,metrics))
+            return
 
         if self.zabbix_debug:
             for metric in metrics:

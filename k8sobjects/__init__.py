@@ -167,19 +167,19 @@ class Node(K8sObject):
         return data
 
     def get_zabbix_metrics(self, zabbix_host):
-        metrics = list()
+        data_to_send = list()
         data = self.resource_data
 
-        metrics.append(ZabbixMetric(zabbix_host, 'check_kubernetesd[get,nodes,' + self.name + ',available_status]',
-                                    'not available' if data['condition_ready'] is not True else 'OK'))
-        metrics.append(ZabbixMetric(zabbix_host, 'check_kubernetesd[get,nodes,' + self.name + ',condition_status_failed]',
-                                    data['failed_conds'] if len(data['failed_conds']) > 0 else 'OK'))
+        data_to_send.append(ZabbixMetric(zabbix_host, 'check_kubernetesd[get,nodes,' + self.name + ',available_status]',
+                                         'not available' if data['condition_ready'] is not True else 'OK'))
+        data_to_send.append(ZabbixMetric(zabbix_host, 'check_kubernetesd[get,nodes,' + self.name + ',condition_status_failed]',
+                                         data['failed_conds'] if len(data['failed_conds']) > 0 else 'OK'))
         for monitor_value in self.MONITOR_VALUES:
-            metrics.append(ZabbixMetric(
+            data_to_send.append(ZabbixMetric(
                 zabbix_host, 'check_kubernetesd[get,nodes,%s,%s]' % (self.name, monitor_value),
                 transform_value(data[monitor_value]))
             )
-        return metrics
+        return data_to_send
 
 
 class Pod(K8sObject):
@@ -190,45 +190,45 @@ class Pod(K8sObject):
         data = super().resource_data
         containers = {}
         for container in self.data['spec']['containers']:
-            namespace = self.data['metadata']['namespace']
-            containers.setdefault(namespace, {})
             containers.setdefault(container['name'], 0)
-            containers[namespace][container['name']] += 1
+            containers[container['name']] += 1
         data['containers'] = containers
-        return data
+        data['status'] = {}
 
-    def get_zabbix_metrics(self, zabbix_host):
-        metrics = list()
-        data = self.resource_data
-
-        collect = {}
-        data_to_send = list()
-
-        if "container_statuses" in data['status'] and data['status']['container_statuses']:
-            for container in data['status']['container_statuses']:
+        if "container_statuses" in self.data['status'] and self.data['status']['container_statuses']:
+            for container in self.data['status']['container_statuses']:
                 container_name = container['name']
-                collect.setdefault(container_name, {
+                data['status'][container_name] = {
                     "restart_count": container['restart_count'],
                     "ready": 0,
                     "not_ready": 0,
                     "status": "OK",
-                })
+                }
 
                 if container['ready'] is True:
-                    collect[container_name]["ready"] += 1
+                    data['status'][container_name]["ready"] += 1
                 else:
-                    collect[container_name]["not_ready"] += 1
+                    data['status'][container_name]["not_ready"] += 1
 
                 if container["state"] and len(container["state"]) > 0:
                     status_values = []
-                    for status, data in container["state"].items():
-                        if data and status != "running":
+                    for status, container_data in container["state"].items():
+                        if container_data and status != "running":
                             status_values.append(status)
 
                     if len(status_values) > 0:
-                        collect[container_name]["status"] = "ERROR: " + (",".join(status_values))
+                        data['status'][container_name]["status"] = 'ERROR: ' + (','.join(status_values))
 
-        for container_name, data in collect.items():
+        return data
+
+    def get_zabbix_metrics(self, zabbix_host):
+        data = self.resource_data
+        data_to_send = list()
+
+        if 'status' not in data:
+            logger.error(data)
+
+        for container_name, data in data['status'].items():
             data_to_send.append(ZabbixMetric(
                 zabbix_host, 'check_kubernetesd[get,pods,%s,%s,ready]' % (self.name_space, container_name),
                 data["ready"],
@@ -246,7 +246,7 @@ class Pod(K8sObject):
                 data["status"],
             ))
 
-        return metrics
+        return data_to_send
 
 
 class Deployment(K8sObject):
@@ -267,24 +267,30 @@ class Deployment(K8sObject):
             for cond in available_conds:
                 if cond['status'] != 'True':
                     failed_conds.append(cond['type'])
-        data.update({'failed cons': failed_conds})
+
+        data['failed cons'] = failed_conds
+        if len(failed_conds) > 0:
+            data['status'] = 'ERROR: ' + (','.join(failed_conds))
+        else:
+            data['status'] = 'OK'
+
         return data
 
     def get_zabbix_metrics(self, zabbix_host):
-        data = super().resource_data
+        data = self.resource_data
         data_to_send = []
 
-        for status_type in data['status']:
+        for status_type in self.data['status']:
             if status_type == 'conditions':
                 continue
 
             data_to_send.append(ZabbixMetric(
                 zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,%s]' % (self.name_space, self.name, status_type),
-                transform_value(data['status'][status_type]))
+                transform_value(self.data['status'][status_type]))
             )
 
         failed_conds = []
-        for cond in [x for x in data['status']['conditions'] if x['type'].lower() == "available"]:
+        for cond in [x for x in self.data['status']['conditions'] if x['type'].lower() == "available"]:
             if cond['status'] != 'True':
                 failed_conds.append(cond['type'])
 
@@ -292,3 +298,4 @@ class Deployment(K8sObject):
             zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,available_status]' % (self.name_space, self.name),
             failed_conds if len(failed_conds) > 0 else 'OK')
         )
+        return data_to_send
