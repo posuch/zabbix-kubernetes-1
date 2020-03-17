@@ -69,10 +69,10 @@ if __name__ == '__main__':
 
     daemons = list()
 
-    daemons.append(CheckKubernetesDaemon(config, config_name, ['nodes', 'components', 'tls', 'services'],
+    daemons.append(CheckKubernetesDaemon(config, config_name, ['nodes', 'components', 'tls', 'services', 'ingresses'],
                                          config.discovery_interval_slow, config.data_interval_slow))
 
-    daemons.append(CheckKubernetesDaemon(config, config_name, ['deployments', 'pods'],
+    daemons.append(CheckKubernetesDaemon(config, config_name, ['deployments', 'statefulsets', 'daemonsets', 'pods'],
                                          config.discovery_interval_slow, config.data_interval_fast))
 
     try:

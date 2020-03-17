@@ -1,7 +1,7 @@
 import requests
 import logging
 
-from k8sobjects import get_k8s_class_identifier
+from k8sobjects.k8sobject import get_k8s_class_identifier
 
 logger = logging.getLogger(__name__)
 

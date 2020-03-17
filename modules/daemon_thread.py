@@ -16,7 +16,7 @@ from cryptography.hazmat.backends import default_backend
 
 from modules.timed_threads import TimedThread
 from modules.watcher_thread import WatcherThread
-from k8sobjects import K8sResourceManager, Pod, Deployment
+from k8sobjects.k8sobject import K8sResourceManager
 
 exit_flag = threading.Event()
 
@@ -49,7 +49,8 @@ def slugit(name_space, name, maxlen):
 
 class KubernetesApi:
     __shared_state = dict(core_v1=None,
-                          apps_v1=None)
+                          apps_v1=None,
+                          extensions_v1=None)
 
     def __init__(self, api_client):
         self.__dict__ = self.__shared_state
@@ -58,6 +59,8 @@ class KubernetesApi:
             self.core_v1 = client.CoreV1Api(api_client)
         if not getattr(self, 'apps_v1', None):
             self.apps_v1 = client.AppsV1Api(api_client)
+        if not getattr(self, 'exentsions_v1', None):
+            self.extensions_v1 = client.ExtensionsV1beta1Api(api_client)
 
 
 class CheckKubernetesDaemon:
@@ -78,9 +81,12 @@ class CheckKubernetesDaemon:
         self.api_configuration.verify_ssl = config.verify_ssl
         self.api_configuration.api_key = {"authorization": "Bearer " + config.k8s_api_token}
 
+        # K8S API
         self.api_client = client.ApiClient(self.api_configuration)
         self.core_v1 = KubernetesApi(self.api_client).core_v1
         self.apps_v1 = KubernetesApi(self.api_client).apps_v1
+        self.extensions_v1 = KubernetesApi(self.api_client).extensions_v1
+
         self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
         self.zabbix_host = config.zabbix_host
         self.zabbix_debug = config.zabbix_debug
@@ -182,11 +188,11 @@ class CheckKubernetesDaemon:
 
     def get_api_for_resource(self, resource):
         if resource in ['nodes', 'components', 'tls', 'pods', 'services']:
-            # use core_v1
             api = self.core_v1
-        elif resource in ['deployments']:
-            # use apps_v1
+        elif resource in ['deployments', 'daemonsets', 'statefulsets']:
             api = self.apps_v1
+        elif resource in ['ingresses']:
+            api = self.extensions_v1
         else:
             raise AttributeError('No valid resource found: %s' % resource)
         return api
@@ -202,28 +208,43 @@ class CheckKubernetesDaemon:
 
         w = watch.Watch()
         if resource == 'nodes':
-            for obj in w.stream(api.list_node):
-                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+            pass
+            # for obj in w.stream(api.list_node):
+            #     self.watch_event_handler(resource, obj, send_discovery=send_discovery)
         elif resource == 'deployments':
             for obj in w.stream(api.list_deployment_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        elif resource == 'daemonsets':
+            for obj in w.stream(api.list_daemon_set_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        elif resource == 'statefulsets':
+            for obj in w.stream(api.list_stateful_set_for_all_namespaces):
                 self.watch_event_handler(resource, obj, send_discovery=send_discovery)
         elif resource == 'components':
             # not supported
             pass
             # for s in w.stream(api.list_component_status, _request_timeout=60):
             #     self.watch_event_handler(resource, s)
-        # elif resource == 'tls':
-        #     return api.list_secret_for_all_namespaces(watch=False).to_dict()
+        elif resource == 'ingresses':
+            for obj in w.stream(api.list_ingress_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        elif resource == 'tls':
+            for obj in w.stream(api.list_secret_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
         elif resource == 'pods':
             for obj in w.stream(api.list_pod_for_all_namespaces):
                 self.watch_event_handler(resource, obj, send_discovery=send_discovery)
-        # elif resource == 'services':
-        #     return api.list_service_for_all_namespaces(watch=False).to_dict()
+        elif resource == 'services':
+            for obj in w.stream(api.list_service_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
 
     def watch_event_handler(self, resource, event, send_discovery=False):
         event_type = event['type']
         obj = event['object'].to_dict()
         # self.logger.debug(event_type + ': ' + obj['metadata']['name'])
+        if not self.data[resource].resource_class:
+            self.logger.error('Could not add watch_event_handler! No resource_class for "%s"' % resource)
+            return
 
         if event_type.lower() in ['added', 'modified']:
             resourced_obj = self.data[resource].add_obj(obj)
@@ -295,7 +316,7 @@ class CheckKubernetesDaemon:
 
         metrics = obj.get_zabbix_metrics(self.zabbix_host)
         if not metrics:
-            self.logger.debug('No metrics to send for %s [%s]: %s' % (obj.name, resource,metrics))
+            self.logger.debug('No metrics to send for %s [%s]: %s' % (obj.name, resource, metrics))
             return
 
         if self.zabbix_debug:
@@ -330,31 +351,6 @@ class CheckKubernetesDaemon:
                     "{#NAMESPACE}": tls_cert['metadata']['namespace'],
                 })
         return json.dumps({"data": name_list})
-
-    # def get_deployments(self):
-    #     data_to_send = list()
-    #     for deployment in self.data.get('deployments').get('items'):
-    #         deployment_name = deployment['metadata']['name']
-    #         deployment_namespace = deployment['metadata']['namespace']
-    #         for status_type in deployment['status']:
-    #             if status_type == 'conditions':
-    #                 continue
-    #
-    #             data_to_send.append(ZabbixMetric(
-    #                 self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,%s]' % (deployment_namespace, deployment_name, status_type),
-    #                 CheckKubernetesDaemon.transform_value(deployment['status'][status_type]))
-    #             )
-    #
-    #         failed_conds = []
-    #         for cond in [x for x in deployment['status']['conditions'] if x['type'].lower() == "available"]:
-    #             if cond['status'] != 'True':
-    #                 failed_conds.append(cond['type'])
-    #
-    #         data_to_send.append(ZabbixMetric(
-    #             self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,available_status]' % (deployment_namespace, deployment_name),
-    #             failed_conds if len(failed_conds) > 0 else 'OK')
-    #         )
-    #     return data_to_send
 
     def get_services(self):
         data_to_send = list()
