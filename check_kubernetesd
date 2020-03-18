@@ -47,9 +47,11 @@ if __name__ == '__main__':
         print("config file %s.py not found. ABORTING!" % config_name)
         sys.exit(1)
 
-    for key in ["k8s_api_host", "k8s_api_token", "verify_ssl", "debug", "zabbix_server", "zabbix_host",
-                "zabbix_debug", "discovery_interval_slow", "data_interval_slow",
-                "discovery_interval_fast", "data_interval_fast"]:
+    with open('config_default.py', 'r') as fh:
+        content_lines = fh.read().split('\n')
+
+    for key, val in [x.split('=') for x in content_lines if x]:
+        key = key.strip()
         if key.upper() in os.environ and os.environ[key.upper()] != "":
             print("setting %s by environment variable %s" % (key, key.upper()))
             setattr(config, key, os.environ[key.upper()])
@@ -69,7 +71,10 @@ if __name__ == '__main__':
 
     daemons = list()
 
-    daemons.append(CheckKubernetesDaemon(config, config_name, ['nodes', 'components', 'tls', 'services', 'ingresses'],
+    daemons.append(CheckKubernetesDaemon(config, config_name, ['components'],
+                                         config.discovery_interval_slow, config.data_interval_slow))
+
+    daemons.append(CheckKubernetesDaemon(config, config_name, ['nodes', 'tls', 'services', 'ingresses'],
                                          config.discovery_interval_slow, config.data_interval_slow))
 
     daemons.append(CheckKubernetesDaemon(config, config_name, ['deployments', 'statefulsets', 'daemonsets', 'pods'],

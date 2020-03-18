@@ -118,12 +118,13 @@ class K8sObject:
     @property
     def name_space(self):
         from .node import Node
-        if isinstance(self, Node):
+        from .component import Component
+        if isinstance(self, Node) or isinstance(self, Component):
             return None
 
         name_space = self.data.get('metadata', {}).get('namespace')
         if not name_space:
-            logger.warning('Could not find name_space for obj %s' % self)
+            logger.warning('Could not find name_space for obj %s' % self.name)
         return name_space
 
     def calculate_checksum(self):

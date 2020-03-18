@@ -128,11 +128,17 @@ class CheckKubernetesDaemon:
         for resource in self.resources:
             self.data.setdefault(resource, K8sResourceManager(resource))
 
-            thread = WatcherThread(resource, exit_flag,
-                                   daemon=self, daemon_method='watch_data',
-                                   send_discovery=True)
-            self.manage_threads.append(thread)
-            thread.start()
+            if resource is 'components':
+                thread = TimedThread('components', self.data_interval, exit_flag,
+                                     daemon=self, daemon_method='watch_data')
+                self.manage_threads.append(thread)
+                thread.start()
+            else:
+                thread = WatcherThread(resource, exit_flag,
+                                       daemon=self, daemon_method='watch_data',
+                                       send_discovery=True)
+                self.manage_threads.append(thread)
+                thread.start()
 
     def start_api_info_threads(self):
         if 'nodes' not in self.resources:
@@ -211,9 +217,9 @@ class CheckKubernetesDaemon:
             pass
             # for obj in w.stream(api.list_node):
             #     self.watch_event_handler(resource, obj, send_discovery=send_discovery)
-        elif resource == 'deployments':
-            for obj in w.stream(api.list_deployment_for_all_namespaces):
-                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        # elif resource == 'deployments':
+        #     for obj in w.stream(api.list_deployment_for_all_namespaces):
+        #         self.watch_event_handler(resource, obj, send_discovery=send_discovery)
         elif resource == 'daemonsets':
             for obj in w.stream(api.list_daemon_set_for_all_namespaces):
                 self.watch_event_handler(resource, obj, send_discovery=send_discovery)
@@ -221,22 +227,20 @@ class CheckKubernetesDaemon:
             for obj in w.stream(api.list_stateful_set_for_all_namespaces):
                 self.watch_event_handler(resource, obj, send_discovery=send_discovery)
         elif resource == 'components':
-            # not supported
-            pass
-            # for s in w.stream(api.list_component_status, _request_timeout=60):
-            #     self.watch_event_handler(resource, s)
-        elif resource == 'ingresses':
-            for obj in w.stream(api.list_ingress_for_all_namespaces):
-                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
-        elif resource == 'tls':
-            for obj in w.stream(api.list_secret_for_all_namespaces):
-                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
-        elif resource == 'pods':
-            for obj in w.stream(api.list_pod_for_all_namespaces):
-                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
-        elif resource == 'services':
-            for obj in w.stream(api.list_service_for_all_namespaces):
-                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+            for obj in api.list_component_status(watch=False).to_dict().get('items'):
+                self.data[resource].add_obj(obj)
+        # elif resource == 'ingresses':
+        #     for obj in w.stream(api.list_ingress_for_all_namespaces):
+        #         self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        # elif resource == 'tls':
+        #     for obj in w.stream(api.list_secret_for_all_namespaces):
+        #         self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        # elif resource == 'pods':
+        #     for obj in w.stream(api.list_pod_for_all_namespaces):
+        #         self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        # elif resource == 'services':
+        #     for obj in w.stream(api.list_service_for_all_namespaces):
+        #         self.watch_event_handler(resource, obj, send_discovery=send_discovery)
 
     def watch_event_handler(self, resource, event, send_discovery=False):
         event_type = event['type']
