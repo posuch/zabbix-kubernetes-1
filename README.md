@@ -85,6 +85,8 @@ TODOs
 
 - use k8s watch api 
 - gather and send data in dedicated threads with different intervals
+- Check if it is useful to convert the deployment to a daemon set which runs on one and only one controller
+  https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
 
 Authors
 =======
