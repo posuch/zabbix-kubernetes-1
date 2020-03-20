@@ -33,20 +33,6 @@ def get_discovery_timeout_datetime():
     return datetime.now() - timedelta(hours=1)
 
 
-def slugit(name_space, name, maxlen):
-    if name_space:
-        slug = name_space + '/' + name
-    else:
-        slug = name
-
-    if len(slug) <= maxlen:
-        return slug
-
-    prefix_pos = int((maxlen / 2) - 1)
-    suffix_pos = len(slug) - int(maxlen / 2) - 2
-    return slug[:prefix_pos] + "~" + slug[suffix_pos:]
-
-
 class KubernetesApi:
     __shared_state = dict(core_v1=None,
                           apps_v1=None,
@@ -129,7 +115,7 @@ class CheckKubernetesDaemon:
             self.data.setdefault(resource, K8sResourceManager(resource))
 
             if resource is 'components':
-                thread = TimedThread('components', self.data_interval, exit_flag,
+                thread = TimedThread(resource, self.data_interval, exit_flag,
                                      daemon=self, daemon_method='watch_data')
                 self.manage_threads.append(thread)
                 thread.start()
@@ -137,6 +123,13 @@ class CheckKubernetesDaemon:
                 thread = WatcherThread(resource, exit_flag,
                                        daemon=self, daemon_method='watch_data',
                                        send_discovery=True)
+                self.manage_threads.append(thread)
+                thread.start()
+
+            # additional looping data threads
+            if resource is 'services':
+                thread = TimedThread(resource, self.data_interval, exit_flag,
+                                     daemon=self, daemon_method='report_data', start_delay=5)
                 self.manage_threads.append(thread)
                 thread.start()
 
@@ -214,12 +207,11 @@ class CheckKubernetesDaemon:
 
         w = watch.Watch()
         if resource == 'nodes':
-            pass
-            # for obj in w.stream(api.list_node):
-            #     self.watch_event_handler(resource, obj, send_discovery=send_discovery)
-        # elif resource == 'deployments':
-        #     for obj in w.stream(api.list_deployment_for_all_namespaces):
-        #         self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+            for obj in w.stream(api.list_node):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        elif resource == 'deployments':
+            for obj in w.stream(api.list_deployment_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
         elif resource == 'daemonsets':
             for obj in w.stream(api.list_daemon_set_for_all_namespaces):
                 self.watch_event_handler(resource, obj, send_discovery=send_discovery)
@@ -229,18 +221,18 @@ class CheckKubernetesDaemon:
         elif resource == 'components':
             for obj in api.list_component_status(watch=False).to_dict().get('items'):
                 self.data[resource].add_obj(obj)
-        # elif resource == 'ingresses':
-        #     for obj in w.stream(api.list_ingress_for_all_namespaces):
-        #         self.watch_event_handler(resource, obj, send_discovery=send_discovery)
-        # elif resource == 'tls':
-        #     for obj in w.stream(api.list_secret_for_all_namespaces):
-        #         self.watch_event_handler(resource, obj, send_discovery=send_discovery)
-        # elif resource == 'pods':
-        #     for obj in w.stream(api.list_pod_for_all_namespaces):
-        #         self.watch_event_handler(resource, obj, send_discovery=send_discovery)
-        # elif resource == 'services':
-        #     for obj in w.stream(api.list_service_for_all_namespaces):
-        #         self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        elif resource == 'ingresses':
+            for obj in w.stream(api.list_ingress_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        elif resource == 'tls':
+            for obj in w.stream(api.list_secret_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        elif resource == 'pods':
+            for obj in w.stream(api.list_pod_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
+        elif resource == 'services':
+            for obj in w.stream(api.list_service_for_all_namespaces):
+                self.watch_event_handler(resource, obj, send_discovery=send_discovery)
 
     def watch_event_handler(self, resource, event, send_discovery=False):
         event_type = event['type']
@@ -261,6 +253,20 @@ class CheckKubernetesDaemon:
         else:
             self.logger.info('event type "%s" not watched' % event_type)
 
+    def report_data(self, resource, send_discovery=False):
+        data_to_send = list()
+        if resource is 'services':
+            num_services = 0
+            num_ingress_services = 0
+            for obj_uid, resourced_obj in self.data[resource].objects.items():
+                num_services += 1
+                if resourced_obj.resource_data['is_ingress']:
+                    num_ingress_services += 1
+
+            data_to_send.append(ZabbixMetric(self.zabbix_host, 'check_kubernetes[get,services,num_services]', num_services))
+            data_to_send.append(ZabbixMetric(self.zabbix_host, 'check_kubernetes[get,services,num_ingress_services]', num_ingress_services))
+            self.send_data_to_zabbix(resource, None, data_to_send)
+
     def send_object(self, resource, resourced_obj, event_type, send_discovery=False):
         self.logger.debug('send obj %s (last_sent %s)' % (resourced_obj.name, resourced_obj.last_sent))
         if resourced_obj.last_sent is not 0 and resourced_obj.last_sent > datetime.now() - timedelta(seconds=10):
@@ -270,7 +276,7 @@ class CheckKubernetesDaemon:
         if send_discovery:
             self.send_discovery_to_zabbix(resource, resourced_obj)
 
-        self.send_data_to_zabbix(resource, resourced_obj)
+        self.send_data_to_zabbix(resource, obj=resourced_obj)
         self.send_to_web_api(resource, resourced_obj, event_type)
         resourced_obj.is_dirty = False
         resourced_obj.last_sent = datetime.now()
@@ -303,24 +309,23 @@ class CheckKubernetesDaemon:
         return result
 
     def send_discovery_to_zabbix(self, resource, obj):
-        data = json.dumps({
-            "{#NAME}": obj.name,
-            "{#NAMESPACE}": obj.name_space,
-            "{#SLUG}": slugit(obj.name_space, obj.name, 40),
-        })
+        discovery_data = obj.get_discovery_for_zabbix()
+        if not discovery_data:
+            self.logger.debug('No discovery_data for obj %s, not sending to zabbix!' % obj.uid)
+            return
 
-        result = self.send_to_zabbix([ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', data)])
+        result = self.send_to_zabbix([ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', discovery_data)])
         if result.failed > 0:
-            self.logger.error("failed to sent discoveries: %s [%s]" % (resource, obj.name))
+            self.logger.error("failed to sent discoveries: %s" % obj.uid)
         else:
-            self.logger.info("successfully sent discoveries: %s [%s]" % (resource, obj.name))
+            self.logger.info("successfully sent discoveries: %s" % obj.uid)
 
-    def send_data_to_zabbix(self, resource, obj):
-        obj_name = obj.name
+    def send_data_to_zabbix(self, resource, obj=None, metrics=None):
+        if obj and not metrics:
+            metrics = obj.get_zabbix_metrics(self.zabbix_host)
 
-        metrics = obj.get_zabbix_metrics(self.zabbix_host)
         if not metrics:
-            self.logger.debug('No metrics to send for %s [%s]: %s' % (obj.name, resource, metrics))
+            self.logger.debug('No metrics to send for %s: %s' % (obj.uid, metrics))
             return
 
         if self.zabbix_debug:

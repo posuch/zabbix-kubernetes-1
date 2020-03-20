@@ -41,3 +41,8 @@ class Tls(K8sObject):
             data['valid_days'])
         )
         return data_to_send
+
+    def get_discovery_for_zabbix(self):
+        if self.data["data"] is not None and "tls.crt" in dict(self.data["data"]):
+            return super().get_discovery_for_zabbix()
+        return ''

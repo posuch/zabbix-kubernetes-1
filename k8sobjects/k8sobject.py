@@ -36,6 +36,20 @@ def get_k8s_class_identifier(resource):
     )[resource]
 
 
+def slugit(name_space, name, maxlen):
+    if name_space:
+        slug = name_space + '/' + name
+    else:
+        slug = name
+
+    if len(slug) <= maxlen:
+        return slug
+
+    prefix_pos = int((maxlen / 2) - 1)
+    suffix_pos = len(slug) - int(maxlen / 2) - 2
+    return slug[:prefix_pos] + "~" + slug[suffix_pos:]
+
+
 class K8sResourceManager:
     def __init__(self, resource):
         self.objects = dict()
@@ -136,4 +150,9 @@ class K8sObject:
             ).encode('utf-8')
         ).hexdigest()
 
-
+    def get_discovery_for_zabbix(self):
+        return json.dumps({
+            "{#NAME}": self.name,
+            "{#NAMESPACE}": self.name_space,
+            "{#SLUG}": slugit(self.name_space, self.name, 40),
+        })

@@ -12,6 +12,7 @@ class Service(K8sObject):
     @property
     def resource_data(self):
         data = super().resource_data
+        data['is_ingress'] = False
         if self.data["status"]["load_balancer"]["ingress"] is not None:
             data['is_ingress'] = True
         return data
