@@ -46,8 +46,10 @@ Testing and development
   ```
   ./build.sh default
   ```
-* Creat release
+* Create release
   ```
+  git tag NEW_TAG
+  git push --tags
   ./build.sh publish_image
   ```
 Run in Kubernetes
