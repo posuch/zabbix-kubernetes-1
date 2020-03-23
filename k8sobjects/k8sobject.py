@@ -120,7 +120,7 @@ class K8sObject:
 
         if self.name_space:
             return self.object_type + '_' + self.name_space + '_' + self.name
-        return self.object_type + '_ ' + self.name
+        return self.object_type + '_' + self.name
 
     @property
     def name(self):

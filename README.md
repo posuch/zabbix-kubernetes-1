@@ -42,7 +42,7 @@ Testing and development
   cp config_default.py configd_c1.py
   ./check_kubernetesd configd_c1
   ```
-* Test in docker
+* Test in docker (IS ESSENTIAL FOR PUBLISH)
   ```
   ./build.sh default
   ```
