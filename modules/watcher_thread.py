@@ -23,7 +23,7 @@ class WatcherThread(threading.Thread):
         self.stop_thread = True
 
     def run(self):
-        self.logger.info('starting looping watcher thread %s -> %s [discovery: %s]' % (self.resource, self.daemon_method, self.send_discovery))
+        self.logger.info('[start thread|watch] %s -> %s' % (self.resource, self.daemon_method))
         try:
             getattr(self.daemon, self.daemon_method)(self.resource, send_discovery=self.send_discovery)
         except ProtocolError as e:

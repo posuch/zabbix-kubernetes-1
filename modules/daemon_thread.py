@@ -105,12 +105,12 @@ class CheckKubernetesDaemon:
         sys.exit(0)
 
     def run(self):
-        self.start_watcher_threads()
+        self.start_data_threads()
         self.start_api_info_threads()
         self.start_loop_send_discovery_threads()
         self.start_rate_limit_resend_threads()
 
-    def start_watcher_threads(self):
+    def start_data_threads(self):
         for resource in self.resources:
             self.data.setdefault(resource, K8sResourceManager(resource))
 

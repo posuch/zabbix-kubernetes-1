@@ -23,7 +23,7 @@ class TimedThread(threading.Thread):
         self.stop_thread = True
 
     def run(self):
-        self.logger.info('starting timed_thread thread %s -> %s | interval: %s | delay: [%s/%s]'
+        self.logger.info('[start thread|timed] %s -> %s | interval: %s | delay: [%s/%s]'
                          % (self.resource, self.daemon_method, self.cycle_interval_seconds, self.start_delay, self.delay))
 
         if not self.delay and not self.start_delay:
