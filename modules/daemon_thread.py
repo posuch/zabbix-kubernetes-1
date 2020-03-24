@@ -108,7 +108,7 @@ class CheckKubernetesDaemon:
         self.start_data_threads()
         self.start_api_info_threads()
         self.start_loop_send_discovery_threads()
-        self.start_rate_limit_resend_threads()
+        self.start_resend_threads()
 
     def start_data_threads(self):
         for resource in self.resources:
@@ -150,9 +150,9 @@ class CheckKubernetesDaemon:
             self.manage_threads.append(send_discovery_thread)
             send_discovery_thread.start()
 
-    def start_rate_limit_resend_threads(self):
-        rate_limit_resend_thread = TimedThread('rate_limited_resend_thread', self.rate_limit_resend_interval, exit_flag,
-                                               daemon=self, daemon_method='resend_dirty_rate_limited', delay=True)
+    def start_resend_threads(self):
+        rate_limit_resend_thread = TimedThread('resend_dirty_thread', self.rate_limit_resend_interval, exit_flag,
+                                               daemon=self, daemon_method='resend_data_and_dirty_rate_limited', delay=True)
         self.manage_threads.append(rate_limit_resend_thread)
         rate_limit_resend_thread.start()
 
@@ -175,13 +175,26 @@ class CheckKubernetesDaemon:
             thread.start()
             del found_thread
 
-    def resend_dirty_rate_limited(self, resources):
+    def resend_data_and_dirty_rate_limited(self, resource_unused):
         try:
             for resource in self.resources:
                 if resource in self.data and len(self.data[resource].objects) > 0:
                     for obj_uid, obj in self.data[resource].objects.items():
-                        if obj.is_dirty:
+                        if obj.last_sent is not 0 and obj.last_sent < datetime.now() - timedelta(seconds=self.data_interval):
                             self.send_object(resource, obj, 'MODIFIED')
+                        elif obj.is_dirty:
+                            self.send_object(resource, obj, 'MODIFIED')
+
+        except RuntimeError as e:
+            self.logger.warning(str(e))
+
+    def resend_resource_data(self, resource):
+        try:
+            if resource in self.data and len(self.data[resource].objects) > 0:
+                for obj_uid, obj in self.data[resource].objects.items():
+                    if obj.last_sent is not 0 and obj.last_sent > datetime.now() - timedelta(seconds=self.data_interval):
+                        continue
+                    self.send_object(resource, obj, 'MODIFIED')
         except RuntimeError as e:
             self.logger.warning(str(e))
 
