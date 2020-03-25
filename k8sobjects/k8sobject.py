@@ -152,7 +152,9 @@ class K8sObject:
 
     def get_discovery_for_zabbix(self):
         return json.dumps({
-            "{#NAME}": self.name,
-            "{#NAMESPACE}": self.name_space,
-            "{#SLUG}": slugit(self.name_space, self.name, 40),
+            'data': [{
+                "{#NAME}": self.name,
+                "{#NAMESPACE}": self.name_space,
+                "{#SLUG}": slugit(self.name_space, self.name, 40),
+            }]
         })
