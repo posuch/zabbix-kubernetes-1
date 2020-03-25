@@ -180,11 +180,15 @@ class CheckKubernetesDaemon:
             for resource in self.resources:
                 if resource in self.data and len(self.data[resource].objects) > 0:
                     for obj_uid, obj in self.data[resource].objects.items():
-                        if obj.last_sent is not 0 and obj.last_sent < datetime.now() - timedelta(seconds=self.data_interval):
-                            # only send to zabbix (refresh not modified data)
-                            self.send_object(resource, obj, 'MODIFIED', only_zabbix=True)
-                        elif obj.is_dirty:
+                        if obj.is_dirty:
                             self.send_object(resource, obj, 'MODIFIED')
+                        elif obj.last_sent is 0 or \
+                                (obj.last_sent is not 0 and obj.last_sent < datetime.now() - timedelta(seconds=self.data_interval)):
+                            only_zabbix = False
+                            if obj.last_sent is not 0:
+                                # only send to zabbix (refresh not modified data if it was sent earlier)
+                                only_zabbix = True
+                            self.send_object(resource, obj, 'MODIFIED', only_zabbix=only_zabbix)
 
         except RuntimeError as e:
             self.logger.warning(str(e))
@@ -354,9 +358,11 @@ class CheckKubernetesDaemon:
         else:
             result = self.send_to_zabbix(metrics)
             if result.failed > 0:
-                self.logger.error("failed to sent %s items of %s items" % (result.failed, result.processed))
+                self.logger.error("failed to sent %s items, processed %s items [%s: %s)"
+                                  % (result.failed, result.processed, resource, obj.name if 'obj' else '-'))
+                self.logger.debug(metrics)
             else:
-                self.logger.debug("successfully sent %s items" % len(metrics))
+                self.logger.debug("successfully sent %s items [%s: %s]" % (len(metrics), resource, obj.name if 'obj' else '-'))
 
     def send_to_web_api(self, resource, obj, action):
         if self.web_api_enable:
