@@ -181,7 +181,8 @@ class CheckKubernetesDaemon:
                 if resource in self.data and len(self.data[resource].objects) > 0:
                     for obj_uid, obj in self.data[resource].objects.items():
                         if obj.last_sent is not 0 and obj.last_sent < datetime.now() - timedelta(seconds=self.data_interval):
-                            self.send_object(resource, obj, 'MODIFIED')
+                            # only send to zabbix (refresh not modified data)
+                            self.send_object(resource, obj, 'MODIFIED', only_zabbix=True)
                         elif obj.is_dirty:
                             self.send_object(resource, obj, 'MODIFIED')
 
@@ -280,7 +281,7 @@ class CheckKubernetesDaemon:
             data_to_send.append(ZabbixMetric(self.zabbix_host, 'check_kubernetes[get,services,num_ingress_services]', num_ingress_services))
             self.send_data_to_zabbix(resource, None, data_to_send)
 
-    def send_object(self, resource, resourced_obj, event_type, send_discovery=False):
+    def send_object(self, resource, resourced_obj, event_type, send_discovery=False, only_zabbix=False):
         self.logger.debug('send obj %s (last_sent %s)' % (resourced_obj.name, resourced_obj.last_sent))
         if resourced_obj.last_sent is not 0 and resourced_obj.last_sent > datetime.now() - timedelta(seconds=10):
             self.logger.info('obj %s not sending! rate limited (10s)' % resourced_obj.name)
@@ -290,7 +291,9 @@ class CheckKubernetesDaemon:
             self.send_discovery_to_zabbix(resource, resourced_obj)
 
         self.send_data_to_zabbix(resource, obj=resourced_obj)
-        self.send_to_web_api(resource, resourced_obj, event_type)
+        if not only_zabbix:
+            self.send_to_web_api(resource, resourced_obj, event_type)
+
         resourced_obj.is_dirty = False
         resourced_obj.last_sent = datetime.now()
 
