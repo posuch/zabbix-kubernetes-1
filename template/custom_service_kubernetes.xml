@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>4.4</version>
-    <date>2019-12-23T10:17:17Z</date>
+    <date>2020-03-25T13:02:28Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -74,13 +74,6 @@
                         </application>
                     </applications>
                     <request_method>POST</request_method>
-                    <triggers>
-                        <trigger>
-                            <expression>{nodata(90m)}=1</expression>
-                            <name>Cluster Items Send</name>
-                            <priority>AVERAGE</priority>
-                        </trigger>
-                    </triggers>
                 </item>
                 <item>
                     <name>Number of ingress services</name>
@@ -133,6 +126,18 @@
                                     <expression>{str(&quot;OK&quot;)}&lt;&gt;1</expression>
                                     <name>Component   {#NAME} - available_status failed: {ITEM.LASTVALUE1}</name>
                                     <priority>AVERAGE</priority>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>Component   {#NAME} - available_status nodata for &gt; 90m</name>
+                                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,components,{#NAME},available_status].nodata(90m)}=1</expression>
+                                        </dependency>
+                                    </dependencies>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <expression>{nodata(90m)}=1</expression>
+                                    <name>Component   {#NAME} - available_status nodata for &gt; 90m</name>
+                                    <priority>AVERAGE</priority>
+                                    <description>No data received for component {#NAME}, probably the monitoring pod crashed</description>
                                 </trigger_prototype>
                             </trigger_prototypes>
                         </item_prototype>

@@ -79,6 +79,9 @@ cleanup(){
   exec_cmd "docker rmi ${IMAGE_NAME} --force"
 }
 
+docu(){
+  exec_cmd "template/create_template_documentation"
+}
 
 publish_image(){
   TIMESTAMP="$(date --date="today" "+%Y-%m-%d_%H-%M-%S")"
@@ -88,7 +91,7 @@ publish_image(){
   exec_cmd "docker push scoopex666/${IMAGE_NAME}:latest"
 }
 
-DEFAULT_PHASES="cleanup build_image test_container"
+DEFAULT_PHASES="cleanup docu build_image test_container"
 if [ -z "$1" ];then
   notice "CMD:" 
   echo
@@ -121,7 +124,7 @@ IMAGE_BASE="${IMAGE_NAME}:${VERSION}"
 for PHASE in $PHASES;
 do
    if ( type "$PHASE" >/dev/null 2>&1 );then
-      notice "INFO: PHASE $PHASE for $IMAGE_BASE"
+      notice "INFO: PHASE >>>$PHASE<<< for $IMAGE_BASE"
       $PHASE
    else
       notice "ERROR: no such phase : $PHASE"

@@ -1,10 +1,13 @@
 #!/bin/bash
 
+BDIR="$(dirname $(readlink -f $0))"
+cd $BDIR || exit 1
 
 rm -rf documentation
 mkdir documentation
 
 for i in custom*.xml; do 
+   echo "=> $i"
    DOCUFILE="documentation/${i%%.xml}.html"
    DOCUFILE="$(echo $DOCUFILE|tr ' ' '_')"
    xalan -in "$i" -out $DOCUFILE -xsl transform.xsl; 
