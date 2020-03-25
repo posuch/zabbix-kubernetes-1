@@ -337,7 +337,7 @@ class CheckKubernetesDaemon:
         result = self.send_to_zabbix([ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', discovery_data)])
         if result.failed > 0:
             self.logger.error("failed to sent discoveries: %s" % obj.uid)
-        else:
+        elif self.zabbix_debug:
             self.logger.info("successfully sent discoveries: %s" % obj.uid)
 
     def send_data_to_zabbix(self, resource, obj=None, metrics=None):
@@ -352,17 +352,17 @@ class CheckKubernetesDaemon:
             for metric in metrics:
                 result = self.send_to_zabbix([metric])
                 if result.failed > 0:
-                    self.logger.error("failed to sent items: %s", metric)
+                    self.logger.error("failed to sent data items: %s", metric)
                 else:
-                    self.logger.info("successfully sent items: %s", metric)
+                    self.logger.info("successfully sent data items: %s", metric)
         else:
             result = self.send_to_zabbix(metrics)
             if result.failed > 0:
                 self.logger.error("failed to sent %s items, processed %s items [%s: %s)"
-                                  % (result.failed, result.processed, resource, obj.name if 'obj' else '-'))
+                                  % (result.failed, result.processed, resource, obj.name if obj else '-'))
                 self.logger.debug(metrics)
             else:
-                self.logger.debug("successfully sent %s items [%s: %s]" % (len(metrics), resource, obj.name if 'obj' else '-'))
+                self.logger.debug("successfully sent %s items [%s: %s]" % (len(metrics), resource, obj.name if obj else '-'))
 
     def send_to_web_api(self, resource, obj, action):
         if self.web_api_enable:
