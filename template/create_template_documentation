@@ -3,6 +3,12 @@
 BDIR="$(dirname $(readlink -f $0))"
 cd $BDIR || exit 1
 
+if ( !(type xalan >/dev/null 2>&1) );then
+   echo "INFO: skipping documentation generation because xalan is not installed"
+   echo "      (apt-get install xalan)"
+   exit 0
+fi
+
 rm -rf documentation
 mkdir documentation
 
