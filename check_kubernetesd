@@ -80,6 +80,11 @@ if __name__ == '__main__':
     daemons.append(CheckKubernetesDaemon(config, config_name, ['deployments', 'statefulsets', 'daemonsets', 'pods'],
                                          config.discovery_interval_slow, config.data_interval_fast))
 
+    def _signal_handler(signum, *args):
+        for daemon in daemons:
+            daemon.handler(signal.SIGUSR1)
+    signal.signal(signal.SIGUSR1, _signal_handler)
+
     try:
         logger.info("Starting daemon threads now")
         for daemon in daemons:
@@ -90,6 +95,9 @@ if __name__ == '__main__':
                     daemon.restart_dirty_threads()
             time.sleep(3)
     except KeyboardInterrupt:
-        daemon.handler(signal.SIGTERM)
+        for daemon in daemons:
+            daemon.handler(signal.SIGTERM)
+
         time.sleep(3)
-        daemon.handler(signal.SIGKILL)
+        for daemon in daemons:
+            daemon.handler(signal.SIGKILL)

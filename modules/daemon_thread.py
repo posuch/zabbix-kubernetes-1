@@ -3,7 +3,7 @@ import sys
 import json
 import base64
 import logging
-
+import signal
 import time
 import threading
 
@@ -97,12 +97,20 @@ class CheckKubernetesDaemon:
         self.logger.info(init_msg)
 
     def handler(self, signum, *args):
-        self.logger.info('Signal handler called with signal %s... stopping (max %s seconds)' % (signum, 3))
-        exit_flag.set()
-        for thread in self.manage_threads:
-            thread.join(timeout=3)
-        self.logger.info('All threads exited... exit check_kubernetesd')
-        sys.exit(0)
+        if signum in [signal.SIGTERM, signal.SIGKILL]:
+            self.logger.info('Signal handler called with signal %s... stopping (max %s seconds)' % (signum, 3))
+            exit_flag.set()
+            for thread in self.manage_threads:
+                thread.join(timeout=3)
+            self.logger.info('All threads exited... exit check_kubernetesd')
+            sys.exit(0)
+        elif signum in [signal.SIGUSR1]:
+            self.logger.info('=== Listing all data hold in daemon for %s ===' % self.resources)
+            for r, d in self.data.items():
+                rd = dict()
+                for obj_uid, obj in d.objects.items():
+                    rd[obj_uid] = obj.data
+                self.logger.info('%s: %s' % (r, rd))
 
     def run(self):
         self.start_data_threads()
