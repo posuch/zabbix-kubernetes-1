@@ -80,7 +80,7 @@ cleanup(){
 }
 
 docu(){
-  exec_cmd "template/create_template_documentation"
+   exec_cmd "template/create_template_documentation"
 }
 
 publish_image(){
