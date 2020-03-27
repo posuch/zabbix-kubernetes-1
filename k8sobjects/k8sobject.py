@@ -78,16 +78,22 @@ class K8sResourceManager:
         return self.objects[new_obj.uid]
 
     def del_obj(self, obj):
+        if not self.resource_class:
+            logger.error('No Resource Class found for "%s"' % self.resource)
+            return
+
+        resourced_obj = self.resource_class(obj, self.resource)
         deleted_obj = None
-        if obj.uid in self.objects:
+
+        if resourced_obj.uid in self.objects:
             deleted_obj = json.loads(
                 json.dumps(
-                    self.objects[obj.uid],
+                    self.objects[resourced_obj.uid],
                     sort_keys=True,
                     default=json_encoder,
                 )
             )
-            del self.objects[obj.uid]
+            del self.objects[resourced_obj.uid]
         return deleted_obj
 
 
