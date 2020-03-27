@@ -92,8 +92,10 @@ class CheckKubernetesDaemon:
                    "Zabbix Host: %s\n" \
                    "Resources watching: %s\n" \
                    "web_api_enable => %s\n" \
+                   "web_api_host => %s\n" \
                    "<===>" \
-                   % (self.api_configuration.host, config.zabbix_server, self.zabbix_host, ",".join(self.resources), self.web_api_enable)
+                   % (self.api_configuration.host, config.zabbix_server, self.zabbix_host, ",".join(self.resources),
+                      self.web_api_enable, self.web_api_host)
         self.logger.info(init_msg)
 
     def handler(self, signum, *args):
