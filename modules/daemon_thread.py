@@ -340,15 +340,18 @@ class CheckKubernetesDaemon:
 
     def send_discovery_to_zabbix(self, resource, obj):
         discovery_data = obj.get_discovery_for_zabbix()
-        if not discovery_data:
+
+        if not discovery_data :
             self.logger.debug('No discovery_data for obj %s, not sending to zabbix!' % obj.uid)
             return
 
-        result = self.send_to_zabbix([ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,' + resource + ']', discovery_data)])
+        discovery_key = 'check_kubernetesd[discover,' + resource + ']'
+
+        result = self.send_to_zabbix([ZabbixMetric(self.zabbix_host, discovery_key, discovery_data)])
         if result.failed > 0:
-            self.logger.error("failed to sent discoveries: %s" % obj.uid)
+            self.logger.error("failed to sent discovery: %s : >>>%s<<<" % (discovery_key, discovery_data))
         elif self.zabbix_debug:
-            self.logger.info("successfully sent discoveries: %s" % obj.uid)
+            self.logger.info("successfully sent discovery: %s  >>>>%s<<<" % (discovery_key, discovery_data))
 
     def send_data_to_zabbix(self, resource, obj=None, metrics=None):
         if obj and not metrics:
