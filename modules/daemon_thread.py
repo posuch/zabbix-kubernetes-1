@@ -329,7 +329,7 @@ class CheckKubernetesDaemon:
                 metrics += obj.get_zabbix_discovery_metrics()
             if metrics:
                 obj.get_discovery_for_zabbix(metrics)
-                self.send_discovery_to_zabbix(resource, metrics)
+                self.send_discovery_to_zabbix(resource, metrics=metrics)
         self.data['zabbix_discovery_sent'] = datetime.now()
 
     def send_object(self, resource, resourced_obj, event_type, send_zabbix_discovery=False, only_zabbix=False):
@@ -339,7 +339,7 @@ class CheckKubernetesDaemon:
             return
 
         if send_zabbix_discovery:
-            self.send_discovery_to_zabbix(resource, resourced_obj)
+            self.send_discovery_to_zabbix(resource, obj=resourced_obj)
 
         if self.data['zabbix_discovery_sent'] is not 0:
             self.send_data_to_zabbix(resource, obj=resourced_obj)
