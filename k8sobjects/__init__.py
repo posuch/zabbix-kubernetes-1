@@ -7,3 +7,4 @@ from .service import *
 from .statefulset import *
 from .tls import *
 from .component import *
+from .container import *

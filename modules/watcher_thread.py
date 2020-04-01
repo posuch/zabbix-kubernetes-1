@@ -9,12 +9,11 @@ class WatcherThread(threading.Thread):
     restart_thread = False
     daemon = None
 
-    def __init__(self, resource, exit_flag, daemon, daemon_method, send_discovery=False):
+    def __init__(self, resource, exit_flag, daemon, daemon_method):
         self.exit_flag = exit_flag
         self.resource = resource
         self.daemon = daemon
         self.daemon_method = daemon_method
-        self.send_discovery = send_discovery
         threading.Thread.__init__(self, target=self.run)
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -25,7 +24,7 @@ class WatcherThread(threading.Thread):
     def run(self):
         self.logger.info('[start thread|watch] %s -> %s' % (self.resource, self.daemon_method))
         try:
-            getattr(self.daemon, self.daemon_method)(self.resource, send_discovery=self.send_discovery)
+            getattr(self.daemon, self.daemon_method)(self.resource)
         except (ProtocolError, ConnectionError) as e:
             self.logger.error(e)
             self.daemon.dirty_threads = True

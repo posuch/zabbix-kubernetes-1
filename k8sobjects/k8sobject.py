@@ -52,11 +52,13 @@ def slugit(name_space, name, maxlen):
 
 class K8sResourceManager:
     def __init__(self, resource):
-        self.objects = dict()
         self.resource = resource
+        self.objects = dict()
+        # containers only used for pods
+        self.containers = dict()
+
         mod = importlib.import_module('k8sobjects')
         class_label = get_k8s_class_identifier(resource)
-
         self.resource_class = getattr(mod, class_label.capitalize(), None)
 
     def add_obj(self, obj):
@@ -64,7 +66,7 @@ class K8sResourceManager:
             logger.error('No Resource Class found for "%s"' % self.resource)
             return
 
-        new_obj = self.resource_class(obj, self.resource)
+        new_obj = self.resource_class(obj, self.resource, manager=self)
         if new_obj.uid not in self.objects:
             # new object
             self.objects[new_obj.uid] = new_obj
@@ -82,7 +84,7 @@ class K8sResourceManager:
             logger.error('No Resource Class found for "%s"' % self.resource)
             return
 
-        resourced_obj = self.resource_class(obj, self.resource)
+        resourced_obj = self.resource_class(obj, self.resource, manager=self)
         deleted_obj = None
 
         if resourced_obj.uid in self.objects:
@@ -98,12 +100,13 @@ class K8sResourceManager:
 
 
 class K8sObject:
-    def __init__(self, obj_data, resource):
+    def __init__(self, obj_data, resource, manager=None):
         self.is_dirty = True
         self.last_sent = 0
         self.resource = resource
         self.data = obj_data
         self.data_checksum = self.calculate_checksum()
+        self.manager = manager
 
     def __str__(self):
         return self.uid
@@ -156,11 +159,14 @@ class K8sObject:
             ).encode('utf-8')
         ).hexdigest()
 
-    def get_discovery_for_zabbix(self):
+    def get_zabbix_discovery_metrics(self):
+        return [{
+            "{#NAME}": self.name,
+            "{#NAMESPACE}": self.name_space,
+            "{#SLUG}": slugit(self.name_space, self.name, 40),
+        }]
+
+    def get_discovery_for_zabbix(self, discovery_metrics):
         return json.dumps({
-            'data': [{
-                "{#NAME}": self.name,
-                "{#NAMESPACE}": self.name_space,
-                "{#SLUG}": slugit(self.name_space, self.name, 40),
-            }]
+            'data': discovery_metrics,
         })

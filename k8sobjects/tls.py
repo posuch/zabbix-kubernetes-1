@@ -42,7 +42,7 @@ class Tls(K8sObject):
         )
         return data_to_send
 
-    def get_discovery_for_zabbix(self):
+    def get_zabbix_discovery_metrics(self):
         if self.data["data"] is not None and "tls.crt" in dict(self.data["data"]):
-            return super().get_discovery_for_zabbix()
+            return super().get_zabbix_discovery_metrics()
         return ''
