@@ -5,3 +5,4 @@ lib/__pycache__/*
 .idea
 configd_*
 *.swp
+venv/*
