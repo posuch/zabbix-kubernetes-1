@@ -30,14 +30,14 @@ class Tls(K8sObject):
         data['valid_days'] = (cert.not_valid_after - datetime.datetime.now()).days
         return data
 
-    def get_zabbix_metrics(self, zabbix_host):
+    def get_zabbix_metrics(self):
         data = self.resource_data
         data_to_send = list()
         if 'valid_days' not in data:
             return data_to_send
 
         data_to_send.append(ZabbixMetric(
-            zabbix_host, 'check_kubernetesd[get,tls,' + self.name_space + ',' + self.name + ',valid_days]',
+            self.zabbix_host, 'check_kubernetesd[get,tls,' + self.name_space + ',' + self.name + ',valid_days]',
             data['valid_days'])
         )
         return data_to_send

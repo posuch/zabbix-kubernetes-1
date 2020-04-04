@@ -42,17 +42,17 @@ class Node(K8sObject):
 
         return data
 
-    def get_zabbix_metrics(self, zabbix_host):
+    def get_zabbix_metrics(self):
         data_to_send = list()
         data = self.resource_data
 
-        data_to_send.append(ZabbixMetric(zabbix_host, 'check_kubernetesd[get,nodes,' + self.name + ',available_status]',
+        data_to_send.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[get,nodes,' + self.name + ',available_status]',
                                          'not available' if data['condition_ready'] is not True else 'OK'))
-        data_to_send.append(ZabbixMetric(zabbix_host, 'check_kubernetesd[get,nodes,' + self.name + ',condition_status_failed]',
+        data_to_send.append(ZabbixMetric(self.zabbix_host, 'check_kubernetesd[get,nodes,' + self.name + ',condition_status_failed]',
                                          data['failed_conds'] if len(data['failed_conds']) > 0 else 'OK'))
         for monitor_value in self.MONITOR_VALUES:
             data_to_send.append(ZabbixMetric(
-                zabbix_host, 'check_kubernetesd[get,nodes,%s,%s]' % (self.name, monitor_value),
+                self.zabbix_host, 'check_kubernetesd[get,nodes,%s,%s]' % (self.name, monitor_value),
                 transform_value(data[monitor_value]))
             )
         return data_to_send

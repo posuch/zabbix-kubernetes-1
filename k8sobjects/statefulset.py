@@ -14,7 +14,7 @@ class Statefulset(K8sObject):
         data = super().resource_data
         return data
 
-    def get_zabbix_metrics(self, zabbix_host):
+    def get_zabbix_metrics(self):
         data = self.resource_data
         data_to_send = list()
         return data_to_send

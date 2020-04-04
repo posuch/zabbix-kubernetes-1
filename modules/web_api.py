@@ -1,7 +1,7 @@
 import requests
 import logging
 
-from k8sobjects.k8sobject import get_k8s_class_identifier
+from k8sobjects.k8sobject import K8S_RESOURCES
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class WebApi:
     def get_url(self, resource=None):
         api_resource = None
         if resource:
-            api_resource = get_k8s_class_identifier(resource)
+            api_resource = K8S_RESOURCES[resource]
 
         url = self.api_host
         if not url.endswith('/'):

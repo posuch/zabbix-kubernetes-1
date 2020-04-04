@@ -24,12 +24,12 @@ class Component(K8sObject):
             data['healthy'] = 'OK'
         return data
 
-    def get_zabbix_metrics(self, zabbix_host):
+    def get_zabbix_metrics(self):
         data = self.resource_data
         data_to_send = list()
 
         data_to_send.append(ZabbixMetric(
-            zabbix_host, 'check_kubernetesd[get,components,' + self.name + ',available_status]',
+            self.zabbix_host, 'check_kubernetesd[get,components,' + self.name + ',available_status]',
             data['healthy'])
         )
 

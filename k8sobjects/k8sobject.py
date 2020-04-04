@@ -7,6 +7,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+K8S_RESOURCES = dict(
+    nodes='node',
+    components='component',
+    services='service',
+    deployments='deployment',
+    statefulsets='statefulset',
+    daemonsets='daemonset',
+    pods='pod',
+    containers='container',
+    tls='tls',
+    ingresses='ingress',
+)
+
 
 def json_encoder(obj):
     if isinstance(obj, (datetime.date, datetime.datetime)):
@@ -20,20 +33,6 @@ def transform_value(value):
     if m:
         return int(m.group(1)) * 1024
     return value
-
-
-def get_k8s_class_identifier(resource):
-    return dict(
-        nodes='node',
-        components='component',
-        services='service',
-        deployments='deployment',
-        statefulsets='statefulset',
-        daemonsets='daemonset',
-        pods='pod',
-        tls='tls',
-        ingresses='ingress',
-    )[resource]
 
 
 def slugit(name_space, name, maxlen):
@@ -51,14 +50,15 @@ def slugit(name_space, name, maxlen):
 
 
 class K8sResourceManager:
-    def __init__(self, resource):
+    def __init__(self, resource, zabbix_host=None):
         self.resource = resource
+        self.zabbix_host = zabbix_host
+
         self.objects = dict()
-        # containers only used for pods
-        self.containers = dict()
+        self.containers = dict()        # containers only used for pods
 
         mod = importlib.import_module('k8sobjects')
-        class_label = get_k8s_class_identifier(resource)
+        class_label = K8S_RESOURCES[resource]
         self.resource_class = getattr(mod, class_label.capitalize(), None)
 
     def add_obj(self, obj):
@@ -72,8 +72,11 @@ class K8sResourceManager:
             self.objects[new_obj.uid] = new_obj
         elif self.objects[new_obj.uid].data_checksum != new_obj.data_checksum:
             # existing object with modified data
-            new_obj.last_sent = self.objects[new_obj.uid].last_sent
-            new_obj.is_dirty = True
+            new_obj.last_sent_zabbix_discovery = self.objects[new_obj.uid].last_sent_zabbix_discovery
+            new_obj.last_sent_zabbix = self.objects[new_obj.uid].last_sent_zabbix
+            new_obj.last_sent_web = self.objects[new_obj.uid].last_sent_web
+            new_obj.is_dirty_web = True
+            new_obj.is_dirty_zabbix = True
             self.objects[new_obj.uid] = new_obj
 
         # return created or updated object
@@ -101,12 +104,16 @@ class K8sResourceManager:
 
 class K8sObject:
     def __init__(self, obj_data, resource, manager=None):
-        self.is_dirty = True
-        self.last_sent = 0
+        self.is_dirty_zabbix = True
+        self.is_dirty_web = True
+        self.last_sent_zabbix_discovery = 0
+        self.last_sent_zabbix = 0
+        self.last_sent_web = 0
         self.resource = resource
         self.data = obj_data
         self.data_checksum = self.calculate_checksum()
         self.manager = manager
+        self.zabbix_host = self.manager.zabbix_host
 
     def __str__(self):
         return self.uid
@@ -135,7 +142,7 @@ class K8sObject:
     def name(self):
         name = self.data.get('metadata', {}).get('name')
         if not name:
-            logger.warning('Could not find name for obj %s' % self)
+            raise Exception('Could not find name in metadata for resource %s' % self.resource)
         return name
 
     @property
@@ -147,7 +154,7 @@ class K8sObject:
 
         name_space = self.data.get('metadata', {}).get('namespace')
         if not name_space:
-            logger.warning('Could not find name_space for obj %s' % self.name)
+            raise Exception('Could not find name_space for obj [%s] %s' % (self.resource, self.name))
         return name_space
 
     def calculate_checksum(self):
@@ -166,7 +173,13 @@ class K8sObject:
             "{#SLUG}": slugit(self.name_space, self.name, 40),
         }]
 
-    def get_discovery_for_zabbix(self, discovery_metrics):
+    def get_discovery_for_zabbix(self, discovery_metrics=None):
+        if discovery_metrics is None:
+            discovery_metrics = self.get_zabbix_discovery_metrics()
+
         return json.dumps({
             'data': discovery_metrics,
         })
+
+    def get_zabbix_metrics(self):
+        return []

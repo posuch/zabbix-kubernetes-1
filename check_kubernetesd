@@ -61,6 +61,9 @@ if __name__ == '__main__':
         config.zabbix_debug = True
         log = logging.getLogger('pyzabbix')
         log.setLevel(logging.DEBUG)
+    else:
+        log = logging.getLogger('pyzabbix')
+        log.setLevel(logging.INFO)
 
     if config.debug:
         stream.setLevel(logging.DEBUG)
@@ -78,13 +81,21 @@ if __name__ == '__main__':
     daemons.append(CheckKubernetesDaemon(config, config_name, ['components', 'services'],
                                          config.discovery_interval_slow, config.data_interval_fast))
 
-    daemons.append(CheckKubernetesDaemon(config, config_name, ['deployments', 'statefulsets', 'daemonsets', 'pods'],
+    daemons.append(CheckKubernetesDaemon(config, config_name, ['deployments', 'statefulsets', 'daemonsets', 'pods', 'containers'],
                                          config.discovery_interval_slow, config.data_interval_fast))
 
-    def _signal_handler(signum, *args):
-        mgmt_daemon.handler(signal.SIGUSR1)
-    signal.signal(signal.SIGUSR1, _signal_handler)
+    if config.debug_k8s_events:
+        for daemon in daemons:
+            daemon.debug_k8s_events = True
 
+    # SIGNAL processing
+    def _signal_handler(signum, *args):
+        mgmt_daemon.handler(signum)
+
+    signal.signal(signal.SIGUSR1, _signal_handler)
+    signal.signal(signal.SIGUSR2, _signal_handler)
+
+    # Daemon start
     try:
         logger.info("Starting daemon threads now")
         for daemon in daemons:

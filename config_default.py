@@ -2,9 +2,11 @@ k8s_api_host = 'https://example.kube-apiserver.com'
 k8s_api_token = ''
 verify_ssl = True
 debug = False
+debug_k8s_events = False
 zabbix_server = 'example.zabbix-server.com'
 zabbix_host = 'k8s-example-host'
 zabbix_debug = False
+zabbix_single_debug = False
 zabbix_dry_run = False
 
 web_api_enable = False
