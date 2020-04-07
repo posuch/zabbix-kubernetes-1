@@ -16,7 +16,7 @@ K8S_RESOURCES = dict(
     daemonsets='daemonset',
     pods='pod',
     containers='container',
-    tls='tls',
+    secrets='secret',
     ingresses='ingress',
 )
 

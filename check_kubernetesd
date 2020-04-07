@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     daemons = list()
 
-    mgmt_daemon = CheckKubernetesDaemon(config, config_name, ['nodes', 'tls'],
+    mgmt_daemon = CheckKubernetesDaemon(config, config_name, ['nodes', 'secrets'],
                                         config.discovery_interval_slow, config.data_interval_fast)
     daemons.append(mgmt_daemon)
 

@@ -225,7 +225,7 @@ class CheckKubernetesDaemon:
             del found_thread
 
     def get_api_for_resource(self, resource):
-        if resource in ['nodes', 'components', 'tls', 'pods', 'services']:
+        if resource in ['nodes', 'components', 'secrets', 'pods', 'services']:
             api = self.core_v1
         elif resource in ['deployments', 'daemonsets', 'statefulsets']:
             api = self.apps_v1

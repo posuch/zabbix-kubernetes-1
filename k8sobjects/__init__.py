@@ -5,6 +5,6 @@ from .node import *
 from .pod import *
 from .service import *
 from .statefulset import *
-from .tls import *
+from .secret import *
 from .component import *
 from .container import *

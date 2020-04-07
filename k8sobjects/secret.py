@@ -11,8 +11,8 @@ from .k8sobject import K8sObject, transform_value
 logger = logging.getLogger(__name__)
 
 
-class Tls(K8sObject):
-    object_type = 'tls'
+class Secret(K8sObject):
+    object_type = 'secret'
 
     @property
     def resource_data(self):
@@ -37,7 +37,7 @@ class Tls(K8sObject):
             return data_to_send
 
         data_to_send.append(ZabbixMetric(
-            self.zabbix_host, 'check_kubernetesd[get,tls,' + self.name_space + ',' + self.name + ',valid_days]',
+            self.zabbix_host, 'check_kubernetesd[get,secret,' + self.name_space + ',' + self.name + ',valid_days]',
             data['valid_days'])
         )
         return data_to_send
