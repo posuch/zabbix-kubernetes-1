@@ -5,6 +5,8 @@ import hashlib
 import json
 import logging
 
+from pyzabbix import ZabbixMetric
+
 logger = logging.getLogger(__name__)
 
 K8S_RESOURCES = dict(
@@ -166,20 +168,24 @@ class K8sObject:
             ).encode('utf-8')
         ).hexdigest()
 
-    def get_zabbix_discovery_metrics(self):
+    def get_zabbix_discovery_data(self):
         return [{
             "{#NAME}": self.name,
             "{#NAMESPACE}": self.name_space,
             "{#SLUG}": slugit(self.name_space, self.name, 40),
         }]
 
-    def get_discovery_for_zabbix(self, discovery_metrics=None):
-        if discovery_metrics is None:
-            discovery_metrics = self.get_zabbix_discovery_metrics()
+    def get_discovery_for_zabbix(self, discovery_data=None):
+        if discovery_data is None:
+            discovery_data = self.get_zabbix_discovery_data()
 
-        return json.dumps({
-            'data': discovery_metrics,
-        })
+        return ZabbixMetric(
+            self.zabbix_host,
+            'discovery,%s' % self.resource,
+            json.dumps({
+                'data': discovery_data,
+            })
+        )
 
     def get_zabbix_metrics(self):
         return []

@@ -42,7 +42,7 @@ class Secret(K8sObject):
         )
         return data_to_send
 
-    def get_zabbix_discovery_metrics(self):
+    def get_zabbix_discovery_data(self):
         if self.data["data"] is not None and "tls.crt" in dict(self.data["data"]):
-            return super().get_zabbix_discovery_metrics()
+            return super().get_zabbix_discovery_data()
         return ''

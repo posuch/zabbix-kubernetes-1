@@ -2,6 +2,7 @@ import sys
 import logging
 import signal
 import time
+import json
 import threading
 
 from pyzabbix import ZabbixAPI, ZabbixMetric, ZabbixSender, ZabbixResponse, ZabbixAPIException
@@ -406,16 +407,14 @@ class CheckKubernetesDaemon:
     def send_discovery(self, resource):
         with self.thread_lock:
             if resource in self.data and len(self.data[resource].objects) > 0:
-                self.logger.debug('sending discovery for %s [%s] (%s)'
-                                  % (resource, self.data[resource].objects.keys(), len(self.data[resource].objects)))
-                metrics = list()
+                data = list()
                 for obj_uid, obj in self.data[resource].objects.items():
-                    metrics += obj.get_zabbix_discovery_metrics()
+                    data += obj.get_zabbix_discovery_data()
 
-                # send to zabbix
-                if metrics:
-                    obj.get_discovery_for_zabbix(metrics)
-                    self.send_discovery_to_zabbix(resource, metrics=metrics)
+                if data:
+                    metric = obj.get_discovery_for_zabbix(data)
+                    self.logger.debug('sending discovery for [%s]: %s' % (resource, metric))
+                    self.send_discovery_to_zabbix(resource, metric=[metric])
             self.data['zabbix_discovery_sent'] = datetime.now()
 
     def send_object(self, resource, resourced_obj, event_type, send_zabbix_discovery=False, send_zabbix_data=False, send_web=False):
@@ -462,7 +461,7 @@ class CheckKubernetesDaemon:
             result = self.zabbix_sender.send(metrics)
         return result
 
-    def send_discovery_to_zabbix(self, resource, metrics=None, obj=None):
+    def send_discovery_to_zabbix(self, resource, metric=None, obj=None):
         if obj:
             with self.thread_lock:
                 discovery_data = obj.get_discovery_for_zabbix()
@@ -476,13 +475,13 @@ class CheckKubernetesDaemon:
                 self.logger.error("failed to sent discovery: %s : >>>%s<<<" % (discovery_key, discovery_data))
             elif self.zabbix_debug:
                 self.logger.info("successfully sent discovery: %s  >>>>%s<<<" % (discovery_key, discovery_data))
-        elif len(metrics) > 0:
-            result = self.send_to_zabbix(metrics)
+        elif metric:
+            result = self.send_to_zabbix(metric)
 
             if result.failed > 0:
-                self.logger.error("failed to sent mass discovery: >>>%s<<<" % metrics)
+                self.logger.error("failed to sent mass discovery: >>>%s<<<" % metric)
             elif self.zabbix_debug:
-                self.logger.info("successfully sent mass discovery: >>>%s<<<" % metrics)
+                self.logger.info("successfully sent mass discovery: >>>%s<<<" % metric)
         else:
             self.logger.warning('No obj or metrics found for send_discovery_to_zabbix [%s]' % resource)
 

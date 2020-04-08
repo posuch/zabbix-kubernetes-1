@@ -72,17 +72,17 @@ class Pod(K8sObject):
         data['status'] = json.dumps(container_status)
         return data
 
-    def get_zabbix_metrics(self):
-        data = self.resource_data
-        data_to_send = list()
-
-        if 'status' not in data:
-            logger.error(data)
-
-        for k, v in data['pod_data'].items():
-            data_to_send.append(ZabbixMetric(
-                self.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,%s]' % (self.name_space, self.name, k),
-                v,
-            ))
-
-        return data_to_send
+    # def get_zabbix_metrics(self):
+    #     data = self.resource_data
+    #     data_to_send = list()
+    #
+    #     if 'status' not in data:
+    #         logger.error(data)
+    #
+    #     for k, v in data['pod_data'].items():
+    #         data_to_send.append(ZabbixMetric(
+    #             self.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,%s]' % (self.name_space, self.name, k),
+    #             v,
+    #         ))
+    #
+    #     return data_to_send
