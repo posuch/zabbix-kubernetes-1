@@ -181,7 +181,7 @@ class K8sObject:
 
         return ZabbixMetric(
             self.zabbix_host,
-            'discovery,%s' % self.resource,
+            'discover,%s' % self.resource,
             json.dumps({
                 'data': discovery_data,
             })
