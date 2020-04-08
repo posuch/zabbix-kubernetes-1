@@ -18,14 +18,17 @@ class Pod(K8sObject):
         return self.name
 
     @property
-    def resource_data(self):
-        data = super().resource_data
+    def containers(self):
         containers = {}
         for container in self.data['spec']['containers']:
             containers.setdefault(container['name'], 0)
             containers[container['name']] += 1
+        return containers
 
-        data['containers'] = json.dumps(containers)
+    @property
+    def resource_data(self):
+        data = super().resource_data
+        data['containers'] = json.dumps(self.containers)
         container_status = dict()
         data['ready'] = True
         data['pod_data'] = {
@@ -72,6 +75,29 @@ class Pod(K8sObject):
         data['status'] = json.dumps(container_status)
         return data
 
+    def get_zabbix_discovery_data(self):
+        data = list()
+        for container in self.containers:
+            data += [{
+                "{#NAMESPACE}": self.name_space,
+                "{#NAME}": self.base_name,
+                "{#CONTAINER}": container,
+            }]
+        return data
+
+    def get_discovery_for_zabbix(self, discovery_data=None):
+        if discovery_data is None:
+            discovery_data = self.get_zabbix_discovery_data()
+
+        return ZabbixMetric(
+            self.zabbix_host,
+            'discovery,containers',
+            json.dumps({
+                'data': discovery_data,
+            })
+        )
+
+    # -> not used, aggregate over containers
     # def get_zabbix_metrics(self):
     #     data = self.resource_data
     #     data_to_send = list()
