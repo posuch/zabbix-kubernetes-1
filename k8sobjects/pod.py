@@ -91,7 +91,7 @@ class Pod(K8sObject):
 
         return ZabbixMetric(
             self.zabbix_host,
-            'discover,containers',
+            'check_kubernetesd[discover,containers]',
             json.dumps({
                 'data': discovery_data,
             })

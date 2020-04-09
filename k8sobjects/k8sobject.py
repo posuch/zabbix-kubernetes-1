@@ -181,7 +181,7 @@ class K8sObject:
 
         return ZabbixMetric(
             self.zabbix_host,
-            'discover,%s' % self.resource,
+            'check_kubernetesd[discover,%s]' % self.resource,
             json.dumps({
                 'data': discovery_data,
             })
