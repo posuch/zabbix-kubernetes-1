@@ -19,7 +19,7 @@ class Component(K8sObject):
                 data['failed_conds'].append(cond['type'])
 
         if len(data['failed_conds']) > 0:
-            data['healty'] = 'ERROR:' % data['failed_conds']
+            data['healthy'] = 'ERROR:' % data['failed_conds']
         else:
             data['healthy'] = 'OK'
         return data
@@ -29,7 +29,8 @@ class Component(K8sObject):
         data_to_send = list()
 
         data_to_send.append(ZabbixMetric(
-            self.zabbix_host, 'check_kubernetesd[get,components,' + self.name + ',available_status]',
+            self.zabbix_host,
+            'check_kubernetesd[get,components,' + self.name + ',available_status]',
             data['healthy'])
         )
 

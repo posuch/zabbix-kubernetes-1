@@ -362,7 +362,7 @@ class CheckKubernetesDaemon:
 
         for obj_uid, obj in self.data[resource].objects.items():
             if obj.last_sent_zabbix == 0 or \
-                    (obj.last_sent_zabbix < datetime.now() - timedelta(seconds=self.data_interval)):
+                    (obj.last_sent_zabbix < (datetime.now() - timedelta(seconds=self.data_interval))):
                 metrics += obj.get_zabbix_metrics()
                 obj.last_sent_zabbix = datetime.now()
         if len(metrics) > 0:
