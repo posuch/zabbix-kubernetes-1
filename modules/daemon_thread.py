@@ -54,7 +54,9 @@ class CheckKubernetesDaemon:
     data = {'zabbix_discovery_sent': {}}
     thread_lock = threading.RLock()
 
-    def __init__(self, config, config_name, resources, discovery_interval, data_interval):
+    def __init__(self, config, config_name,
+                 resources, resources_excluded, resources_excluded_web, resources_excluded_zabbix,
+                 discovery_interval, data_interval):
         self.dirty_threads = False
         self.manage_threads = []
 
@@ -78,30 +80,41 @@ class CheckKubernetesDaemon:
         self.extensions_v1 = KubernetesApi(self.api_client).extensions_v1
 
         self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
+        self.zabbix_resources = CheckKubernetesDaemon.exclude_resources(resources, resources_excluded_zabbix)
         self.zabbix_host = config.zabbix_host
         self.zabbix_debug = config.zabbix_debug
         self.zabbix_single_debug = config.zabbix_single_debug
         self.zabbix_dry_run = config.zabbix_dry_run
 
         self.web_api_enable = config.web_api_enable
+        self.web_api_resources = CheckKubernetesDaemon.exclude_resources(resources, resources_excluded_web)
+
         self.web_api_host = config.web_api_host
         self.web_api_token = config.web_api_token
         self.web_api_cluster = config.web_api_cluster
         self.web_api_verify_ssl = config.web_api_verify_ssl
 
-        self.resources = resources
+        self.resources = CheckKubernetesDaemon.exclude_resources(resources, resources_excluded)
 
         init_msg = "INIT K8S-ZABBIX Watcher\n<===>\n" \
                    "K8S API Server: %s\n" \
                    "Zabbix Server: %s\n" \
                    "Zabbix Host: %s\n" \
                    "Resources watching: %s\n" \
-                   "web_api_enable => %s\n" \
+                   "web_api_enable => %s (resources: %s)\n" \
                    "web_api_host => %s\n" \
                    "<===>" \
                    % (self.api_configuration.host, config.zabbix_server, self.zabbix_host, ",".join(self.resources),
-                      self.web_api_enable, self.web_api_host)
+                      self.web_api_enable, ",".join(self.web_api_resources), self.web_api_host)
         self.logger.info(init_msg)
+
+    @staticmethod
+    def exclude_resources(available_types, excluded_types):
+        result = []
+        for k8s_type_available in available_types:
+            if k8s_type_available not in excluded_types:
+                result.append(k8s_type_available)
+        return result
 
     def handler(self, signum, *args):
         if signum in [signal.SIGTERM, signal.SIGKILL]:
@@ -244,37 +257,50 @@ class CheckKubernetesDaemon:
             self._web_api = WebApi(self.web_api_host, self.web_api_token, verify_ssl=self.web_api_verify_ssl)
         return self._web_api
 
-    def watch_data(self, resource, send_zabbix_discovery=False):
+    def watch_data(self, resource, send_zabbix_discovery=False, timeout=240):
         api = self.get_api_for_resource(resource)
 
-        w = watch.Watch()
-        if resource == 'nodes':
-            for obj in w.stream(api.list_node):
-                self.watch_event_handler(resource, obj)
-        elif resource == 'deployments':
-            for obj in w.stream(api.list_deployment_for_all_namespaces):
-                self.watch_event_handler(resource, obj)
-        elif resource == 'daemonsets':
-            for obj in w.stream(api.list_daemon_set_for_all_namespaces):
-                self.watch_event_handler(resource, obj)
-        elif resource == 'statefulsets':
-            for obj in w.stream(api.list_stateful_set_for_all_namespaces):
-                self.watch_event_handler(resource, obj)
-        elif resource == 'components':
-            for obj in api.list_component_status(watch=False).to_dict().get('items'):
-                self.data[resource].add_obj(obj)
-        elif resource == 'ingresses':
-            for obj in w.stream(api.list_ingress_for_all_namespaces):
-                self.watch_event_handler(resource, obj)
-        elif resource == 'tls':
-            for obj in w.stream(api.list_secret_for_all_namespaces):
-                self.watch_event_handler(resource, obj)
-        elif resource == 'pods':
-            for obj in w.stream(api.list_pod_for_all_namespaces):
-                self.watch_event_handler(resource, obj)
-        elif resource == 'services':
-            for obj in w.stream(api.list_service_for_all_namespaces):
-                self.watch_event_handler(resource, obj)
+        if timeout == 0:
+            timeout_str = "no timeout"
+        else:
+            timeout_str = "%i seconds" % timeout
+
+        self.logger.info("Watching for resource >>>%s<<< with a timeout of %s" % (resource, timeout_str))
+        while True:
+            w = watch.Watch()
+            if resource == 'nodes':
+                for obj in w.stream(api.list_node, timeout_seconds=timeout):
+                    self.watch_event_handler(resource, obj)
+            elif resource == 'deployments':
+                for obj in w.stream(api.list_deployment_for_all_namespaces, timeout_seconds=timeout):
+                    self.watch_event_handler(resource, obj)
+            elif resource == 'daemonsets':
+                for obj in w.stream(api.list_daemon_set_for_all_namespaces, timeout_seconds=timeout):
+                    self.watch_event_handler(resource, obj)
+            elif resource == 'statefulsets':
+                for obj in w.stream(api.list_stateful_set_for_all_namespaces, timeout_seconds=timeout):
+                    self.watch_event_handler(resource, obj)
+            elif resource == 'components':
+                # The api does not support watching on component status
+                for obj in api.list_component_status(watch=False).to_dict().get('items'):
+                    self.data[resource].add_obj(obj)
+                time.sleep(self.data_interval)
+            elif resource == 'ingresses':
+                for obj in w.stream(api.list_ingress_for_all_namespaces, timeout_seconds=timeout):
+                    self.watch_event_handler(resource, obj)
+            elif resource == 'tls':
+                for obj in w.stream(api.list_secret_for_all_namespaces, timeout_seconds=timeout):
+                    self.watch_event_handler(resource, obj)
+            elif resource == 'pods':
+                for obj in w.stream(api.list_pod_for_all_namespaces, timeout_seconds=timeout):
+                    self.watch_event_handler(resource, obj)
+            elif resource == 'services':
+                for obj in w.stream(api.list_service_for_all_namespaces, timeout_seconds=timeout):
+                    self.watch_event_handler(resource, obj)
+            else:
+                self.logger.error("No watch handling for resource %s" % resource)
+                time.sleep(60)
+            self.logger.debug("Watch/fetch completed for resource >>>%s<<<, restarting" % resource)
 
     def watch_event_handler(self, resource, event):
         event_type = event['type']
@@ -366,7 +392,7 @@ class CheckKubernetesDaemon:
                 metrics += obj.get_zabbix_metrics()
                 obj.last_sent_zabbix = datetime.now()
         if len(metrics) > 0:
-            self.logger.debug('resending data for %s' % resource)
+            self.logger.info('resending data for %s' % resource)
             self.send_data_to_zabbix(resource, metrics=metrics)
 
     def resend_dirty_and_rate_limited(self, resource_unused):
@@ -433,7 +459,7 @@ class CheckKubernetesDaemon:
                     resourced_obj.last_sent_zabbix = datetime.now()
                     resourced_obj.is_dirty_zabbix = False
                 else:
-                    self.logger.info('obj %s not sending to zabbix! rate limited (10s)' % resourced_obj.name)
+                    self.logger.info('obj >>>type: %s, name: %s<<< not sending to zabbix! rate limited (10s)' % (resource, resourced_obj.name))
 
             if send_web:
                 if resourced_obj.last_sent_web == 0 or resourced_obj.last_sent_web < datetime.now() - timedelta(seconds=10):
@@ -443,16 +469,16 @@ class CheckKubernetesDaemon:
                         # only set dirty False if send_zabbix_data worked
                         resourced_obj.is_dirty_web = False
                 else:
-                    self.logger.info('obj %s not sending to web! rate limited (10s)' % resourced_obj.name)
+                    self.logger.info('obj >>>type: %s, name: %s<<< not sending to web! rate limited (10s)' % (resource, resourced_obj.name))
 
     def send_api_info(self, *args):
         result = self.send_to_zabbix([
             ZabbixMetric(self.zabbix_host, 'check_kubernetesd[discover,api]', int(time.time()))
         ])
         if result.failed > 0:
-            self.logger.error("failed to api info")
+            self.logger.error("failed to send heartbeat")
         else:
-            self.logger.info("successfully sent api info")
+            self.logger.debug("successfully sent heartbeat")
 
     def send_to_zabbix(self, metrics):
         if self.zabbix_dry_run:
@@ -470,6 +496,9 @@ class CheckKubernetesDaemon:
         return result
 
     def send_discovery_to_zabbix(self, resource, metric=None, obj=None):
+        if resource not in self.zabbix_resources:
+            return
+
         if obj:
             with self.thread_lock:
                 discovery_data = obj.get_discovery_for_zabbix()
@@ -494,6 +523,9 @@ class CheckKubernetesDaemon:
             self.logger.warning('No obj or metrics found for send_discovery_to_zabbix [%s]' % resource)
 
     def send_data_to_zabbix(self, resource, obj=None, metrics=[]):
+        if resource not in self.zabbix_resources:
+            return
+
         if obj and len(metrics) == 0:
             metrics = obj.get_zabbix_metrics()
 
@@ -521,7 +553,7 @@ class CheckKubernetesDaemon:
                 self.logger.debug("successfully sent %s items [%s: %s]" % (len(metrics), resource, obj.name if obj else 'metrics'))
 
     def send_to_web_api(self, resource, obj, action):
-        if self.web_api_enable:
+        if self.web_api_enable and resource in self.web_api_resources:
             api = self.get_web_api()
             with self.thread_lock:
                 data_to_send = obj.resource_data

@@ -13,6 +13,7 @@ import logging
 import signal
 import time
 import argparse
+import re
 
 from modules.daemon_thread import CheckKubernetesDaemon
 
@@ -23,6 +24,12 @@ stream = logging.StreamHandler(sys.stdout)
 stream.setFormatter(formatter)
 
 logger = logging.getLogger()
+
+def to_array(list_string):
+    if isinstance(list_string, list):
+        return list_string
+    else:
+        return re.split(r"[\s,]+", config.web_api_resources_exclude.strip())
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -42,12 +49,14 @@ if __name__ == '__main__':
     config_name = remaining_args[0]
 
     try:
+        config_name = re.sub(r"\.py", "", config_name)
         config = importlib.import_module(config_name)
     except ImportError:
         print("config file %s.py not found. ABORTING!" % config_name)
         sys.exit(1)
 
-    with open('config_default.py', 'r') as fh:
+    defaults_file = os.path.realpath(os.path.dirname(sys.argv[0])) + '/config_default.py'
+    with open(defaults_file, 'r') as fh:
         content_lines = fh.read().split('\n')
 
     for key, val in [x.split('=') for x in content_lines if x]:
@@ -74,15 +83,26 @@ if __name__ == '__main__':
 
     daemons = list()
 
-    mgmt_daemon = CheckKubernetesDaemon(config, config_name, ['nodes', 'secrets'],
-                                        config.discovery_interval_slow, config.data_interval_fast)
+    web_api_resources_exclude = to_array(config.web_api_resources_exclude)
+    zabbix_resources_exclude = to_array(config.zabbix_resources_exclude)
+    resources_exclude = to_array(config.resources_exclude)
+
+    # ['nodes', 'secrets']
+    mgmt_daemon = CheckKubernetesDaemon(config, config_name,
+                                        ['nodes'],
+                                        resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
+                                        config.discovery_interval_slow, config.resend_data_interval_slow)
     daemons.append(mgmt_daemon)
 
-    daemons.append(CheckKubernetesDaemon(config, config_name, ['components', 'services'],
-                                         config.discovery_interval_slow, config.data_interval_fast))
+    daemons.append(CheckKubernetesDaemon(config, config_name,
+                                         ['components', 'services'],
+                                         resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
+                                         config.discovery_interval_slow, config.resend_data_interval_fast))
 
-    daemons.append(CheckKubernetesDaemon(config, config_name, ['deployments', 'statefulsets', 'daemonsets', 'pods', 'containers'],
-                                         config.discovery_interval_slow, config.data_interval_fast))
+    daemons.append(CheckKubernetesDaemon(config, config_name,
+                                         ['deployments', 'statefulsets', 'daemonsets', 'pods', 'containers'],
+                                         resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
+                                         config.discovery_interval_slow, config.resend_data_interval_slow))
 
     if config.debug_k8s_events:
         for daemon in daemons:
