@@ -20,9 +20,9 @@ web_api_token = ""
 web_api_cluster = 'k8s-test-cluster'
 
 discovery_interval_fast = 60 * 15
-data_interval_fast = 60 * 2
+resend_data_interval_fast = 60 * 2
 
 discovery_interval_slow = 60 * 60 *2
-data_interval_slow = 60 * 30
+resend_data_interval_slow = 60 * 30
 
 
