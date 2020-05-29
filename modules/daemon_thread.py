@@ -17,8 +17,6 @@ from modules.watcher_thread import WatcherThread
 from k8sobjects.k8sobject import K8sResourceManager, K8S_RESOURCES
 from k8sobjects.container import get_container_zabbix_metrics
 
-DELAY_DISCOVERY = 15
-
 exit_flag = threading.Event()
 
 
@@ -56,14 +54,14 @@ class CheckKubernetesDaemon:
 
     def __init__(self, config, config_name,
                  resources, resources_excluded, resources_excluded_web, resources_excluded_zabbix,
-                 discovery_interval, data_interval):
+                 discovery_interval, data_resend_interval):
         self.dirty_threads = False
         self.manage_threads = []
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config_name = config_name
         self.discovery_interval = discovery_interval
-        self.data_interval = data_interval
+        self.data_resend_interval = data_resend_interval
 
         self.api_zabbix_interval = 60
         self.rate_limit_resend_interval = 10
@@ -167,7 +165,7 @@ class CheckKubernetesDaemon:
             if resource == 'containers':
                 pass
             elif resource == 'components':
-                thread = TimedThread(resource, self.data_interval, exit_flag,
+                thread = TimedThread(resource, self.data_resend_interval, exit_flag,
                                      daemon=self, daemon_method='watch_data')
                 self.manage_threads.append(thread)
                 thread.start()
@@ -179,13 +177,13 @@ class CheckKubernetesDaemon:
 
             # additional looping data threads
             if resource == 'services':
-                thread = TimedThread(resource, self.data_interval, exit_flag,
+                thread = TimedThread(resource, self.data_resend_interval, exit_flag,
                                      daemon=self, daemon_method='report_global_data_zabbix',
                                      start_delay=self.discovery_interval + 5)
                 self.manage_threads.append(thread)
                 thread.start()
             elif resource == 'containers':
-                thread = TimedThread(resource, self.data_interval, exit_flag,
+                thread = TimedThread(resource, self.data_resend_interval, exit_flag,
                                      daemon=self, daemon_method='report_global_data_zabbix',
                                      start_delay=self.discovery_interval + 5)
                 self.manage_threads.append(thread)
@@ -204,22 +202,16 @@ class CheckKubernetesDaemon:
     def start_loop_send_discovery_threads(self):
         for resource in self.resources:
             send_discovery_thread = TimedThread(resource, self.discovery_interval, exit_flag,
-                                                daemon=self, daemon_method='send_discovery', start_delay=DELAY_DISCOVERY)
+                                                daemon=self, daemon_method='send_discovery', start_delay=True)
             self.manage_threads.append(send_discovery_thread)
             send_discovery_thread.start()
 
     def start_resend_threads(self):
-        if 'nodes' in self.resources:
-            rate_limit_resend_thread = TimedThread('resend_dirty_thread', self.rate_limit_resend_interval, exit_flag,
-                                                   daemon=self, daemon_method='resend_dirty_and_rate_limited')
+        for resource in self.resources:
+            rate_limit_resend_thread = TimedThread(resource, self.data_resend_interval, exit_flag,
+                                                   daemon=self, daemon_method='resend_dirty_and_rate_limited', start_delay=True)
             self.manage_threads.append(rate_limit_resend_thread)
             rate_limit_resend_thread.start()
-
-        for resource in self.resources:
-            data_resend_thread = TimedThread(resource, self.data_interval, exit_flag,
-                                             daemon=self, daemon_method='resend_data', start_delay=DELAY_DISCOVERY + 2)
-            self.manage_threads.append(data_resend_thread)
-            data_resend_thread.start()
 
     def restart_dirty_threads(self):
         found_thread = None
@@ -284,7 +276,7 @@ class CheckKubernetesDaemon:
                 # The api does not support watching on component status
                 for obj in api.list_component_status(watch=False).to_dict().get('items'):
                     self.data[resource].add_obj(obj)
-                time.sleep(self.data_interval)
+                time.sleep(self.data_resend_interval)
             elif resource == 'ingresses':
                 for obj in w.stream(api.list_ingress_for_all_namespaces, timeout_seconds=timeout):
                     self.watch_event_handler(resource, obj)
@@ -329,7 +321,7 @@ class CheckKubernetesDaemon:
             with self.thread_lock:
                 resourced_obj = self.data[resource].del_obj(obj)
                 self.delete_object(resource, resourced_obj)
-                self.data[resource].delete_obj(obj)
+                #TODO: why two times self.data[resource].delete_obj(obj) ?
         else:
             self.logger.info('event type "%s" not watched' % event_type)
 
@@ -385,51 +377,51 @@ class CheckKubernetesDaemon:
             return
 
         metrics = list()
-
         for obj_uid, obj in self.data[resource].objects.items():
             if obj.last_sent_zabbix == 0 or \
-                    (obj.last_sent_zabbix < (datetime.now() - timedelta(seconds=self.data_interval))):
+                    (obj.last_sent_zabbix < (datetime.now() - timedelta(seconds=self.data_resend_interval))):
                 metrics += obj.get_zabbix_metrics()
                 obj.last_sent_zabbix = datetime.now()
         if len(metrics) > 0:
             self.logger.info('resending data for %s' % resource)
             self.send_data_to_zabbix(resource, metrics=metrics)
+        else:
+            self.logger.info('not data to resend for %s' % resource)
 
-    def resend_dirty_and_rate_limited(self, resource_unused):
-        # resend for all resources
+    def resend_dirty_and_rate_limited(self, resource):
 
         with self.thread_lock:
             try:
-                for resource in K8S_RESOURCES.keys():
-                    if self.data['zabbix_discovery_sent'].get(resource) is None:
-                        self.logger.debug('skipping resend_dirty_and_rate_limited, discovery for %s not sent yet!' % resource)
-                        continue
+                if self.data['zabbix_discovery_sent'].get(resource) is None:
+                    self.logger.debug('skipping resend_dirty_and_rate_limited, discovery for %s not sent yet!' % resource)
+                    return
 
-                    metrics = list()
-                    if resource not in self.data or len(self.data[resource].objects) == 0:
-                        continue
+                metrics = list()
+                if resource not in self.data or len(self.data[resource].objects) == 0:
+                    return
 
-                    for obj_uid, obj in self.data[resource].objects.items():
-                        if obj.is_dirty_zabbix or obj.is_dirty_web:
-                            if obj.is_dirty_web:
-                                self.send_to_web_api(resource, obj, 'ADDED' if obj.last_sent_web == 0 else 'MODIFIED')
-                                obj.is_dirty_web = False
-                            if obj.is_dirty_zabbix:
-                                metrics += obj.get_zabbix_metrics()
-                                obj.last_sent_zabbix = datetime.now()
-                                obj.is_dirty_zabbix = False
+                for obj_uid, obj in self.data[resource].objects.items():
+                    if obj.is_dirty_zabbix or obj.is_dirty_web:
+                        if obj.is_dirty_web:
+                            self.send_to_web_api(resource, obj, 'ADDED' if obj.last_sent_web == 0 else 'MODIFIED')
+                            obj.is_dirty_web = False
+                        if obj.is_dirty_zabbix:
+                            metrics += obj.get_zabbix_metrics()
+                            obj.last_sent_zabbix = datetime.now()
+                            obj.is_dirty_zabbix = False
 
-                        # elif obj.last_sent_web == 0 or \
-                        #      (obj.last_sent_web != 0 and
-                        #       obj.last_sent_web < datetime.now() - timedelta(seconds=self.data_interval)):
-                        #
-                        #     self.send_to_web_api(resource, obj, 'MODIFIED')
-                    if len(metrics) > 0:
-                        self.logger.debug('resend dirty data for %s' % resource)
-                        self.send_data_to_zabbix(resource, metrics=metrics)
+                    # elif obj.last_sent_web == 0 or \
+                    #      (obj.last_sent_web != 0 and
+                    #       obj.last_sent_web < datetime.now() - timedelta(seconds=self.data_interval)):
+                    #
+                    #     self.send_to_web_api(resource, obj, 'MODIFIED')
+                if len(metrics) > 0:
+                    self.logger.debug('resend dirty data for %s' % resource)
+                    self.send_data_to_zabbix(resource, metrics=metrics)
             except RuntimeError as e:
                 self.logger.warning(str(e))
 
+    # TODO: not implemented
     def delete_object(self, resource, resourced_obj):
         pass
 
