@@ -57,7 +57,7 @@ class K8sResourceManager:
         self.zabbix_host = zabbix_host
 
         self.objects = dict()
-        self.containers = dict()        # containers only used for pods
+        self.containers = dict()  # containers only used for pods
 
         mod = importlib.import_module('k8sobjects')
         class_label = K8S_RESOURCES[resource]
@@ -108,9 +108,9 @@ class K8sObject:
     def __init__(self, obj_data, resource, manager=None):
         self.is_dirty_zabbix = True
         self.is_dirty_web = True
-        self.last_sent_zabbix_discovery = 0
-        self.last_sent_zabbix = 0
-        self.last_sent_web = 0
+        self.last_sent_zabbix_discovery = datetime.datetime(2000, 1, 1, 0, 0)
+        self.last_sent_zabbix = datetime.datetime(2000, 1, 1, 0, 0)
+        self.last_sent_web = datetime.datetime(2000, 1, 1, 0, 0)
         self.resource = resource
         self.data = obj_data
         self.data_checksum = self.calculate_checksum()
