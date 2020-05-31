@@ -19,7 +19,6 @@ from k8sobjects.container import get_container_zabbix_metrics
 
 exit_flag = threading.Event()
 
-
 class DryResult:
     pass
 
@@ -502,8 +501,7 @@ class CheckKubernetesDaemon:
             return
 
         if obj:
-            with self.thread_lock:
-                discovery_data = obj.get_discovery_for_zabbix()
+            discovery_data = obj.get_discovery_for_zabbix()
             if not discovery_data:
                 self.logger.debug('No discovery_data for obj %s, not sending to zabbix!' % obj.uid)
                 return

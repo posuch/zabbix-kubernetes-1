@@ -36,4 +36,4 @@ class TimedThread(threading.Thread):
             self.logger.debug('looprun on timed thread %s.%s [interval %is]' % (self.resource, self.daemon_method, self.cycle_interval_seconds))
             getattr(self.daemon, self.daemon_method)(self.resource)
             self.logger.debug('looprun complete on timed thread %s.%s [interval %is]' % (self.resource, self.daemon_method, self.cycle_interval_seconds))
-
+        self.logger.info('terminating looprun thread %s.%s' % (self.resource, self.daemon_method))

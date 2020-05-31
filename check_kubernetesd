@@ -130,15 +130,17 @@ if __name__ == '__main__':
         logger.info("Starting daemon threads now")
         for daemon in daemons:
             daemon.run()
+
+        # TODO: remove thread restarts later
+        # while True:
+        #     for daemon in daemons:
+        #         if daemon.dirty_threads:
+        #             daemon.restart_dirty_threads()
+        #     time.sleep(3)
         while True:
-            for daemon in daemons:
-                if daemon.dirty_threads:
-                    daemon.restart_dirty_threads()
-            time.sleep(3)
+            time.sleep(60)
     except KeyboardInterrupt:
+        logger.info("got SIGINT, shutting down")
         for daemon in daemons:
             daemon.handler(signal.SIGTERM)
-
-        time.sleep(3)
-        for daemon in daemons:
-            daemon.handler(signal.SIGKILL)
+        os.exit(1)
