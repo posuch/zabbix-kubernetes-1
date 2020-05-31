@@ -1,5 +1,6 @@
 import logging
 import threading
+import time
 
 
 class TimedThread(threading.Thread):
@@ -7,14 +8,15 @@ class TimedThread(threading.Thread):
     restart_thread = False
     daemon = None
 
-    def __init__(self, resource, interval, exit_flag, daemon, daemon_method, delay=False, start_delay=False):
+    # TODO: change default of delay_first_run_seconds to 120 seconds
+    def __init__(self, resource, interval, exit_flag, daemon, daemon_method, delay_first_run=False, delay_first_run_seconds=10):
         self.cycle_interval_seconds = interval
         self.exit_flag = exit_flag
         self.resource = resource
         self.daemon = daemon
         self.daemon_method = daemon_method
-        self.delay = delay
-        self.start_delay = start_delay
+        self.delay_first_run = delay_first_run
+        self.delay_first_run_seconds = delay_first_run_seconds
         threading.Thread.__init__(self, target=self.run)
         self.logger = logging.getLogger(self.__class__.__name__)
 
@@ -23,15 +25,15 @@ class TimedThread(threading.Thread):
         self.stop_thread = True
 
     def run(self):
-        self.logger.info('[start thread|timed] %s -> %s | interval: %s | start_delay, first_delay: [%s/%s]'
-                         % (self.resource, self.daemon_method, self.cycle_interval_seconds, self.start_delay, self.delay))
+        if self.delay_first_run:
+            self.logger.info('%s -> %s | delaying first run by %is' % (self.resource, self.daemon_method, self.delay_first_run_seconds))
+            time.sleep(self.delay_first_run_seconds)
 
-        if not self.delay and not self.start_delay:
-            getattr(self.daemon, self.daemon_method)(self.resource)
-        elif self.start_delay:
-            if not self.exit_flag.wait(self.start_delay):
-                getattr(self.daemon, self.daemon_method)(self.resource)
-
+        self.logger.debug('first looprun on timed thread %s.%s [interval %is]' % (self.resource, self.daemon_method, self.cycle_interval_seconds))
+        getattr(self.daemon, self.daemon_method)(self.resource)
+        self.logger.debug('first looprun complete on timed thread %s.%s [interval %is]' % (self.resource, self.daemon_method, self.cycle_interval_seconds))
         while not self.exit_flag.wait(self.cycle_interval_seconds):
-            self.logger.debug('starting new run on thread ' + self.resource + '.' + self.daemon_method)
+            self.logger.debug('looprun on timed thread %s.%s [interval %is]' % (self.resource, self.daemon_method, self.cycle_interval_seconds))
             getattr(self.daemon, self.daemon_method)(self.resource)
+            self.logger.debug('looprun complete on timed thread %s.%s [interval %is]' % (self.resource, self.daemon_method, self.cycle_interval_seconds))
+
