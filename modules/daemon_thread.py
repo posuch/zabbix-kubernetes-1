@@ -388,14 +388,16 @@ class CheckKubernetesDaemon:
             try:
                 metrics = list()
                 if resource not in self.data or len(self.data[resource].objects) == 0:
+                    self.logger.debug("no resource data available for %s , stop delivery" % resource)
                     return
+
                 # Zabbix
                 for obj_uid, obj in self.data[resource].objects.items():
                     zabbix_send = False
-                    if obj.is_dirty_zabbix and self.data['zabbix_discovery_sent'].get(resource) is not None:
+                    if self.data['zabbix_discovery_sent'].get(resource) is not None:
                         zabbix_send = True
                     elif obj.last_sent_zabbix < (datetime.now() - timedelta(seconds=self.data_resend_interval)):
-                        self.logger.debug("resend zabbix : %s/%s data because its outdated" % (resource, obj.name))
+                        self.logger.debug("resend zabbix : %s  - %s/%s data because its outdated" % (resource, obj.name_space, obj.name))
                         zabbix_send = True
                     if zabbix_send:
                         metrics += obj.get_zabbix_metrics()
@@ -403,19 +405,20 @@ class CheckKubernetesDaemon:
                         obj.is_dirty_zabbix = False
                 if len(metrics) > 0:
                     if self.data['zabbix_discovery_sent'].get(resource) is None:
-                        self.logger.debug('skipping resend_data zabbix , discovery for %s/%s not sent yet!' % (resource, obj.name))
-                        return
-                    self.send_data_to_zabbix(resource, metrics=metrics)
+                        self.logger.debug(
+                            'skipping resend_data zabbix , discovery for %s - %s/%s not sent yet!' % (resource, obj.name_space, obj.name))
+                    else:
+                        self.send_data_to_zabbix(resource, metrics=metrics)
 
                 # Web
                 for obj_uid, obj in self.data[resource].objects.items():
                     if obj.is_dirty_web:
-                        if obj.last_sent_web == 0:
+                        if obj.is_unsubmitted_web():
                             self.send_to_web_api(resource, obj, 'ADDED')
                         else:
                             self.send_to_web_api(resource, obj, 'MODIFIED')
                     else:
-                        if obj.last_sent_web == 0:
+                        if obj.is_unsubmitted_web():
                             self.send_to_web_api(resource, obj, 'ADDED')
                         elif obj.last_sent_web < (datetime.now() - timedelta(seconds=self.data_resend_interval)):
                             self.send_to_web_api(resource, obj, 'MODIFIED')
@@ -457,8 +460,8 @@ class CheckKubernetesDaemon:
                     resourced_obj.last_sent_zabbix = datetime.now()
                     resourced_obj.is_dirty_zabbix = False
                 else:
-                    self.logger.info('obj >>>type: %s, name: %s<<< not sending to zabbix! rate limited (%is)' % (
-                        ressource, resourced_obj.name, self.rate_limit_seconds))
+                    self.logger.info('obj >>>type: %s, name: %s/%s<<< not sending to zabbix! rate limited (%is)' % (
+                        ressource, resourced_obj.name_space, resourced_obj.name, self.rate_limit_seconds))
                     resourced_obj.is_dirty_zabbix = True
 
             if send_web:
@@ -469,8 +472,8 @@ class CheckKubernetesDaemon:
                         # only set dirty False if send_to_web_api worked
                         resourced_obj.is_dirty_web = False
                 else:
-                    self.logger.info('obj >>>type: %s, name: %s<<< not sending to web! rate limited (%is)' % (
-                        ressource, resourced_obj.name, self.rate_limit_seconds))
+                    self.logger.info('obj >>>type: %s, name: %s/%s<<< not sending to web! rate limited (%is)' % (
+                        ressource, resourced_obj.name_space, resourced_obj.name, self.rate_limit_seconds))
                     resourced_obj.is_dirty_web = True
 
     def send_heartbeat_info(self, *args):
@@ -563,3 +566,5 @@ class CheckKubernetesDaemon:
             data_to_send = obj.resource_data
             data_to_send['cluster'] = self.web_api_cluster
             api.send_data(resource, data_to_send, action)
+        else:
+            self.logger.debug("suppressing submission of %s %s/%s" % (resource, obj.name_space, obj.name))

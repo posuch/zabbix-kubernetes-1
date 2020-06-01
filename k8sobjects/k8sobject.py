@@ -104,13 +104,16 @@ class K8sResourceManager:
         return deleted_obj
 
 
+INITIAL_DATE = datetime.datetime(2000, 1, 1, 0, 0)
+
+
 class K8sObject:
     def __init__(self, obj_data, resource, manager=None):
         self.is_dirty_zabbix = True
         self.is_dirty_web = True
-        self.last_sent_zabbix_discovery = datetime.datetime(2000, 1, 1, 0, 0)
-        self.last_sent_zabbix = datetime.datetime(2000, 1, 1, 0, 0)
-        self.last_sent_web = datetime.datetime(2000, 1, 1, 0, 0)
+        self.last_sent_zabbix_discovery = INITIAL_DATE
+        self.last_sent_zabbix = INITIAL_DATE
+        self.last_sent_web = INITIAL_DATE
         self.resource = resource
         self.data = obj_data
         self.data_checksum = self.calculate_checksum()
@@ -158,6 +161,15 @@ class K8sObject:
         if not name_space:
             raise Exception('Could not find name_space for obj [%s] %s' % (self.resource, self.name))
         return name_space
+
+    def is_unsubmitted_web(self):
+        return self.last_sent_web == INITIAL_DATE
+
+    def is_unsubmitted_zabbix(self):
+        return self.last_sent_zabbix == INITIAL_DATE
+
+    def is_unsubmitted_zabbix_discovery(self):
+        return self.last_sent_zabbix_discovery == datetime.datetime(2000, 1, 1, 0, 0)
 
     def calculate_checksum(self):
         return hashlib.md5(

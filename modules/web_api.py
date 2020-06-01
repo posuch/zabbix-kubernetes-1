@@ -20,6 +20,7 @@ class WebApi:
     def get_headers(self):
         return {
             'Authorization': self.api_token,
+            'User-Agent': 'k8s-zabbix agent',
         }
 
     def get_url(self, resource=None):
@@ -53,7 +54,7 @@ class WebApi:
                  allow_redirects=True)
 
         if r.status_code > 399:
-            logger.warning('%s [%s] %s sended %s data -> %s' % (self.api_host, r.status_code, url, resource, data))
+            logger.warning('%s [%s] %s sended %s data -> %s (%s)' % (self.api_host, r.status_code, url, resource, data, action))
             logger.warning(r.text)
         else:
-            logger.debug('%s [%s] sended %s [%s]' % (url, r.status_code, resource, data['name']))
+            logger.debug('%s [%s] sended %s [%s/%s] (%s)' % (url, r.status_code, resource, data['name_space'], data['name'], action))
