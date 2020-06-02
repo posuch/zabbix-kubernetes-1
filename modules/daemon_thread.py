@@ -55,7 +55,6 @@ class CheckKubernetesDaemon:
     def __init__(self, config, config_name,
                  resources, resources_excluded, resources_excluded_web, resources_excluded_zabbix,
                  discovery_interval, data_resend_interval):
-        self.dirty_threads = False
         self.manage_threads = []
 
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -220,26 +219,6 @@ class CheckKubernetesDaemon:
                                         )
             self.manage_threads.append(resend_thread)
             resend_thread.start()
-
-    # TODO: remove
-    def restart_dirty_threads(self):
-        found_thread = None
-        for thread in self.manage_threads:
-            if thread.restart_thread:
-                found_thread = thread
-
-        if found_thread:
-            self.logger.info('thread must be restarted: %s' % found_thread)
-
-            resource = found_thread.resource
-            found_thread.join()
-
-            self.manage_threads = [x for x in self.manage_threads if x.resource != resource]
-            thread = WatcherThread(resource, exit_flag,
-                                   daemon=self, daemon_method='watch_data')
-            self.manage_threads.append(thread)
-            thread.start()
-            del found_thread
 
     def get_api_for_resource(self, resource):
         if resource in ['nodes', 'components', 'secrets', 'pods', 'services']:

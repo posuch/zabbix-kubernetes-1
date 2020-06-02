@@ -5,7 +5,6 @@
     - sends data to inventory REST-API
 """
 import os
-
 import sys
 import faulthandler
 import importlib.util
@@ -26,11 +25,13 @@ stream.setFormatter(formatter)
 
 logger = logging.getLogger()
 
+
 def to_array(list_string):
     if isinstance(list_string, list):
         return list_string
     else:
         return re.split(r"[\s,]+", config.web_api_resources_exclude.strip())
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -113,34 +114,28 @@ if __name__ == '__main__':
     def _signal_handler(signum, *args):
         mgmt_daemon.handler(signum)
 
+
     def stacktraces(signum, frame):
         print("#" * 80)
         print("# Threadump")
         faulthandler.dump_traceback()
         print("#")
         print("#" * 80)
-    signal.signal(signal.SIGQUIT, stacktraces)
 
+
+    signal.signal(signal.SIGQUIT, stacktraces)
     signal.signal(signal.SIGUSR1, _signal_handler)
     signal.signal(signal.SIGUSR2, _signal_handler)
-
 
     # Daemon start
     try:
         logger.info("Starting daemon threads now")
         for daemon in daemons:
             daemon.run()
-
-        # TODO: remove thread restarts later
-        # while True:
-        #     for daemon in daemons:
-        #         if daemon.dirty_threads:
-        #             daemon.restart_dirty_threads()
-        #     time.sleep(3)
         while True:
             time.sleep(60)
     except KeyboardInterrupt:
         logger.info("got SIGINT, shutting down")
         for daemon in daemons:
             daemon.handler(signal.SIGTERM)
-        os.exit(1)
+        sys.exit(1)
