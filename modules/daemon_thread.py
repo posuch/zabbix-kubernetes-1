@@ -204,7 +204,7 @@ class CheckKubernetesDaemon:
     def start_loop_send_discovery_threads(self):
         for resource in self.resources:
             send_discovery_thread = TimedThread(resource, self.discovery_interval, exit_flag,
-                                                daemon=self, daemon_method='send_discovery_to_zabbix',
+                                                daemon=self, daemon_method='send_zabbix_discovery',
                                                 delay_first_run=True,
                                                 delay_first_run_seconds=30)
             self.manage_threads.append(send_discovery_thread)
@@ -417,6 +417,7 @@ class CheckKubernetesDaemon:
             pass
 
     def send_zabbix_discovery(self, resource):
+        # aggregate data and send to zabbix
         with self.thread_lock:
             if resource in self.data and len(self.data[resource].objects) > 0:
                 data = list()
@@ -431,7 +432,6 @@ class CheckKubernetesDaemon:
 
     def send_object(self, ressource, resourced_obj, event_type, send_zabbix_data=False, send_web=False):
         # send single object for updates
-
         with self.thread_lock:
             if send_zabbix_data:
                 if resourced_obj.last_sent_zabbix < datetime.now() - timedelta(seconds=self.rate_limit_seconds):
