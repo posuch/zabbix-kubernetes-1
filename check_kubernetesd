@@ -15,7 +15,7 @@ import time
 import argparse
 import re
 
-from modules.daemon_thread import CheckKubernetesDaemon
+from k8s_zabbix_base.daemon_thread import CheckKubernetesDaemon
 
 KNOWN_ACTIONS = ['discover', 'get']
 

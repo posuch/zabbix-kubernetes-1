@@ -12,8 +12,8 @@ from datetime import datetime, timedelta
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 
-from modules.timed_threads import TimedThread
-from modules.watcher_thread import WatcherThread
+from k8s_zabbix_base.timed_threads import TimedThread
+from k8s_zabbix_base.watcher_thread import WatcherThread
 from k8sobjects.k8sobject import K8sResourceManager, K8S_RESOURCES
 from k8sobjects.container import get_container_zabbix_metrics
 
