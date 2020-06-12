@@ -115,15 +115,16 @@ if __name__ == '__main__':
         mgmt_daemon.handler(signum)
 
 
-    def stacktraces(signum, frame):
+    def stacktraces_and_terminate(signum, frame):
         print("#" * 80)
         print("# Threadump")
         faulthandler.dump_traceback()
         print("#")
         print("#" * 80)
+        sys.exit(1)
 
 
-    signal.signal(signal.SIGQUIT, stacktraces)
+    signal.signal(signal.SIGQUIT, stacktraces_and_terminate)
     signal.signal(signal.SIGUSR1, _signal_handler)
     signal.signal(signal.SIGUSR2, _signal_handler)
 
