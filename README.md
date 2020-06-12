@@ -2,6 +2,7 @@ k8s-zabbix
 =================
 
 This project provides kubernetes monitoring capabilities for zabbix.
+Optionally it can submit kubernetes entities to a configurable webservice (i.e. you run your own management system for your production environments).
 
 * apiserver : Check and discover apiservers
 * components : Check and discover health of k8s components (etcd, controller-manager, scheduler etc.)
@@ -15,6 +16,22 @@ This project provides kubernetes monitoring capabilities for zabbix.
 For details of the monitored kubernetes attributes, have a look at the [documentation](http://htmlpreview.github.io/?https://github.com/zabbix-tooling/k8s-zabbix/blob/master/template/documentation/custom_service_kubernetes.html)
 
 The current docker image is published on https://hub.docker.com/repository/docker/scoopex666/k8s-zabbix/
+
+Architecture Details
+=====================
+
+
+![Deployment Diagram](documentation/deployment_yed.png)
+
+Behavior of the system:
+
+* k8s-zabbix queries the kubernetes api service for several types of k8s entities (see above)
+* discovered data is stored in a internal cache of k8s-zabbix
+* new k8s entities are sent to zabbix or optionally to a configurable webservice
+* if a k8s entity disappears, zabbix or optionally to a configurable webservice are notified
+* if k8s entities appear/disappear the zabbix discovefor low level disovery is updated
+* known entities will be resended to zabbix or the webservice in a schedule
+
 
 Testing and development
 =======================
@@ -52,8 +69,8 @@ Testing and development
   git push --tags
   ./build.sh publish_image
   ```
-Run in Kubernetes
-=================
+Production Deployment
+=====================
 
 * Clone Repo and install dependencies
   ```
@@ -81,14 +98,20 @@ Run in Kubernetes
   vi kubernetes/deployment.yaml # modify docker repo
   kubectl apply -f kubernetes/deployment.yaml
   ```
+* Zabbix Configuration
+  * Add [zabbix template](template/custom_service_kubernetes.xml) to zabbix 
+  * Create a monitoring host
+  * Assign template to host
 
-TODOs
-=====
 
-- use k8s watch api 
-- gather and send data in dedicated threads with different intervals
-- Check if it is useful to convert the deployment to a daemon set which runs on one and only one controller
-  https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+Unix Signals
+=======
+
+Unix signals are usefuil for debugging:
+
+ * SIGQUIT: Dumps the stacktraces of all threads and terminates the daemon
+ * SIGUSR1: Listing count of data hold in CheckKubernetesDaemon.data
+ * SIGUSR2: Listing all data hold in CheckKubernetesDaemon.data
 
 Authors
 =======

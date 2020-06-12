@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>4.4</version>
-    <date>2020-03-25T13:02:28Z</date>
+    <date>2020-06-12T10:18:45Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -19,6 +19,9 @@
             <applications>
                 <application>
                     <name>Custom - Service - Kubernetes - Components</name>
+                </application>
+                <application>
+                    <name>Custom - Service - Kubernetes - Containers</name>
                 </application>
                 <application>
                     <name>Custom - Service - Kubernetes - Deployments</name>
@@ -41,12 +44,12 @@
             </applications>
             <items>
                 <item>
-                    <name>Cluster Discovery</name>
+                    <name>Cluster API Monitoring Heartbeat</name>
                     <type>TRAP</type>
                     <key>check_kubernetesd[discover,api]</key>
                     <delay>0</delay>
                     <history>14d</history>
-                    <trends>0d</trends>
+                    <trends>0</trends>
                     <applications>
                         <application>
                             <name>Custom - Service - Kubernetes - Global</name>
@@ -142,6 +145,138 @@
                             </trigger_prototypes>
                         </item_prototype>
                     </item_prototypes>
+                    <request_method>POST</request_method>
+                </discovery_rule>
+                <discovery_rule>
+                    <name>Custom - Service - Kubernetes - Containers</name>
+                    <type>TRAP</type>
+                    <key>check_kubernetesd[discover,containers]</key>
+                    <delay>0</delay>
+                    <lifetime>4h</lifetime>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>{#NAMESPACE} / {#NAME} / {#CONTAINER} - not_ready</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,containers,{#NAMESPACE},{#NAME},{#CONTAINER},not_ready]</key>
+                            <delay>0</delay>
+                            <history>14d</history>
+                            <applications>
+                                <application>
+                                    <name>Custom - Service - Kubernetes - Containers</name>
+                                </application>
+                            </applications>
+                            <request_method>POST</request_method>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{min(35m)}&lt;&gt;0</expression>
+                                    <name>Pod {#NAMESPACE} / {#NAME} - not ready pods for 30minutes</name>
+                                    <priority>WARNING</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>{#NAMESPACE} / {#NAME} / {#CONTAINER} - ready</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,containers,{#NAMESPACE},{#NAME},{#CONTAINER},ready]</key>
+                            <delay>0</delay>
+                            <history>14d</history>
+                            <applications>
+                                <application>
+                                    <name>Custom - Service - Kubernetes - Containers</name>
+                                </application>
+                            </applications>
+                            <request_method>POST</request_method>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>{#NAMESPACE} / {#NAME} / {#CONTAINER} - restart_count</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,containers,{#NAMESPACE},{#NAME},{#CONTAINER},restart_count]</key>
+                            <delay>0</delay>
+                            <history>14d</history>
+                            <applications>
+                                <application>
+                                    <name>Custom - Service - Kubernetes - Containers</name>
+                                </application>
+                            </applications>
+                            <preprocessing>
+                                <step>
+                                    <type>SIMPLE_CHANGE</type>
+                                    <params/>
+                                </step>
+                            </preprocessing>
+                            <request_method>POST</request_method>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last()}&gt;0</expression>
+                                    <name>Pod {#NAMESPACE} / {#NAME} - restart_count &gt; 0</name>
+                                    <priority>WARNING</priority>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <expression>{sum(30m)}&gt;{$POD_RESTART_AVERAGE_LIMIT_30M}</expression>
+                                    <name>Pod {#NAMESPACE} / {#NAME} - restart_count &gt; {$POD_RESTART_AVERAGE_LIMIT_30M}  in 30m</name>
+                                    <priority>AVERAGE</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>{#NAMESPACE} / {#NAME} / {#CONTAINER} - status</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,containers,{#NAMESPACE},{#NAME},{#CONTAINER},status]</key>
+                            <delay>0</delay>
+                            <history>14d</history>
+                            <trends>0</trends>
+                            <value_type>CHAR</value_type>
+                            <applications>
+                                <application>
+                                    <name>Custom - Service - Kubernetes - Containers</name>
+                                </application>
+                            </applications>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{str(&quot;ERROR&quot;)}=1</expression>
+                                    <name>Pod {#NAMESPACE} / {#NAME} - status - {ITEM.VALUE}</name>
+                                    <opdata>{ITEM.VALUE}</opdata>
+                                    <priority>WARNING</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                    </item_prototypes>
+                    <graph_prototypes>
+                        <graph_prototype>
+                            <name>Pod {#NAMESPACE} / {#NAME} - Launch Statistics</name>
+                            <height>300</height>
+                            <ymin_type_1>FIXED</ymin_type_1>
+                            <graph_items>
+                                <graph_item>
+                                    <color>008800</color>
+                                    <calc_fnc>ALL</calc_fnc>
+                                    <item>
+                                        <host>Custom - Service - Kubernetes</host>
+                                        <key>check_kubernetesd[get,containers,{#NAMESPACE},{#NAME},{#CONTAINER},ready]</key>
+                                    </item>
+                                </graph_item>
+                                <graph_item>
+                                    <sortorder>1</sortorder>
+                                    <color>EE0000</color>
+                                    <calc_fnc>ALL</calc_fnc>
+                                    <item>
+                                        <host>Custom - Service - Kubernetes</host>
+                                        <key>check_kubernetesd[get,containers,{#NAMESPACE},{#NAME},{#CONTAINER},not_ready]</key>
+                                    </item>
+                                </graph_item>
+                                <graph_item>
+                                    <sortorder>2</sortorder>
+                                    <drawtype>GRADIENT_LINE</drawtype>
+                                    <color>2774A4</color>
+                                    <calc_fnc>ALL</calc_fnc>
+                                    <item>
+                                        <host>Custom - Service - Kubernetes</host>
+                                        <key>check_kubernetesd[get,containers,{#NAMESPACE},{#NAME},{#CONTAINER},restart_count]</key>
+                                    </item>
+                                </graph_item>
+                            </graph_items>
+                        </graph_prototype>
+                    </graph_prototypes>
                     <request_method>POST</request_method>
                 </discovery_rule>
                 <discovery_rule>
@@ -574,138 +709,6 @@
                                     <item>
                                         <host>Custom - Service - Kubernetes</host>
                                         <key>check_kubernetesd[get,nodes,{#NAME},capacity.pods]</key>
-                                    </item>
-                                </graph_item>
-                            </graph_items>
-                        </graph_prototype>
-                    </graph_prototypes>
-                    <request_method>POST</request_method>
-                </discovery_rule>
-                <discovery_rule>
-                    <name>Custom - Service - Kubernetes - Pods</name>
-                    <type>TRAP</type>
-                    <key>check_kubernetesd[discover,pods]</key>
-                    <delay>0</delay>
-                    <lifetime>4h</lifetime>
-                    <item_prototypes>
-                        <item_prototype>
-                            <name>{#NAMESPACE} / {#NAME} - not_ready</name>
-                            <type>TRAP</type>
-                            <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},not_ready]</key>
-                            <delay>0</delay>
-                            <history>14d</history>
-                            <applications>
-                                <application>
-                                    <name>Custom - Service - Kubernetes - Pods</name>
-                                </application>
-                            </applications>
-                            <request_method>POST</request_method>
-                            <trigger_prototypes>
-                                <trigger_prototype>
-                                    <expression>{min(35m)}&lt;&gt;0</expression>
-                                    <name>Pod {#NAMESPACE} / {#NAME} - not ready pods for 30minutes</name>
-                                    <priority>WARNING</priority>
-                                </trigger_prototype>
-                            </trigger_prototypes>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>{#NAMESPACE} / {#NAME} - ready</name>
-                            <type>TRAP</type>
-                            <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},ready]</key>
-                            <delay>0</delay>
-                            <history>14d</history>
-                            <applications>
-                                <application>
-                                    <name>Custom - Service - Kubernetes - Pods</name>
-                                </application>
-                            </applications>
-                            <request_method>POST</request_method>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>{#NAMESPACE} / {#NAME} - restart_count</name>
-                            <type>TRAP</type>
-                            <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},restart_count]</key>
-                            <delay>0</delay>
-                            <history>14d</history>
-                            <applications>
-                                <application>
-                                    <name>Custom - Service - Kubernetes - Pods</name>
-                                </application>
-                            </applications>
-                            <preprocessing>
-                                <step>
-                                    <type>SIMPLE_CHANGE</type>
-                                    <params/>
-                                </step>
-                            </preprocessing>
-                            <request_method>POST</request_method>
-                            <trigger_prototypes>
-                                <trigger_prototype>
-                                    <expression>{last()}&gt;0</expression>
-                                    <name>Pod {#NAMESPACE} / {#NAME} - restart_count &gt; 0</name>
-                                    <priority>WARNING</priority>
-                                </trigger_prototype>
-                                <trigger_prototype>
-                                    <expression>{sum(30m)}&gt;{$POD_RESTART_AVERAGE_LIMIT_30M}</expression>
-                                    <name>Pod {#NAMESPACE} / {#NAME} - restart_count &gt; {$POD_RESTART_AVERAGE_LIMIT_30M}  in 30m</name>
-                                    <priority>AVERAGE</priority>
-                                </trigger_prototype>
-                            </trigger_prototypes>
-                        </item_prototype>
-                        <item_prototype>
-                            <name>{#NAMESPACE} / {#NAME} - status</name>
-                            <type>TRAP</type>
-                            <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},status]</key>
-                            <delay>0</delay>
-                            <history>14d</history>
-                            <trends>0</trends>
-                            <value_type>CHAR</value_type>
-                            <applications>
-                                <application>
-                                    <name>Custom - Service - Kubernetes - Pods</name>
-                                </application>
-                            </applications>
-                            <trigger_prototypes>
-                                <trigger_prototype>
-                                    <expression>{str(&quot;ERROR&quot;)}=1</expression>
-                                    <name>Pod {#NAMESPACE} / {#NAME} - status - {ITEM.VALUE}</name>
-                                    <opdata>{ITEM.VALUE}</opdata>
-                                    <priority>WARNING</priority>
-                                </trigger_prototype>
-                            </trigger_prototypes>
-                        </item_prototype>
-                    </item_prototypes>
-                    <graph_prototypes>
-                        <graph_prototype>
-                            <name>Pod {#NAMESPACE} / {#NAME} - Launch Statistics</name>
-                            <height>300</height>
-                            <ymin_type_1>FIXED</ymin_type_1>
-                            <graph_items>
-                                <graph_item>
-                                    <color>008800</color>
-                                    <calc_fnc>ALL</calc_fnc>
-                                    <item>
-                                        <host>Custom - Service - Kubernetes</host>
-                                        <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},ready]</key>
-                                    </item>
-                                </graph_item>
-                                <graph_item>
-                                    <sortorder>1</sortorder>
-                                    <color>EE0000</color>
-                                    <calc_fnc>ALL</calc_fnc>
-                                    <item>
-                                        <host>Custom - Service - Kubernetes</host>
-                                        <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},not_ready]</key>
-                                    </item>
-                                </graph_item>
-                                <graph_item>
-                                    <sortorder>2</sortorder>
-                                    <drawtype>GRADIENT_LINE</drawtype>
-                                    <color>2774A4</color>
-                                    <calc_fnc>ALL</calc_fnc>
-                                    <item>
-                                        <host>Custom - Service - Kubernetes</host>
-                                        <key>check_kubernetesd[get,pods,{#NAMESPACE},{#NAME},restart_count]</key>
                                     </item>
                                 </graph_item>
                             </graph_items>
