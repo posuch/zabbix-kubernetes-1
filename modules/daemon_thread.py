@@ -114,7 +114,7 @@ class CheckKubernetesDaemon:
         return result
 
     def handler(self, signum, *args):
-        if signum in [signal.SIGTERM, signal.SIGKILL]:
+        if signum in [signal.SIGTERM]:
             self.logger.info('Signal handler called with signal %s... stopping (max %s seconds)' % (signum, 3))
             exit_flag.set()
             for thread in self.manage_threads:
