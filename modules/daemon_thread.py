@@ -409,12 +409,11 @@ class CheckKubernetesDaemon:
 
     # TODO: not implemented
     def delete_object(self, resource, resourced_obj):
-
-        with self.thread_lock:
-            # send event to web api
-            # trigger zabbix dsicovery
-            # remove from self.data already done?
-            pass
+        # we don't need a lock here, already aquired at higher level
+        # send event to web api
+        # trigger zabbix discovery
+        # remove from self.data if not already done?
+        pass
 
     def send_zabbix_discovery(self, resource):
         # aggregate data and send to zabbix
@@ -538,10 +537,6 @@ class CheckKubernetesDaemon:
     def send_to_web_api(self, resource, obj, action):
         if self.web_api_enable and resource in self.web_api_resources:
             api = self.get_web_api()
-
-            # TODO: remove
-            # with self.thread_lock:
-            #     data_to_send = obj.resource_data
             data_to_send = obj.resource_data
             data_to_send['cluster'] = self.web_api_cluster
             api.send_data(resource, data_to_send, action)
