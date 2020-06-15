@@ -41,10 +41,8 @@ class WebApi:
         path_append = ""
 
         if action.lower() == 'added':
-            return
             func = requests.post
         elif action.lower() == 'modified':
-            return
             func = requests.put
         elif action.lower() == 'deleted':
             func = requests.delete
