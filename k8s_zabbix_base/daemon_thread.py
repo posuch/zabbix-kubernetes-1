@@ -436,7 +436,7 @@ class CheckKubernetesDaemon:
                     resourced_obj.last_sent_zabbix = datetime.now()
                     resourced_obj.is_dirty_zabbix = False
                 else:
-                    self.logger.info('obj >>>type: %s, name: %s/%s<<< not sending to zabbix! rate limited (%is)' % (
+                    self.logger.debug('obj >>>type: %s, name: %s/%s<<< not sending to zabbix! rate limited (%is)' % (
                         resource, resourced_obj.name_space, resourced_obj.name, self.rate_limit_seconds))
                     resourced_obj.is_dirty_zabbix = True
 
@@ -448,7 +448,7 @@ class CheckKubernetesDaemon:
                         # only set dirty False if send_to_web_api worked
                         resourced_obj.is_dirty_web = False
                 else:
-                    self.logger.info('obj >>>type: %s, name: %s/%s<<< not sending to web! rate limited (%is)' % (
+                    self.logger.debug('obj >>>type: %s, name: %s/%s<<< not sending to web! rate limited (%is)' % (
                         resource, resourced_obj.name_space, resourced_obj.name, self.rate_limit_seconds))
                     resourced_obj.is_dirty_web = True
 
