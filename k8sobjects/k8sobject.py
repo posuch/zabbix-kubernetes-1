@@ -90,18 +90,9 @@ class K8sResourceManager:
             return
 
         resourced_obj = self.resource_class(obj, self.resource, manager=self)
-        deleted_obj = None
-
         if resourced_obj.uid in self.objects:
-            deleted_obj = json.loads(
-                json.dumps(
-                    self.objects[resourced_obj.uid],
-                    sort_keys=True,
-                    default=json_encoder,
-                )
-            )
             del self.objects[resourced_obj.uid]
-        return deleted_obj
+        return resourced_obj
 
 
 INITIAL_DATE = datetime.datetime(2000, 1, 1, 0, 0)
