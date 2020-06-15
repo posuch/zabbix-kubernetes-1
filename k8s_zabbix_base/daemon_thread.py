@@ -196,8 +196,8 @@ class CheckKubernetesDaemon:
             # only send api heartbeat once
             return
 
-        thread = TimedThread('api_info', self.api_zabbix_interval, exit_flag,
-                             daemon=self, daemon_method='send_api_info')
+        thread = TimedThread('api_heartbeat', self.api_zabbix_interval, exit_flag,
+                             daemon=self, daemon_method='send_heartbeat_info')
         self.manage_threads.append(thread)
         thread.start()
 
@@ -237,7 +237,7 @@ class CheckKubernetesDaemon:
             self._web_api = WebApi(self.web_api_host, self.web_api_token, verify_ssl=self.web_api_verify_ssl)
         return self._web_api
 
-    def watch_data(self, resource, send_zabbix_discovery=False, timeout=240):
+    def watch_data(self, resource, timeout=240):
         api = self.get_api_for_resource(resource)
 
         if timeout == 0:
@@ -406,22 +406,18 @@ class CheckKubernetesDaemon:
             except RuntimeError as e:
                 self.logger.warning(str(e))
 
-
-
-    # TODO: not implemented
     def delete_object(self, resource_type, resourced_obj):
-        # TODO: trigger zabbix discovery
-        if resource_type not in ["pods"]:
-            self.logger.debug("no delete implemented for resource_type %s" % resource_type)
-            return
+        # TODO: trigger zabbix discovery, srsly?
         self.send_to_web_api(resource_type, resourced_obj, "deleted")
-
 
     def send_zabbix_discovery(self, resource):
         # aggregate data and send to zabbix
         with self.thread_lock:
+            if resource not in self.data:
+                self.logger.warning('send_zabbix_discovery: resource "%s" not in self.data... skipping!' % resource)
+                return
+
             data = list()
-            self.data.setdefault(resource, {})
             for obj_uid, obj in self.data[resource].objects.items():
                 data += obj.get_zabbix_discovery_data()
 
@@ -429,7 +425,8 @@ class CheckKubernetesDaemon:
                 metric = obj.get_discovery_for_zabbix(data)
                 self.logger.debug('sending discovery for [%s]: %s' % (resource, metric))
                 self.send_discovery_to_zabbix(resource, metric=[metric])
-        self.data['zabbix_discovery_sent'][resource] = datetime.now()
+
+            self.data['zabbix_discovery_sent'][resource] = datetime.now()
 
     def send_object(self, resource, resourced_obj, event_type, send_zabbix_data=False, send_web=False):
         # send single object for updates

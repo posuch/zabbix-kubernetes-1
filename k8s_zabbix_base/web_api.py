@@ -34,11 +34,9 @@ class WebApi:
 
         if not api_resource:
             return url
-        return url + api_resource + '/' + path_append
+        return url + api_resource + '/'
 
     def send_data(self, resource, data, action):
-
-        path_append = ""
 
         if action.lower() == 'added':
             func = requests.post
@@ -46,16 +44,10 @@ class WebApi:
             func = requests.put
         elif action.lower() == 'deleted':
             func = requests.delete
-            path_append = "cluster/%s/namespace/%s/name/%s" % (
-                data["cluster"],
-                data["name_space"],
-                data["name"],
-            )
-            data = {}
         else:
             return
 
-        url = self.get_url(resource, path_append)
+        url = self.get_url(resource)
 
         # empty variables are NOT sent!
         r = func(url,
@@ -68,4 +60,4 @@ class WebApi:
             logger.warning('%s [%s] %s sended %s but failed data >>>%s<<< (%s)' % (self.api_host, r.status_code, url, resource, data, action))
             logger.warning(r.text)
         else:
-            logger.warning('%s [%s] %s sucessfully sended %s >>>%s<<< (%s)' % (self.api_host, r.status_code, url, resource, data, action))
+            logger.debug('%s [%s] %s sucessfully sended %s >>>%s<<< (%s)' % (self.api_host, r.status_code, url, resource, data, action))
