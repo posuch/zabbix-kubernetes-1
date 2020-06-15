@@ -157,7 +157,6 @@ class CheckKubernetesDaemon:
 
     def start_data_threads(self):
         for resource in self.resources:
-
             with self.thread_lock:
                 self.data.setdefault(resource, K8sResourceManager(resource, zabbix_host=self.zabbix_host))
                 if resource == 'pods':
@@ -534,6 +533,9 @@ class CheckKubernetesDaemon:
                 self.logger.debug("successfully sent %s zabbix items [%s: %s]" % (len(metrics), resource, obj.name if obj else 'metrics'))
 
     def send_to_web_api(self, resource, obj, action):
+        if resource not in self.web_api_resources:
+            return
+
         if self.web_api_enable:
             api = self.get_web_api()
             data_to_send = obj.resource_data
