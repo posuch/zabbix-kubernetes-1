@@ -34,20 +34,26 @@ class WebApi:
 
         if not api_resource:
             return url
-        return url + api_resource + '/'
+        return url + api_resource + '/' + path_append
 
     def send_data(self, resource, data, action):
-
+        path_append = ""
         if action.lower() == 'added':
             func = requests.post
         elif action.lower() == 'modified':
             func = requests.put
         elif action.lower() == 'deleted':
             func = requests.delete
+            path_append = "%s/%s/%s/" % (
+                data["cluster"],
+                data["name_space"],
+                data["name"],
+            )
+            data = {}
         else:
             return
 
-        url = self.get_url(resource)
+        url = self.get_url(resource, path_append)
 
         # empty variables are NOT sent!
         r = func(url,
