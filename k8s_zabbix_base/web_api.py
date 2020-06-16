@@ -44,11 +44,17 @@ class WebApi:
             func = requests.put
         elif action.lower() == 'deleted':
             func = requests.delete
-            path_append = "%s/%s/%s/" % (
-                data["cluster"],
-                data["name_space"],
-                data["name"],
-            )
+            if 'name_space' in data and data["name_space"]:
+                path_append = "%s/%s/%s/" % (
+                    data["cluster"],
+                    data["name_space"],
+                    data["name"],
+                )
+            else:
+                path_append = "%s/%s/" % (
+                    data["cluster"],
+                    data["name"],
+                )
             data = {}
         else:
             return
