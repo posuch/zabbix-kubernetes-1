@@ -85,8 +85,8 @@ docu(){
 
 publish_image(){
   TIMESTAMP="$(date --date="today" "+%Y-%m-%d_%H-%M-%S")"
-  exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} scoopex666/${IMAGE_NAME}:${VERSION}.${TIMESTAMP}"
-  exec_cmd "docker push scoopex666/${IMAGE_NAME}:${VERSION}.${TIMESTAMP}"
+  exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} scoopex666/${IMAGE_NAME}:${VERSION}"
+  exec_cmd "docker push scoopex666/${IMAGE_NAME}:${VERSION}"
   exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} scoopex666/${IMAGE_NAME}:latest"
   exec_cmd "docker push scoopex666/${IMAGE_NAME}:latest"
 }
