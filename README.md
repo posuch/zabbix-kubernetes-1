@@ -1,8 +1,16 @@
 k8s-zabbix
 =================
 
-This project provides kubernetes monitoring capabilities for zabbix.
-Optionally it can submit kubernetes entities to a configurable webservice (i.e. if you have left the GitOps paradigm behind and built a management system for your infrastructure).
+This project provides kubernetes monitoring capabilities for zabbix using the watch api method.
+
+This means that new Kubernetes entities are created without delay via zabbix discovery and transferred to Zabbix. 
+For example, the moment a deployment is created, it is also created in Zabbix using the [LLD](https://www.zabbix.com/documentation/current/manual/discovery/low_level_discovery) and its status changes are transferred to Zabbix without significant delay.
+This tool aggregates status information of entities in some cases to the managing entity to improve the practical usage with zabbix
+(example: aggegation of the pod statuses to the deployment which manages the pods)
+Disappearing entities will be deleted by zabbix using the "Keep lost resources period" setting.
+
+Optionally this tool can submit kubernetes entities to a webservice in unaggregated manner.
+This might be a very useful thing if you have left the GitOps paradigm behind and built a real management system for your infrastructure. 
 
 * apiserver : Check and discover apiservers
 * components : Check and discover health of k8s components (etcd, controller-manager, scheduler etc.)
