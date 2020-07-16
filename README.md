@@ -2,7 +2,7 @@ k8s-zabbix
 =================
 
 This project provides kubernetes monitoring capabilities for zabbix.
-Optionally it can submit kubernetes entities to a configurable webservice (i.e. you run your own management system for your production environments).
+Optionally it can submit kubernetes entities to a configurable webservice (i.e. if you have left the GitOps paradigm behind and built a management system for your infrastructure).
 
 * apiserver : Check and discover apiservers
 * components : Check and discover health of k8s components (etcd, controller-manager, scheduler etc.)
@@ -100,8 +100,8 @@ Production Deployment
   ```
 * Zabbix Configuration
   * Add [zabbix template](template/custom_service_kubernetes.xml) to zabbix 
-  * Create a monitoring host
-  * Assign template to host
+  * Create a virtual/abstract monitoring host for your kubernetes cluster (i.e. k8s-c1.foo.bar)
+  * Assign the template to that host
 
 
 Unix Signals
