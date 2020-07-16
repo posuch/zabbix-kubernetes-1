@@ -13,9 +13,9 @@ Optionally it can submit kubernetes entities to a configurable webservice (i.e. 
 * replicasets: Check and discover replicasets readiness
 * tls: Check tls secrets expiration dates
 
-For details of the monitored kubernetes attributes, have a look at the [documentation](http://htmlpreview.github.io/?https://github.com/zabbix-tooling/k8s-zabbix/blob/master/template/documentation/custom_service_kubernetes.html)
+For details of the monitored kubernetes attributes, have a look at the [documentation](http://htmlpreview.github.io/?https://github.com/zabbix-tooling/k8s-zabbix/blob/master/documentation/template/custom_service_kubernetes.html)
 
-The current docker image is published on https://hub.docker.com/repository/docker/scoopex666/k8s-zabbix/
+The current docker image is published at https://hub.docker.com/repository/docker/scoopex666/k8s-zabbix/
 
 Architecture Details
 =====================
