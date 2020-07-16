@@ -19,6 +19,7 @@ spec:
           #image: your-repo.foo.bar:k8s-zabbix:latest
           image: scoopex666/k8s-zabbix:latest
           args: [ "config_default" ]
+          # review config_default.py for additionaol configuration values (convert the names to uppercase)
           env:
              # the ingress hostname where you can reach the k8s api
              - name: "K8S_API_HOST"
@@ -32,6 +33,18 @@ spec:
              # the abstract/virtual host which is configured in zabbix to hold and alert k8s zabbix 
              - name: "ZABBIX_HOST"
                value: "k8s-c1.foo.bar"
+             # Enable the optional management api status submission
+             - name: "WEB_API_ENABLE"
+               value: "False"
+             # The base uri of the anagement api status submission
+             - name: "WEB_API_HOST"
+               value: "https://example.api.com/api/v1/k8s"
+             # The security token for management api status submission
+             - name: "WEB_API_TOKEN"
+               value: "17812110692887024374221963068327794883098412835131004"
+             # The name of the k8s cluster in the management system
+             - name: "web_api_cluster"
+               value: "k8s-test-cluster"
           imagePullPolicy: Always
           resources:
             requests:
