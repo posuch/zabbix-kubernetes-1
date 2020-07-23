@@ -31,7 +31,7 @@ class Pod(K8sObject):
         data['containers'] = json.dumps(self.containers)
         container_status = dict()
         data['ready'] = True
-        data['pod_data'] = {
+        pod_data = {
             "restart_count": 0,
             "ready": 0,
             "not_ready": 0,
@@ -52,14 +52,14 @@ class Pod(K8sObject):
                         "status": "OK",
                     }
                 container_status[container_name]['restart_count'] += container['restart_count']
-                data['pod_data']['restart_count'] += container['restart_count']
+                pod_data['restart_count'] += container['restart_count']
 
                 if container['ready'] is True:
                     container_status[container_name]['ready'] += 1
-                    data['pod_data']['ready'] += 1
+                    pod_data['ready'] += 1
                 else:
                     container_status[container_name]['not_ready'] += 1
-                    data['pod_data']['not_ready'] += 1
+                    pod_data['not_ready'] += 1
 
                 if container["state"] and len(container["state"]) > 0:
                     for status, container_data in container["state"].items():
@@ -68,11 +68,11 @@ class Pod(K8sObject):
 
                 if len(status_values) > 0:
                     container_status[container_name]['status'] = 'ERROR: ' + (','.join(status_values))
-                    data['pod_data']['status'] = container_status[container_name]['status']
+                    pod_data['status'] = container_status[container_name]['status']
                     data['ready'] = False
 
-        data['container_status'] = container_status
-        data['status'] = json.dumps(container_status)
+        data['container_status'] = json.dumps(container_status)
+        data['pod_data'] = json.dumps(pod_data)
         return data
 
     def get_zabbix_discovery_data(self):
@@ -105,7 +105,7 @@ class Pod(K8sObject):
     #     if 'status' not in data:
     #         logger.error(data)
     #
-    #     for k, v in data['pod_data'].items():
+    #     for k, v in pod_data.items():
     #         data_to_send.append(ZabbixMetric(
     #             self.zabbix_host, 'check_kubernetesd[get,pods,%s,%s,%s]' % (self.name_space, self.name, k),
     #             v,
