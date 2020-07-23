@@ -1,8 +1,16 @@
 k8s-zabbix
 =================
 
-This project provides kubernetes monitoring capabilities for zabbix.
-Optionally it can submit kubernetes entities to a configurable webservice (i.e. you run your own management system for your production environments).
+This project provides kubernetes monitoring capabilities for zabbix using the watch api method.
+
+This means that new Kubernetes entities are created without delay via zabbix discovery and transferred to Zabbix. 
+For example, the moment a deployment is created, it is also created in Zabbix using the [LLD](https://www.zabbix.com/documentation/current/manual/discovery/low_level_discovery) and its status changes are transferred to Zabbix without significant delay.
+This tool aggregates status information of entities in some cases to the managing entity to improve the practical usage with zabbix
+(example: aggegation of the pod statuses to the deployment which manages the pods)
+Disappearing entities will be deleted by zabbix using the "Keep lost resources period" setting.
+
+Optionally this tool can submit kubernetes entities to a webservice in unaggregated manner.
+This might be a very useful thing if you have left the GitOps paradigm behind and built a real management system for your infrastructure. 
 
 * apiserver : Check and discover apiservers
 * components : Check and discover health of k8s components (etcd, controller-manager, scheduler etc.)
@@ -13,9 +21,9 @@ Optionally it can submit kubernetes entities to a configurable webservice (i.e. 
 * replicasets: Check and discover replicasets readiness
 * tls: Check tls secrets expiration dates
 
-For details of the monitored kubernetes attributes, have a look at the [documentation](http://htmlpreview.github.io/?https://github.com/zabbix-tooling/k8s-zabbix/blob/master/template/documentation/custom_service_kubernetes.html)
+For details of the monitored kubernetes attributes, have a look at the [documentation](http://htmlpreview.github.io/?https://github.com/zabbix-tooling/k8s-zabbix/blob/master/documentation/template/custom_service_kubernetes.html)
 
-The current docker image is published on https://hub.docker.com/repository/docker/scoopex666/k8s-zabbix/
+The current docker image is published at https://hub.docker.com/repository/docker/scoopex666/k8s-zabbix/
 
 Architecture Details
 =====================
@@ -100,8 +108,8 @@ Production Deployment
   ```
 * Zabbix Configuration
   * Add [zabbix template](template/custom_service_kubernetes.xml) to zabbix 
-  * Create a monitoring host
-  * Assign template to host
+  * Create a virtual/abstract monitoring host for your kubernetes cluster (i.e. k8s-c1.foo.bar)
+  * Assign the template to that host
 
 
 Unix Signals
