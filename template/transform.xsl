@@ -66,13 +66,12 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
       <td><xsl:value-of select="name"/></td>
       <td><xsl:value-of select="description"/></td>
       <xsl:choose>
-         <xsl:when test="priority='0'"><td style="background-color:#efefef;">Not classified</td></xsl:when>
-         <xsl:when test="priority='1'"><td style="background-color:#FFFF00;">Information</td></xsl:when>
-         <xsl:when test="priority='2'"><td style="background-color:#FFFF00;">Warning</td></xsl:when>
-         <xsl:when test="priority='3'"><td style="background-color:#FF0000;">Average</td></xsl:when>
-         <xsl:when test="priority='4'"><td style="background-color:#FF0000;">High</td></xsl:when>
-         <xsl:when test="priority='5'"><td style="background-color:#FF0000;">Disaster</td></xsl:when>
-         <xsl:otherwise><xsl:value-of select="priority"/><td>ERROR - Unknown</td></xsl:otherwise>
+         <xsl:when test="priority='INFORMATION'"><td style="background-color:#FFFF00;">Information</td></xsl:when>
+         <xsl:when test="priority='WARNING'"><td style="background-color:#FFFF00;">Warning</td></xsl:when>
+         <xsl:when test="priority='AVERAGE'"><td style="background-color:#FF0000;">Average</td></xsl:when>
+         <xsl:when test="priority='HIGH'"><td style="background-color:#FF0000;">High</td></xsl:when>
+         <xsl:when test="priority='DISASTER'"><td style="background-color:#FF0000;">Disaster</td></xsl:when>
+         <xsl:otherwise><td>NOT CLASSIFIED</td></xsl:otherwise>
       </xsl:choose>
       <td><tt><xsl:value-of select="expression"/></tt></td>
       <td><tt>
@@ -114,15 +113,7 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     </tr>
     <xsl:for-each select="zabbix_export/templates/template/items/item">
     <tr>
-      <xsl:choose>
-         <xsl:when test="type='0'"><td><p class="desc">Zabbix Agent</p></td></xsl:when>
-         <xsl:when test="type='2'"><td><p class="desc">Zabbix Trapper</p></td></xsl:when>
-         <xsl:when test="type='3'"><td><p class="desc">Simple check</p></td></xsl:when>
-         <xsl:when test="type='7'"><td><p class="desc">Zabbix Agent (active)</p></td></xsl:when>
-         <xsl:when test="type='10'"><td><p class="desc">External check</p></td></xsl:when>
-         <xsl:when test="type='15'"><td><p class="desc">Calculated</p></td></xsl:when>
-         <xsl:otherwise><xsl:value-of select="state"/><td><p class="desc">ERROR - Unknown</p></td></xsl:otherwise>
-      </xsl:choose>
+      <td><xsl:value-of select="type"/></td>
       <td><xsl:value-of select="name"/></td>
       <td><tt><xsl:value-of select="key"/></tt></td>
       <td><xsl:value-of select="description"/></td>
@@ -145,15 +136,7 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
     <tr><td>Key</td><td><xsl:value-of select="key"/></td></tr>
     <tr>
       <td>Type</td>
-      <xsl:choose>
-         <xsl:when test="type='0'"><td><p class="desc">Zabbix Agent</p></td></xsl:when>
-         <xsl:when test="type='2'"><td><p class="desc">Zabbix Trapper</p></td></xsl:when>
-         <xsl:when test="type='3'"><td><p class="desc">Simple check</p></td></xsl:when>
-         <xsl:when test="type='7'"><td><p class="desc">Zabbix Agent (active)</p></td></xsl:when>
-         <xsl:when test="type='10'"><td><p class="desc">External check</p></td></xsl:when>
-         <xsl:when test="type='15'"><td><p class="desc">Calculated</p></td></xsl:when>
-         <xsl:otherwise><xsl:value-of select="state"/><td><p class="desc">ERROR - Unknown</p></td></xsl:otherwise>
-      </xsl:choose>
+      <td><xsl:value-of select="type"/></td>
      </tr>
      <tr><td>Delay</td><td><xsl:value-of select="delay"/></td></tr>
   </table>
@@ -173,13 +156,12 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
       <td><xsl:value-of select="name"/></td>
       <td><xsl:value-of select="description"/></td>
       <xsl:choose>
-         <xsl:when test="priority='0'"><td style="background-color:#efefef;">Not classified</td></xsl:when>
-         <xsl:when test="priority='1'"><td style="background-color:#FFFF00;">Information</td></xsl:when>
-         <xsl:when test="priority='2'"><td style="background-color:#FFFF00;">Warning</td></xsl:when>
-         <xsl:when test="priority='3'"><td style="background-color:#FF0000;">Average</td></xsl:when>
-         <xsl:when test="priority='4'"><td style="background-color:#FF0000;">High</td></xsl:when>
-         <xsl:when test="priority='5'"><td style="background-color:#FF0000;">Disaster</td></xsl:when>
-         <xsl:otherwise><xsl:value-of select="priority"/><td>ERROR - Unknown</td></xsl:otherwise>
+         <xsl:when test="priority='INFORMATION'"><td style="background-color:#FFFF00;">Information</td></xsl:when>
+         <xsl:when test="priority='WARNING'"><td style="background-color:#FFFF00;">Warning</td></xsl:when>
+         <xsl:when test="priority='AVERAGE'"><td style="background-color:#FF0000;">Average</td></xsl:when>
+         <xsl:when test="priority='HIGH'"><td style="background-color:#FF0000;">High</td></xsl:when>
+         <xsl:when test="priority='DISASTER'"><td style="background-color:#FF0000;">Disaster</td></xsl:when>
+         <xsl:otherwise><td>NOT CLASSIFIED</td></xsl:otherwise>
       </xsl:choose>
       <td><tt><xsl:value-of select="expression"/></tt></td>
       <td><tt>
@@ -220,16 +202,8 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
       <th>Trend Days</th>
     </tr>
     <xsl:for-each select="item_prototypes/item_prototype">
-    <tr>
-      <xsl:choose>
-         <xsl:when test="type='0'"><td><p class="desc">Zabbix Agent</p></td></xsl:when>
-         <xsl:when test="type='2'"><td><p class="desc">Zabbix Trapper</p></td></xsl:when>
-         <xsl:when test="type='3'"><td><p class="desc">Simple check</p></td></xsl:when>
-         <xsl:when test="type='7'"><td><p class="desc">Zabbix Agent (active)</p></td></xsl:when>
-         <xsl:when test="type='10'"><td><p class="desc">External check</p></td></xsl:when>
-         <xsl:when test="type='15'"><td><p class="desc">Calculated</p></td></xsl:when>
-         <xsl:otherwise><xsl:value-of select="state"/><td><p class="desc">ERROR - Unknown</p></td></xsl:otherwise>
-      </xsl:choose>
+       <tr>
+      <td><xsl:value-of select="type"/></td>
       <td><xsl:value-of select="name"/></td>
       <td><tt><xsl:value-of select="key"/></tt></td>
       <td><xsl:value-of select="description"/></td>

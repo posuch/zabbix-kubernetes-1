@@ -3,5 +3,7 @@
 lib/__pycache__/*
 *.pyc
 .idea
-config_*
 configd_*
+*.swp
+venv/*
+*.log
