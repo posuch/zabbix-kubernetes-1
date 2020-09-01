@@ -124,8 +124,11 @@ Unix signals are usefuil for debugging:
 Authors
 =======
 
+- Marc Schoechlin <ms-github@256bit.org>
 - Marc Schoechlin <marc.schoechlin@vico-research.com>
 - Amin Dandache <amin.dandache@vico-research.com>
+
+This project is heavily modified fork of [https://github.com/posuch/zabbix-kubernetes-1](https://github.com/posuch/zabbix-kubernetes-1)
 
 Licence
 =======
