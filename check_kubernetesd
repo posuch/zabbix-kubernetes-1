@@ -15,7 +15,7 @@ import time
 import argparse
 import re
 
-from k8s_zabbix_base.daemon_thread import CheckKubernetesDaemon
+from k8s_zabbix_base.daemon_thread import CheckKubernetesDaemon, str2bool
 
 KNOWN_ACTIONS = ['discover', 'get']
 
@@ -67,7 +67,8 @@ if __name__ == '__main__':
             print("setting %s by environment variable %s" % (key, key.upper()))
             setattr(config, key, os.environ[key.upper()])
 
-    if config.zabbix_debug:
+
+    if str2bool(config.zabbix_debug):
         logger.info("starting with zabbix debug")
         config.zabbix_debug = True
         log = logging.getLogger('pyzabbix')
@@ -76,7 +77,7 @@ if __name__ == '__main__':
         log = logging.getLogger('pyzabbix')
         log.setLevel(logging.INFO)
 
-    if config.debug:
+    if str2bool(config.debug):
         stream.setLevel(logging.DEBUG)
         logger.setLevel(logging.DEBUG)
     else:

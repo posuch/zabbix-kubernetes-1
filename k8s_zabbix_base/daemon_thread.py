@@ -19,10 +19,8 @@ from k8sobjects.container import get_container_zabbix_metrics
 
 exit_flag = threading.Event()
 
-
 class DryResult:
     pass
-
 
 def get_data_timeout_datetime():
     return datetime.now() - timedelta(minutes=1)
@@ -31,6 +29,10 @@ def get_data_timeout_datetime():
 def get_discovery_timeout_datetime():
     return datetime.now() - timedelta(hours=1)
 
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    return v.lower() in ("yes", "true", "t", "1")
 
 class KubernetesApi:
     __shared_state = dict(core_v1=None,
@@ -59,14 +61,14 @@ class CheckKubernetesDaemon:
 
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config_name = config_name
-        self.discovery_interval = discovery_interval
-        self.data_resend_interval = data_resend_interval
+        self.discovery_interval = int(discovery_interval)
+        self.data_resend_interval = int(data_resend_interval)
 
         self.api_zabbix_interval = 60
         self.rate_limit_seconds = 30
         self.api_configuration = client.Configuration()
         self.api_configuration.host = config.k8s_api_host
-        self.api_configuration.verify_ssl = config.verify_ssl
+        self.api_configuration.verify_ssl = str2bool(config.verify_ssl)
         self.api_configuration.api_key = {"authorization": "Bearer " + config.k8s_api_token}
 
         # K8S API
@@ -79,17 +81,17 @@ class CheckKubernetesDaemon:
         self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
         self.zabbix_resources = CheckKubernetesDaemon.exclude_resources(resources, resources_excluded_zabbix)
         self.zabbix_host = config.zabbix_host
-        self.zabbix_debug = config.zabbix_debug
-        self.zabbix_single_debug = config.zabbix_single_debug
-        self.zabbix_dry_run = config.zabbix_dry_run
+        self.zabbix_debug = str2bool(config.zabbix_debug)
+        self.zabbix_single_debug = str2bool(config.zabbix_single_debug)
+        self.zabbix_dry_run = str2bool(config.zabbix_dry_run)
 
-        self.web_api_enable = config.web_api_enable
+        self.web_api_enable = str2bool(config.web_api_enable)
         self.web_api_resources = CheckKubernetesDaemon.exclude_resources(resources, resources_excluded_web)
 
         self.web_api_host = config.web_api_host
         self.web_api_token = config.web_api_token
         self.web_api_cluster = config.web_api_cluster
-        self.web_api_verify_ssl = config.web_api_verify_ssl
+        self.web_api_verify_ssl = str2bool(config.web_api_verify_ssl)
 
         self.resources = CheckKubernetesDaemon.exclude_resources(resources, resources_excluded)
 
