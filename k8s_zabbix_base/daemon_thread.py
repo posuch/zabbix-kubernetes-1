@@ -19,8 +19,10 @@ from k8sobjects.container import get_container_zabbix_metrics
 
 exit_flag = threading.Event()
 
+
 class DryResult:
     pass
+
 
 def get_data_timeout_datetime():
     return datetime.now() - timedelta(minutes=1)
@@ -29,10 +31,12 @@ def get_data_timeout_datetime():
 def get_discovery_timeout_datetime():
     return datetime.now() - timedelta(hours=1)
 
+
 def str2bool(v):
     if isinstance(v, bool):
         return v
     return v.lower() in ("yes", "true", "t", "1")
+
 
 class KubernetesApi:
     __shared_state = dict(core_v1=None,
@@ -345,7 +349,14 @@ class CheckKubernetesDaemon:
 
                     pod_data = resourced_obj.resource_data
                     pod_base_name = resourced_obj.base_name
-                    for container_name, container_data in pod_data['container_status'].items():
+                    try:
+                        container_status = json.loads(pod_data['container_status'])
+                    except Exception as e:
+                        self.logger.error(e)
+                        continue
+
+                    # aggregate container information
+                    for container_name, container_data in container_status.items():
                         containers[ns].setdefault(pod_base_name, dict())
                         containers[ns][pod_base_name].setdefault(container_name, container_data)
                         for k, v in containers[ns][pod_base_name][container_name].items():
@@ -476,6 +487,7 @@ class CheckKubernetesDaemon:
                 self.logger.error(e)
                 result = DryResult()
                 result.failed = 1
+                result.processed = 0
         return result
 
     def send_discovery_to_zabbix(self, resource, metric=None, obj=None):
