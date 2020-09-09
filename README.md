@@ -101,16 +101,25 @@ Production Deployment
   kubectl apply -f kubernetes/service-apiserver.yaml
   kubectl apply -f kubernetes/monitoring-user.yaml
   ```
+* Zabbix Configuration
+  * Import the monitoring template [zabbix template](template/custom_service_kubernetes.xml) to zabbix : Configuration →  Templates → Import
+  * Create a virtual monitoring host for your kubernetes cluster <BR>
+    (i.e. "k8s-prod-001", name should corospond to the ZABBIX\_HOST in the deployment.yaml of the next step)
+  * Assign the template to that host
 * Create and apply deployment
+  (adapt the configuration values for your environment)
   ```
-  vi kubernetes/deployment.yaml # modify docker repo
+  vi kubernetes/deployment.yaml
   kubectl apply -f kubernetes/deployment.yaml
   ```
-* Zabbix Configuration
-  * Add [zabbix template](template/custom_service_kubernetes.xml) to zabbix 
-  * Create a virtual/abstract monitoring host for your kubernetes cluster (i.e. k8s-c1.foo.bar)
-  * Assign the template to that host
-
+* Check proper function
+  * Review the logs of the pod
+    ```
+    kubectl logs -n monitoring k8s-zabbix... -f
+    ```
+  * Review latest data in zabbix
+    * "Monitoring" →  "Latest data" →  "Add Hosts": i.e. "k8s-prod-001"
+    * Enable Option "Show items without data" →  Button "Apply"
 
 Unix Signals
 =======

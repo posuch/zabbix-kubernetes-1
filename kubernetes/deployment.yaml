@@ -32,7 +32,7 @@ spec:
                value: "zabbix.api.foo.bar:10080"
              # the abstract/virtual host which is configured in zabbix to hold and alert k8s zabbix 
              - name: "ZABBIX_HOST"
-               value: "k8s-c1.foo.bar"
+               value: "k8s-prod-001"
              # Enable the optional management api status submission
              - name: "WEB_API_ENABLE"
                value: "False"
