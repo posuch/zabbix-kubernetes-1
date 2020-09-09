@@ -101,6 +101,12 @@ Production Deployment
   kubectl apply -f kubernetes/service-apiserver.yaml
   kubectl apply -f kubernetes/monitoring-user.yaml
   ```
+* Configure a ingress for that service with valid ssl certificate for high available access to the kubernetes API<BR>
+  (otherwise set SSL\_VERIFY to "False")
+  ```
+  vi kubernetes/ingress-apiserver.yaml
+  kubectl apply -f kubernetes/ingress-apiserver.yaml
+  ```
 * Zabbix Configuration
   * Import the monitoring template [zabbix template](template/custom_service_kubernetes.xml) to zabbix : Configuration →  Templates → Import
   * Create a virtual monitoring host for your kubernetes cluster <BR>

@@ -24,6 +24,9 @@ spec:
              # the ingress hostname where you can reach the k8s api
              - name: "K8S_API_HOST"
                value: "http://k8s-api.foo.bar/"
+             # if you ignore the advice of the installation instructions to create a ingress with a offical certificate and instead to connect to a controller, you should set this to "False"
+             - name: "VERIFY_SSL"
+               value: "True"
              # the k8s api token, where you can fetch information from the k8s cluster
              - name: "K8S_API_TOKEN"
                value: "FAKE-4uo7ahn0HaireePhohmieCix5eecoox6luv9ahngaiwieweem1wooxie4ooch1Meingeetai7Esh9toiQuaith1uphae2thoonae9yoo0ye0eiy2Ien2iecaNgiudut3kohjahfeilooShaewoch3ibeezieTas8seijaiwed3ei0ShuGo5nooqua5Yaixieghaihiaquahvae6Oowiqu8Yahko4in6Nievai7rohghohbiThei5gai5Ohqu0bo5ahphah4uuquohfaif6rae0ahCheijeSahkae2Voox8seivo5ohg6niSh3thuk8seemo4Eixir8eb0miejeeSeem3aen5noovohchoop1weikieliith0eaPoJohkee8nou4Voja9eiyoh4oenie3reehohriichool6baegeeghien5uibiemooghoRahshaibea8Foo5zaiT5kood9quae6Naiw4hohvei6fae9goyei4yafeesh8Eiciepha1ahseZ7Eesho3oa0yiicieyaiShoh8eivi7kahv8nae5eivohZ8ierengaepoh1fiezo2Oth1boy6jeichah6eiDeiquun5Ach4chithui2Gei7ohchu1uephekalichahzeigh1ohV9aceyah1phahohsoo6eisieJohw7uk4Zo5Iedai8iW9ut4beePh1bai3Oogh7Aighi6uiPhapoo4loo2eth4el0Ieng7ZeeV0aiXiJaigh5AhlabieBir3Aegoh5aey8coRah2Aehee3shutiej1johy6mieXahxiePe"

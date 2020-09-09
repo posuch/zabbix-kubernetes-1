@@ -12,6 +12,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
 spec:
   tls:
+    # Ideally use a offical tls certificate or set VERIFY_SSL to False in the deployment environment variables
     - secretName: tls-global
       hosts:
         - "k8s-test-api.foo.bar"
