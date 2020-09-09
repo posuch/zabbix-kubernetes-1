@@ -104,7 +104,7 @@ Production Deployment
 * Zabbix Configuration
   * Import the monitoring template [zabbix template](template/custom_service_kubernetes.xml) to zabbix : Configuration →  Templates → Import
   * Create a virtual monitoring host for your kubernetes cluster <BR>
-    (i.e. "k8s-prod-001", name should corospond to the ZABBIX\_HOST in the deployment.yaml of the next step)
+    (i.e. "k8s-prod-001", name should match to the ZABBIX\_HOST in the deployment.yaml of the next step)
   * Assign the template to that host
 * Create and apply deployment
   (adapt the configuration values for your environment)
