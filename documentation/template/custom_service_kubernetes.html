@@ -200,6 +200,10 @@
 <tr>
 <th>Name</th><th>Description</th><th>Priority</th><th>Expression</th><th>Dependencies</th>
 </tr>
+<tr>
+<td>Deployment {#NAMESPACE} / {#NAME} - available_status failed: {ITEM.LASTVALUE1}</td><td>Raise a alarm if the available status is not rrue and no deployment is currently in progress.&#13;
+(the generation has not changed)</td><td style="background-color:#FF0000;">Average</td><td><tt>{Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},available_status].str("OK")}&lt;&gt;1 and ({Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},observed_generation].last(60)} = {Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},observed_generation].last()})</tt></td><td><tt></tt></td>
+</tr>
 </table>
 <h2>Graph Overview</h2>
 <table class="pretty">

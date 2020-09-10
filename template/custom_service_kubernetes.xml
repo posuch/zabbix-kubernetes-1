@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>4.4</version>
-    <date>2020-06-12T10:18:45Z</date>
+    <date>2020-09-10T08:14:20Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -152,7 +152,9 @@
                     <type>TRAP</type>
                     <key>check_kubernetesd[discover,containers]</key>
                     <delay>0</delay>
+                    <status>DISABLED</status>
                     <lifetime>4h</lifetime>
+                    <description>currently not implemented</description>
                     <item_prototypes>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} / {#CONTAINER} - not_ready</name>
@@ -313,13 +315,6 @@
                                 </application>
                             </applications>
                             <request_method>POST</request_method>
-                            <trigger_prototypes>
-                                <trigger_prototype>
-                                    <expression>{str(&quot;OK&quot;)}&lt;&gt;1</expression>
-                                    <name>Deployment {#NAMESPACE} / {#NAME} - available_status failed: {ITEM.LASTVALUE1}</name>
-                                    <priority>AVERAGE</priority>
-                                </trigger_prototype>
-                            </trigger_prototypes>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - collision_count</name>
@@ -346,6 +341,13 @@
                                 </application>
                             </applications>
                             <request_method>POST</request_method>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{diff()}=1</expression>
+                                    <name>Deployment {#NAMESPACE} / {#NAME} - observed_generation changed</name>
+                                    <priority>INFO</priority>
+                                </trigger_prototype>
+                            </trigger_prototypes>
                         </item_prototype>
                         <item_prototype>
                             <name>{#NAMESPACE} / {#NAME} - ready_replicas</name>
@@ -400,6 +402,15 @@
                             <request_method>POST</request_method>
                         </item_prototype>
                     </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger_prototype>
+                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},available_status].str(&quot;OK&quot;)}&lt;&gt;1 and ({Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},observed_generation].last(60)} = {Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},observed_generation].last()})</expression>
+                            <name>Deployment {#NAMESPACE} / {#NAME} - available_status failed: {ITEM.LASTVALUE1}</name>
+                            <priority>AVERAGE</priority>
+                            <description>Raise a alarm if the available status is not rrue and no deployment is currently in progress.&#13;
+(the generation has not changed)</description>
+                        </trigger_prototype>
+                    </trigger_prototypes>
                     <graph_prototypes>
                         <graph_prototype>
                             <name>Deployment {#NAMESPACE} / {#NAME} - Misc</name>
