@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>4.4</version>
-    <date>2020-09-10T08:14:20Z</date>
+    <date>2020-09-17T07:00:11Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -152,7 +152,6 @@
                     <type>TRAP</type>
                     <key>check_kubernetesd[discover,containers]</key>
                     <delay>0</delay>
-                    <status>DISABLED</status>
                     <lifetime>4h</lifetime>
                     <description>currently not implemented</description>
                     <item_prototypes>
