@@ -4,17 +4,16 @@
     - sends data to zabbix
     - sends data to inventory REST-API
 """
-import os
-import sys
+import argparse
 import faulthandler
 import importlib.util
-
 import logging
-import signal
-import time
-import argparse
+import os
 import re
-
+import signal
+import sys
+import sentry_sdk
+import time
 from k8s_zabbix_base.daemon_thread import CheckKubernetesDaemon, str2bool
 
 KNOWN_ACTIONS = ['discover', 'get']
@@ -67,6 +66,12 @@ if __name__ == '__main__':
             print("setting %s by environment variable %s" % (key, key.upper()))
             setattr(config, key, os.environ[key.upper()])
 
+    if str2bool(config.sentry_enabled):
+        logger.info("starting with sentry DSN %s" % config.sentry_dsn)
+        config.sentry_enabled = True
+        if not config.sentry_dsn:
+            print("sentry enabled but no DNS set: '%s'! ABORTING!" % config.sentry_dsn)
+        sentry_sdk.init(config.sentry_dsn)
 
     if str2bool(config.zabbix_debug):
         logger.info("starting with zabbix debug")
@@ -114,7 +119,6 @@ if __name__ == '__main__':
     # SIGNAL processing
     def _signal_handler(signum, *args):
         mgmt_daemon.handler(signum)
-
 
     def stacktraces_and_terminate(signum, frame):
         print("#" * 80)

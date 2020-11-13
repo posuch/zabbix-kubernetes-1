@@ -5,6 +5,9 @@ debug = False
 debug_k8s_events = False
 resources_exclude = []
 
+sentry_enabled = False
+sentry_dsn = ""
+
 zabbix_server = 'example.zabbix-server.com'
 zabbix_resources_exclude = ["statefulsets", "daemonsets"]
 zabbix_host = 'k8s-example-host'

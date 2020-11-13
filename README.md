@@ -1,10 +1,11 @@
 k8s-zabbix
 =================
 
-This project provides kubernetes monitoring capabilities for zabbix using the watch api method.
+This project provides kubernetes monitoring capabilities for zabbix using the watch api method and methods to send watched data to webhooks.
 
-This means that new Kubernetes entities are created without delay via zabbix discovery and transferred to Zabbix. 
-For example, the moment a deployment is created, it is also created in Zabbix using the [LLD](https://www.zabbix.com/documentation/current/manual/discovery/low_level_discovery) and its status changes are transferred to Zabbix without significant delay.
+This means that new Kubernetes entities are created with nearly no delay via zabbix discovery and transferred to Zabbix.
+For example, at the moment a deployment is created, it is also created in k8s-zabbix cache and sent to Zabbix using the [LLD](https://www.zabbix.com/documentation/current/manual/discovery/low_level_discovery).
+The resource status changes are transferred to Zabbix with no significant delay.
 This tool aggregates status information of entities in some cases to the managing entity to improve the practical usage with zabbix
 (example: aggegation of the pod statuses to the deployment which manages the pods)
 Disappearing entities will be deleted by zabbix using the "Keep lost resources period" setting.
@@ -36,9 +37,10 @@ Behavior of the system:
 * k8s-zabbix queries the kubernetes api service for several types of k8s entities (see above)
 * discovered data is stored in a internal cache of k8s-zabbix
 * new k8s entities are sent to zabbix or optionally to a configurable webservice
-* if a k8s entity disappears, zabbix or optionally to a configurable webservice are notified
-* if k8s entities appear/disappear the zabbix discovefor low level disovery is updated
-* known entities will be resended to zabbix or the webservice in a schedule
+* if a k8s entity disappears, zabbix and/or optionally a configurable webservice are notified
+* if k8s entities appear/disappear the zabbix discover for low level disovery is updated
+* known entities (discovery and data) will be sent to zabbix and/or the webservice in a configurable schedule
+* sentry can optionally used as error tracking system
 
 
 Testing and development
@@ -65,6 +67,8 @@ Testing and development
   ```
   source venv/bin/activate
   cp config_default.py configd_c1.py
+  # edit to appropriate values for your setup
+  vim configd_c1
   ./check_kubernetesd configd_c1
   ```
 * Test in docker (IS ESSENTIAL FOR PUBLISH)
@@ -115,7 +119,9 @@ Production Deployment
 * Create and apply deployment
   (adapt the configuration values for your environment)
   ```
+* Adapt values corresponding to your cluster setup, use ENV Variables defined in config_default.py
   vi kubernetes/deployment.yaml
+
   kubectl apply -f kubernetes/deployment.yaml
   ```
 * Check proper function
@@ -139,9 +145,8 @@ Unix signals are usefuil for debugging:
 Authors
 =======
 
-- Marc Schoechlin <ms-github@256bit.org>
-- Marc Schoechlin <marc.schoechlin@vico-research.com>
 - Amin Dandache <amin.dandache@vico-research.com>
+- Marc Schoechlin <ms-github@256bit.org>
 
 This project is heavily modified fork of [https://github.com/posuch/zabbix-kubernetes-1](https://github.com/posuch/zabbix-kubernetes-1)
 
