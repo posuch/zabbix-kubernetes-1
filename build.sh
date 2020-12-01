@@ -95,7 +95,7 @@ publish_image(){
 display_hint(){
   notice "CMD:"
   echo
-  echo "$0 <phase>...<repo_name>"
+  echo "$0 <phase> <repo_name>"
   echo
   notice "AVAILABLE PHASES:"
   echo  " -  default"

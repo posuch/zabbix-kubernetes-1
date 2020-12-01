@@ -19,7 +19,7 @@ pipeline {
     stages {
         stage('Prepare') {
             when {
-                  environment name: 'RELEASE', value: 'true' 
+                  environment name: 'RELEASE', value: 'true'
             }
             steps {
                ansiColor('xterm') {
@@ -32,17 +32,17 @@ pipeline {
             steps {
                 ansiColor('xterm') {
                   sh 'git fetch --tags'
-                  sh "./build.sh default"
+                  sh "./build.sh default vicoconsulting"
                 }
             }
         }
         stage('Release') {
             when {
-                  environment name: 'RELEASE', value: 'true' 
+                  environment name: 'RELEASE', value: 'true'
             }
             steps {
                ansiColor('xterm') {
-                  sh './build.sh publish_image'
+                  sh './build.sh publish_image vicoconsulting'
                }
             }
         }
