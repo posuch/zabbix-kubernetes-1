@@ -79,6 +79,7 @@ Testing and development
   ```
   git tag NEW_TAG
   git push --tags
+  ./build.sh default
   ./build.sh publish_image
   ```
 Production Deployment

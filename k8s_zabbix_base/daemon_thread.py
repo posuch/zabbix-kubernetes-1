@@ -359,11 +359,12 @@ class CheckKubernetesDaemon:
                     for container_name, container_data in container_status.items():
                         containers[ns].setdefault(pod_base_name, dict())
                         containers[ns][pod_base_name].setdefault(container_name, container_data)
+
                         for k, v in containers[ns][pod_base_name][container_name].items():
                             if isinstance(v, int):
-                                containers[ns][container_name][pod_base_name][k] += container_data[k]
+                                containers[ns][pod_base_name][container_name][k] += container_data[k]
                             elif k == 'status' and container_data[k].startswith('ERROR'):
-                                containers[ns][container_name][pod_base_name][k] = container_data[k]
+                                containers[ns][pod_base_name][container_name][k] = container_data[k]
 
                 for ns, d1 in containers.items():
                     for pod_base_name, d2 in d1.items():

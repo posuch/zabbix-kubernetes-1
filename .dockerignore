@@ -2,7 +2,8 @@ Dockerfile
 Jenkinsfile
 build.sh
 *.swp
+.git
 .gitignore
 kubernetes/*
 venv/*
-
+configd_*

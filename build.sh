@@ -26,11 +26,12 @@ exec_cmd(){
 ####################################################################
 ## MAIN
 
+DEFAULT_PHASES="build_image inspect cleanup docu test_container"
+
 VERSION="${VERSION:-$(git describe --abbrev=0 --tags)}"
 TIMESTAMP="$(date --date="today" "+%Y%m%d%H%M%S")"
 
 DOCKER_SQUASH="${DOCKER_SQUASH:-true}"
-
 
 DELAY="35"
 
@@ -85,41 +86,45 @@ docu(){
 
 publish_image(){
   TIMESTAMP="$(date --date="today" "+%Y-%m-%d_%H-%M-%S")"
-  exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} scoopex666/${IMAGE_NAME}:${VERSION}"
-  exec_cmd "docker push scoopex666/${IMAGE_NAME}:${VERSION}"
-  exec_cmd "docker tag ${IMAGE_NAME}:${VERSION} scoopex666/${IMAGE_NAME}:latest"
-  exec_cmd "docker push scoopex666/${IMAGE_NAME}:latest"
+  exec_cmd "docker tag ${IMAGE_REPO}/${IMAGE_NAME}:${VERSION} ${IMAGE_REPO}/${IMAGE_NAME}:${VERSION}"
+  exec_cmd "docker push ${IMAGE_REPO}/${IMAGE_NAME}:${VERSION}"
+  exec_cmd "docker tag ${IMAGE_REPO}/${IMAGE_NAME}:${VERSION} ${IMAGE_REPO}/${IMAGE_NAME}:latest"
+  exec_cmd "docker push ${IMAGE_REPO}/${IMAGE_NAME}:latest"
 }
 
-DEFAULT_PHASES="cleanup docu build_image test_container"
-if [ -z "$1" ];then
-  notice "CMD:" 
+display_hint(){
+  notice "CMD:"
   echo
-  echo "$0 <phase>...<phase>"
+  echo "$0 <phase>...<repo_name>"
   echo
   notice "AVAILABLE PHASES:"
   echo  " -  default"
   echo  "    ($DEFAULT_PHASES)"
   echo  " -  inspect"
   for PHASE in $DEFAULT_PHASES; do
-    echo " -  $PHASE"
+    echo " -  $PHASE <repo_name>"
   done
   echo " -  publish_image (optional)"
-  exit 0
+}
+
+
+if [ -z "$1" ] || [ -z "$2" ];then
+  display_hint
+  exit 2
+else
+  PHASE="$1"
+  IMAGE_REPO="$2"
 fi
 
 PHASES=""
-for PHASE in $@
-do
-  if [ "$PHASE" = "default" ];then
-     PHASES="$PHASES $DEFAULT_PHASES"
-  else
-     PHASES="$PHASES $PHASE"
-  fi
-done
+if [ "$PHASE" = "default" ];then
+   PHASES="$DEFAULT_PHASES"
+else
+   PHASES="$PHASE"
+fi
 
 IMAGE_NAME="k8s-zabbix"
-IMAGE_BASE="${IMAGE_NAME}:${VERSION}"
+IMAGE_BASE="${IMAGE_REPO}/${IMAGE_NAME}:${VERSION}"
 
 for PHASE in $PHASES;
 do
