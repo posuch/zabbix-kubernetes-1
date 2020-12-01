@@ -26,7 +26,7 @@ exec_cmd(){
 ####################################################################
 ## MAIN
 
-DEFAULT_PHASES="build_image inspect cleanup docu test_container"
+DEFAULT_PHASES="build_image cleanup docu test_container"
 
 VERSION="${VERSION:-$(git describe --abbrev=0 --tags)}"
 TIMESTAMP="$(date --date="today" "+%Y%m%d%H%M%S")"
