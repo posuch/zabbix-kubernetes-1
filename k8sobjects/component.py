@@ -19,7 +19,7 @@ class Component(K8sObject):
                 data['failed_conds'].append(cond['type'])
 
         if len(data['failed_conds']) > 0:
-            data['healthy'] = 'ERROR:' % data['failed_conds']
+            data['healthy'] = 'ERROR: %s' % data['failed_conds']
         else:
             data['healthy'] = 'OK'
         return data
