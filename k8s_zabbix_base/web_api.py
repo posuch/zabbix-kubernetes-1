@@ -69,7 +69,9 @@ class WebApi:
                  allow_redirects=True)
 
         if r.status_code > 399:
-            logger.warning('%s [%s] %s sended %s but failed data >>>%s<<< (%s)' % (self.api_host, r.status_code, url, resource, data, action))
+            logger.warning('%s [%s] %s sended %s but failed data >>>%s<<< (%s)' % (
+            self.api_host, r.status_code, url, resource, data, action))
             logger.warning(r.text)
         else:
-            logger.debug('%s [%s] %s sucessfully sended %s >>>%s<<< (%s)' % (self.api_host, r.status_code, url, resource, data, action))
+            logger.debug('%s [%s] %s sucessfully sended %s >>>%s<<< (%s)' % (
+            self.api_host, r.status_code, url, resource, data, action))

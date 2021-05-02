@@ -1,4 +1,6 @@
-kubernetes==10.0.1
-cryptography==2.9.2
+kubernetes==12.0.1
+cryptography==3.4.7
 py-zabbix==1.1.7
-sentry-sdk==0.14.4
+sentry-sdk==1.0.0
+adal==1.2.7
+urllib3==1.26.4

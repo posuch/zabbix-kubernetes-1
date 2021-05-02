@@ -43,11 +43,13 @@ class Deployment(K8sObject):
                 continue
 
             data_to_send.append(ZabbixMetric(
-                self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,%s]' % (self.name_space, self.name, status_type),
+                self.zabbix_host,
+                'check_kubernetesd[get,deployments,%s,%s,%s]' % (self.name_space, self.name, status_type),
                 transform_value(self.data['status'][status_type]))
             )
 
         data_to_send.append(ZabbixMetric(
-            self.zabbix_host, 'check_kubernetesd[get,deployments,%s,%s,available_status]' % (self.name_space, self.name), data['status']))
+            self.zabbix_host,
+            'check_kubernetesd[get,deployments,%s,%s,available_status]' % (self.name_space, self.name), data['status']))
 
         return data_to_send

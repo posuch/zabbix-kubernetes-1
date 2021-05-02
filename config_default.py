@@ -1,3 +1,4 @@
+k8s_use_kube_config = False
 k8s_api_host = 'https://example.kube-apiserver.com'
 k8s_api_token = ''
 verify_ssl = True
