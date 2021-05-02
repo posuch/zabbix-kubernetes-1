@@ -1,21 +1,19 @@
-import sys
+import json
 import logging
 import signal
-import time
-import json
+import sys
 import threading
-
-from pyzabbix import ZabbixAPI, ZabbixMetric, ZabbixSender, ZabbixResponse, ZabbixAPIException
-from kubernetes import client, config, watch
-from kubernetes.client.rest import ApiException
+import time
 from datetime import datetime, timedelta
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
+
+from kubernetes import client, watch
+from kubernetes import config as kube_config
+from pyzabbix import ZabbixMetric, ZabbixSender
 
 from k8s_zabbix_base.timed_threads import TimedThread
 from k8s_zabbix_base.watcher_thread import WatcherThread
-from k8sobjects.k8sobject import K8sResourceManager, K8S_RESOURCES
 from k8sobjects.container import get_container_zabbix_metrics
+from k8sobjects.k8sobject import K8sResourceManager
 
 exit_flag = threading.Event()
 
@@ -70,14 +68,19 @@ class CheckKubernetesDaemon:
 
         self.api_zabbix_interval = 60
         self.rate_limit_seconds = 30
-        self.api_configuration = client.Configuration()
-        self.api_configuration.host = config.k8s_api_host
-        self.api_configuration.verify_ssl = str2bool(config.verify_ssl)
-        self.api_configuration.api_key = {"authorization": "Bearer " + config.k8s_api_token}
+
+        if hasattr(config, "k8s_use_kube_config") and str2bool(config.k8s_use_kube_config):
+            kube_config.load_kube_config()
+            self.api_client = kube_config.new_client_from_config()
+        else:
+            self.api_configuration = client.Configuration()
+            self.api_configuration.host = config.k8s_api_host
+            self.api_configuration.verify_ssl = str2bool(config.verify_ssl)
+            self.api_configuration.api_key = {"authorization": "Bearer " + config.k8s_api_token}
+            self.api_client = client.ApiClient(self.api_configuration)
 
         # K8S API
         self.debug_k8s_events = False
-        self.api_client = client.ApiClient(self.api_configuration)
         self.core_v1 = KubernetesApi(self.api_client).core_v1
         self.apps_v1 = KubernetesApi(self.api_client).apps_v1
         self.extensions_v1 = KubernetesApi(self.api_client).extensions_v1
@@ -99,17 +102,10 @@ class CheckKubernetesDaemon:
 
         self.resources = CheckKubernetesDaemon.exclude_resources(resources, resources_excluded)
 
-        init_msg = "INIT K8S-ZABBIX Watcher\n<===>\n" \
-                   "K8S API Server: %s\n" \
-                   "Zabbix Server: %s\n" \
-                   "Zabbix Host: %s\n" \
-                   "Resources watching: %s\n" \
-                   "web_api_enable => %s (resources: %s)\n" \
-                   "web_api_host => %s\n" \
-                   "<===>" \
-                   % (self.api_configuration.host, config.zabbix_server, self.zabbix_host, ",".join(self.resources),
-                      self.web_api_enable, ",".join(self.web_api_resources), self.web_api_host)
-        self.logger.info(init_msg)
+        self.logger.info(f"Init K8S-ZABBIX Watcher for resources: {','.join(self.resources)}")
+        self.logger.info(f"Zabbix Host: {self.zabbix_host} / Zabbix Proxy or Server: {config.zabbix_server}")
+        if self.web_api_enable:
+            self.logger.info(f"WEB Api Host {self.web_api_host} with resources {','.join(self.web_api_resources)}")
 
     @staticmethod
     def exclude_resources(available_types, excluded_types):
