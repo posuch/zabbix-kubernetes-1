@@ -8,11 +8,13 @@ ENV K8S_API_HOST ""
 ENV K8S_API_TOKEN ""
 ENV ZABBIX_SERVER "zabbix"
 ENV ZABBIX_HOST "k8s"
+ENV CRYPTOGRAPHY_DONT_BUILD_RUST "1"
 
 
 COPY --chown=nobody:users . /app
 RUN  apk update && \
        apk add build-base libffi-dev libffi openssl-dev && \
+       pip install --upgrade pip && \
        pip install -r /app/requirements.txt && \
        apk upgrade --update-cache --available && \
        apk del build-base openssl-dev libffi-dev && \
