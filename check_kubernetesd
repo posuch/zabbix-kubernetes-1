@@ -95,23 +95,27 @@ if __name__ == '__main__':
     zabbix_resources_exclude = to_array(config.zabbix_resources_exclude)
     resources_exclude = to_array(config.resources_exclude)
 
-    # ['nodes', 'secrets']
-    mgmt_daemon = CheckKubernetesDaemon(config, config_name,
-                                        ['nodes'],
-                                        resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
-                                        config.discovery_interval_slow, config.resend_data_interval_slow)
-    daemons.append(mgmt_daemon)
+    # TODO: reactivate
+    # mgmt_daemon = CheckKubernetesDaemon(config, config_name,
+    #                                     ['nodes'],
+    #                                     resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
+    #                                     config.discovery_interval_slow, config.resend_data_interval_slow)
+    # daemons.append(mgmt_daemon)
+    #
+    # daemons.append(CheckKubernetesDaemon(config, config_name,
+    #                                      ['components', 'services', 'pvcs'],
+    #                                      resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
+    #                                      config.discovery_interval_slow, config.resend_data_interval_fast))
+    #
+    # daemons.append(CheckKubernetesDaemon(config, config_name,
+    #                                      ['deployments', 'statefulsets', 'daemonsets', 'pods', 'containers'],
+    #                                      resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
+    #                                      config.discovery_interval_slow, config.resend_data_interval_slow))
 
     daemons.append(CheckKubernetesDaemon(config, config_name,
-                                         ['components', 'services'],
+                                         ['pvcs'],
                                          resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
                                          config.discovery_interval_slow, config.resend_data_interval_fast))
-
-    daemons.append(CheckKubernetesDaemon(config, config_name,
-                                         ['deployments', 'statefulsets', 'daemonsets', 'pods', 'containers'],
-                                         resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
-                                         config.discovery_interval_slow, config.resend_data_interval_slow))
-
     if config.debug_k8s_events:
         for daemon in daemons:
             daemon.debug_k8s_events = True

@@ -5,6 +5,13 @@ from .k8sobject import K8sObject, transform_value
 
 logger = logging.getLogger(__name__)
 
+def get_node_names(api):
+    ret = api.list_node(watch=False)
+    nodenames = []
+    for item in ret.items:
+        nodenames.append(item.metadata.name)
+    return nodenames
+
 
 class Node(K8sObject):
     object_type = 'node'
