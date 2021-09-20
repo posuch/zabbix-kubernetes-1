@@ -18,7 +18,8 @@ from k8s_zabbix_base.daemon_thread import CheckKubernetesDaemon, str2bool
 
 KNOWN_ACTIONS = ['discover', 'get']
 
-formatter = logging.Formatter('%(asctime)s - %(threadName)s : {%(pathname)s:%(lineno)d} : %(levelname)s : %(name)s - %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s - %(threadName)s : {%(pathname)s:%(lineno)d} : %(levelname)s : %(name)s - %(message)s')
 stream = logging.StreamHandler(sys.stdout)
 stream.setFormatter(formatter)
 
@@ -115,9 +116,11 @@ if __name__ == '__main__':
         for daemon in daemons:
             daemon.debug_k8s_events = True
 
+
     # SIGNAL processing
     def _signal_handler(signum, *args):
         mgmt_daemon.handler(signum)
+
 
     def stacktraces_and_terminate(signum, frame):
         print("#" * 80)

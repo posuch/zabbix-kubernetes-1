@@ -62,7 +62,7 @@ def get_pvc_data(api, node, timeout_seconds):
                 data['item']['usedBytes'] / data['item']['capacityBytes'])) * 100
 
             data['item']['inodesUsedPercentage'] = float(float(
-                data['item']['inodesUsed'] / data['item']['inodesBytes'])) * 100
+                data['item']['inodesUsed'] / data['item']['inodes'])) * 100
 
             for key in ['name', 'pvcRef', 'time', 'availableBytes', 'inodesFree']:
                 data['item'].pop(key, None)
