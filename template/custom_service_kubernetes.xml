@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
-    <version>4.4</version>
-    <date>2020-09-17T07:00:11Z</date>
+    <version>5.2</version>
+    <date>2021-09-20T15:56:46Z</date>
     <groups>
         <group>
             <name>Templates</name>
@@ -202,7 +202,9 @@
                             <preprocessing>
                                 <step>
                                     <type>SIMPLE_CHANGE</type>
-                                    <params/>
+                                    <parameters>
+                                        <parameter/>
+                                    </parameters>
                                 </step>
                             </preprocessing>
                             <request_method>POST</request_method>
@@ -406,7 +408,7 @@
                             <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},available_status].str(&quot;OK&quot;)}&lt;&gt;1 and ({Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},observed_generation].last(60)} = {Custom - Service - Kubernetes:check_kubernetesd[get,deployments,{#NAMESPACE},{#NAME},observed_generation].last()})</expression>
                             <name>Deployment {#NAMESPACE} / {#NAME} - available_status failed: {ITEM.LASTVALUE1}</name>
                             <priority>AVERAGE</priority>
-                            <description>Raise a alarm if the available status is not rrue and no deployment is currently in progress.&#13;
+                            <description>Raise a alarm if the available status is not rrue and no deployment is currently in progress.
 (the generation has not changed)</description>
                         </trigger_prototype>
                     </trigger_prototypes>
@@ -727,6 +729,204 @@
                     <request_method>POST</request_method>
                 </discovery_rule>
                 <discovery_rule>
+                    <name>Custom - Service - Kubernetes - PVCs</name>
+                    <type>TRAP</type>
+                    <key>check_kubernetesd[discover,pvcs]</key>
+                    <delay>0</delay>
+                    <lifetime>4d</lifetime>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>PV {#NAMESPACE} / {#NAME} - capacityBytes</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},capacityBytes]</key>
+                            <delay>0</delay>
+                            <history>7d</history>
+                            <units>B</units>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>PV {#NAMESPACE} / {#NAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>PV {#NAMESPACE} / {#NAME} - inodesUsedPercentage</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},inodesUsedPercentage]</key>
+                            <delay>0</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>%</units>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>PV {#NAMESPACE} / {#NAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last()}=0 &gt;{$DISK_USAGE_PERCENT_ALARM}</expression>
+                                    <name>PV {#NAMESPACE} / {#NAME} - inodesUsedPercentage &gt; {$DISK_USAGE_PERCENT_ALARM}%</name>
+                                    <priority>AVERAGE</priority>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <expression>{last()}=0 &gt;{$DISK_USAGE_PERCENT_WARN}</expression>
+                                    <name>PV {#NAMESPACE} / {#NAME} - inodesUsedPercentage &gt; {$DISK_USAGE_PERCENT_WARN}%</name>
+                                    <priority>WARNING</priority>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>PV {#NAMESPACE} / {#NAME} - inodesUsedPercentage &gt; {$DISK_USAGE_PERCENT_ALARM}%</name>
+                                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},inodesUsedPercentage].last()}=0 &gt;{$DISK_USAGE_PERCENT_ALARM}</expression>
+                                        </dependency>
+                                    </dependencies>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>PV {#NAMESPACE} / {#NAME} - inodesUsed</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},inodesUsed]</key>
+                            <delay>0</delay>
+                            <history>7d</history>
+                            <units>i</units>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>PV {#NAMESPACE} / {#NAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>PV {#NAMESPACE} / {#NAME} - inodes</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},inodes]</key>
+                            <delay>0</delay>
+                            <history>7d</history>
+                            <units>i</units>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>PV {#NAMESPACE} / {#NAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>PV {#NAMESPACE} / {#NAME} - Nodename</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},nodename]</key>
+                            <delay>0</delay>
+                            <history>14d</history>
+                            <trends>0</trends>
+                            <value_type>CHAR</value_type>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>PV {#NAMESPACE} / {#NAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>PV {#NAMESPACE} / {#NAME} - usedBytesPercentage</name>
+                            <type>TRAP</type>
+                            <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},usedBytesPercentage]</key>
+                            <delay>0</delay>
+                            <history>7d</history>
+                            <value_type>FLOAT</value_type>
+                            <units>%</units>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>PV {#NAMESPACE} / {#NAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <expression>{last()} &gt;{$DISK_USAGE_PERCENT_ALARM}</expression>
+                                    <name>PV {#NAMESPACE} / {#NAME} - capacityBytesPercentage &gt; {$DISK_USAGE_PERCENT_ALARM}%</name>
+                                    <priority>AVERAGE</priority>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <expression>{last()} &gt;{$DISK_USAGE_PERCENT_WARN}</expression>
+                                    <name>PV {#NAMESPACE} / {#NAME} - capacityBytesPercentage &gt; {$DISK_USAGE_PERCENT_WARN}%</name>
+                                    <priority>WARNING</priority>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>PV {#NAMESPACE} / {#NAME} - capacityBytesPercentage &gt; {$DISK_USAGE_PERCENT_ALARM}%</name>
+                                            <expression>{Custom - Service - Kubernetes:check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},usedBytesPercentage].last()} &gt;{$DISK_USAGE_PERCENT_ALARM}</expression>
+                                        </dependency>
+                                    </dependencies>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                    </item_prototypes>
+                    <graph_prototypes>
+                        <graph_prototype>
+                            <name>PV {#NAMESPACE} / {#NAME} iNodes</name>
+                            <ymin_type_1>FIXED</ymin_type_1>
+                            <graph_items>
+                                <graph_item>
+                                    <sortorder>1</sortorder>
+                                    <color>2E7D32</color>
+                                    <calc_fnc>MAX</calc_fnc>
+                                    <item>
+                                        <host>Custom - Service - Kubernetes</host>
+                                        <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},inodes]</key>
+                                    </item>
+                                </graph_item>
+                                <graph_item>
+                                    <sortorder>2</sortorder>
+                                    <color>F63100</color>
+                                    <calc_fnc>MAX</calc_fnc>
+                                    <item>
+                                        <host>Custom - Service - Kubernetes</host>
+                                        <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},inodesUsed]</key>
+                                    </item>
+                                </graph_item>
+                                <graph_item>
+                                    <sortorder>3</sortorder>
+                                    <drawtype>BOLD_LINE</drawtype>
+                                    <color>2774A4</color>
+                                    <yaxisside>RIGHT</yaxisside>
+                                    <calc_fnc>MAX</calc_fnc>
+                                    <item>
+                                        <host>Custom - Service - Kubernetes</host>
+                                        <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},inodesUsedPercentage]</key>
+                                    </item>
+                                </graph_item>
+                            </graph_items>
+                        </graph_prototype>
+                        <graph_prototype>
+                            <name>PV {#NAMESPACE} / {#NAME} Space</name>
+                            <ymin_type_1>FIXED</ymin_type_1>
+                            <graph_items>
+                                <graph_item>
+                                    <sortorder>1</sortorder>
+                                    <color>2E7D32</color>
+                                    <calc_fnc>MAX</calc_fnc>
+                                    <item>
+                                        <host>Custom - Service - Kubernetes</host>
+                                        <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},capacityBytes]</key>
+                                    </item>
+                                </graph_item>
+                                <graph_item>
+                                    <sortorder>2</sortorder>
+                                    <color>F63100</color>
+                                    <calc_fnc>MAX</calc_fnc>
+                                    <item>
+                                        <host>Custom - Service - Kubernetes</host>
+                                        <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},usedBytesPercentage]</key>
+                                    </item>
+                                </graph_item>
+                                <graph_item>
+                                    <sortorder>3</sortorder>
+                                    <drawtype>BOLD_LINE</drawtype>
+                                    <color>2774A4</color>
+                                    <yaxisside>RIGHT</yaxisside>
+                                    <calc_fnc>MAX</calc_fnc>
+                                    <item>
+                                        <host>Custom - Service - Kubernetes</host>
+                                        <key>check_kubernetesd[get,pvs,{#NAMESPACE},{#NAME},usedBytesPercentage]</key>
+                                    </item>
+                                </graph_item>
+                            </graph_items>
+                        </graph_prototype>
+                    </graph_prototypes>
+                </discovery_rule>
+                <discovery_rule>
                     <name>Custom - Service - Kubernetes - Services</name>
                     <type>TRAP</type>
                     <key>check_kubernetesd[discover,services]</key>
@@ -772,6 +972,26 @@
                     <value>default</value>
                 </macro>
                 <macro>
+                    <macro>{$DISK_USAGE_ABOVE_1TB_MINFREE_GBYTES_ALARM}</macro>
+                    <value>50</value>
+                    <description>Minimum amount of disk space before alerting, overrides percentage.</description>
+                </macro>
+                <macro>
+                    <macro>{$DISK_USAGE_ABOVE_1TB_MINFREE_GBYTES_WARN}</macro>
+                    <value>50</value>
+                    <description>Minimum amount of disk space before alerting, overrides percentage.</description>
+                </macro>
+                <macro>
+                    <macro>{$DISK_USAGE_PERCENT_ALARM}</macro>
+                    <value>97</value>
+                    <description>Percentage of disk usage to accept before alert</description>
+                </macro>
+                <macro>
+                    <macro>{$DISK_USAGE_PERCENT_WARN}</macro>
+                    <value>95</value>
+                    <description>Percentage of disk usage to accept before warn</description>
+                </macro>
+                <macro>
                     <macro>{$POD_RESTART_AVERAGE_LIMIT_30M}</macro>
                     <value>2</value>
                 </macro>
@@ -784,233 +1004,320 @@
                     <value>35</value>
                 </macro>
             </macros>
-            <screens>
-                <screen>
+            <dashboards>
+                <dashboard>
                     <name>Custom - Service - Kubernetes - Deployments</name>
-                    <hsize>2</hsize>
-                    <vsize>1</vsize>
-                    <screen_items>
-                        <screen_item>
-                            <resourcetype>20</resourcetype>
-                            <style>0</style>
-                            <resource>
-                                <name>Deployment {#NAMESPACE} / {#NAME} - Replicas</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <width>700</width>
-                            <height>300</height>
-                            <x>0</x>
-                            <y>0</y>
-                            <colspan>1</colspan>
-                            <rowspan>1</rowspan>
-                            <elements>0</elements>
-                            <valign>1</valign>
-                            <halign>0</halign>
-                            <dynamic>0</dynamic>
-                            <sort_triggers>0</sort_triggers>
-                            <url/>
-                            <application/>
-                            <max_columns>1</max_columns>
-                        </screen_item>
-                        <screen_item>
-                            <resourcetype>20</resourcetype>
-                            <style>0</style>
-                            <resource>
-                                <name>Deployment {#NAMESPACE} / {#NAME} - Misc</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <width>700</width>
-                            <height>300</height>
-                            <x>1</x>
-                            <y>0</y>
-                            <colspan>1</colspan>
-                            <rowspan>1</rowspan>
-                            <elements>0</elements>
-                            <valign>1</valign>
-                            <halign>0</halign>
-                            <dynamic>0</dynamic>
-                            <sort_triggers>0</sort_triggers>
-                            <url/>
-                            <application/>
-                            <max_columns>1</max_columns>
-                        </screen_item>
-                    </screen_items>
-                </screen>
-                <screen>
+                    <widgets>
+                        <widget>
+                            <type>GRAPH_PROTOTYPE</type>
+                            <width>12</width>
+                            <height>7</height>
+                            <fields>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>columns</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>rows</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>source_type</name>
+                                    <value>2</value>
+                                </field>
+                                <field>
+                                    <type>GRAPH_PROTOTYPE</type>
+                                    <name>graphid</name>
+                                    <value>
+                                        <name>Deployment {#NAMESPACE} / {#NAME} - Replicas</name>
+                                        <host>Custom - Service - Kubernetes</host>
+                                    </value>
+                                </field>
+                            </fields>
+                        </widget>
+                        <widget>
+                            <type>GRAPH_PROTOTYPE</type>
+                            <x>12</x>
+                            <width>12</width>
+                            <height>7</height>
+                            <fields>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>columns</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>rows</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>source_type</name>
+                                    <value>2</value>
+                                </field>
+                                <field>
+                                    <type>GRAPH_PROTOTYPE</type>
+                                    <name>graphid</name>
+                                    <value>
+                                        <name>Deployment {#NAMESPACE} / {#NAME} - Misc</name>
+                                        <host>Custom - Service - Kubernetes</host>
+                                    </value>
+                                </field>
+                            </fields>
+                        </widget>
+                    </widgets>
+                </dashboard>
+                <dashboard>
                     <name>Custom - Service - Kubernetes - Global</name>
-                    <hsize>1</hsize>
-                    <vsize>1</vsize>
-                    <screen_items>
-                        <screen_item>
-                            <resourcetype>0</resourcetype>
-                            <style>0</style>
-                            <resource>
-                                <name>Services</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <width>900</width>
-                            <height>300</height>
-                            <x>0</x>
-                            <y>0</y>
-                            <colspan>1</colspan>
-                            <rowspan>1</rowspan>
-                            <elements>0</elements>
-                            <valign>0</valign>
-                            <halign>0</halign>
-                            <dynamic>0</dynamic>
-                            <sort_triggers>0</sort_triggers>
-                            <url/>
-                            <application/>
-                            <max_columns>3</max_columns>
-                        </screen_item>
-                    </screen_items>
-                </screen>
-                <screen>
+                    <widgets>
+                        <widget>
+                            <type>GRAPH_CLASSIC</type>
+                            <width>24</width>
+                            <height>7</height>
+                            <fields>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>source_type</name>
+                                    <value>0</value>
+                                </field>
+                                <field>
+                                    <type>GRAPH</type>
+                                    <name>graphid</name>
+                                    <value>
+                                        <name>Services</name>
+                                        <host>Custom - Service - Kubernetes</host>
+                                    </value>
+                                </field>
+                            </fields>
+                        </widget>
+                    </widgets>
+                </dashboard>
+                <dashboard>
+                    <name>Custom - Service - Kubernetes - Namespaces - PVCs</name>
+                    <widgets>
+                        <widget>
+                            <type>GRAPH_PROTOTYPE</type>
+                            <width>24</width>
+                            <height>8</height>
+                            <fields>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>columns</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>GRAPH_PROTOTYPE</type>
+                                    <name>graphid</name>
+                                    <value>
+                                        <name>PV {#NAMESPACE} / {#NAME} Space</name>
+                                        <host>Custom - Service - Kubernetes</host>
+                                    </value>
+                                </field>
+                            </fields>
+                        </widget>
+                        <widget>
+                            <type>GRAPH_PROTOTYPE</type>
+                            <y>8</y>
+                            <width>24</width>
+                            <height>8</height>
+                            <fields>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>columns</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>GRAPH_PROTOTYPE</type>
+                                    <name>graphid</name>
+                                    <value>
+                                        <name>PV {#NAMESPACE} / {#NAME} iNodes</name>
+                                        <host>Custom - Service - Kubernetes</host>
+                                    </value>
+                                </field>
+                            </fields>
+                        </widget>
+                    </widgets>
+                </dashboard>
+                <dashboard>
                     <name>Custom - Service - Kubernetes - Nodes - CPUs</name>
-                    <hsize>1</hsize>
-                    <vsize>1</vsize>
-                    <screen_items>
-                        <screen_item>
-                            <resourcetype>20</resourcetype>
-                            <style>0</style>
-                            <resource>
-                                <name>Node {#NAME} - CPUs</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <width>900</width>
-                            <height>300</height>
-                            <x>0</x>
-                            <y>0</y>
-                            <colspan>1</colspan>
-                            <rowspan>1</rowspan>
-                            <elements>0</elements>
-                            <valign>0</valign>
-                            <halign>0</halign>
-                            <dynamic>0</dynamic>
-                            <sort_triggers>0</sort_triggers>
-                            <url/>
-                            <application/>
-                            <max_columns>1</max_columns>
-                        </screen_item>
-                    </screen_items>
-                </screen>
-                <screen>
+                    <widgets>
+                        <widget>
+                            <type>GRAPH_PROTOTYPE</type>
+                            <width>24</width>
+                            <height>7</height>
+                            <fields>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>columns</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>rows</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>source_type</name>
+                                    <value>2</value>
+                                </field>
+                                <field>
+                                    <type>GRAPH_PROTOTYPE</type>
+                                    <name>graphid</name>
+                                    <value>
+                                        <name>Node {#NAME} - CPUs</name>
+                                        <host>Custom - Service - Kubernetes</host>
+                                    </value>
+                                </field>
+                            </fields>
+                        </widget>
+                    </widgets>
+                </dashboard>
+                <dashboard>
                     <name>Custom - Service - Kubernetes - Nodes - Ephemeral-Storage</name>
-                    <hsize>1</hsize>
-                    <vsize>1</vsize>
-                    <screen_items>
-                        <screen_item>
-                            <resourcetype>20</resourcetype>
-                            <style>0</style>
-                            <resource>
-                                <name>Node {#NAME} - Ephemeral-Storage</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <width>900</width>
-                            <height>300</height>
-                            <x>0</x>
-                            <y>0</y>
-                            <colspan>1</colspan>
-                            <rowspan>1</rowspan>
-                            <elements>0</elements>
-                            <valign>0</valign>
-                            <halign>0</halign>
-                            <dynamic>0</dynamic>
-                            <sort_triggers>0</sort_triggers>
-                            <url/>
-                            <application/>
-                            <max_columns>1</max_columns>
-                        </screen_item>
-                    </screen_items>
-                </screen>
-                <screen>
+                    <widgets>
+                        <widget>
+                            <type>GRAPH_PROTOTYPE</type>
+                            <width>24</width>
+                            <height>7</height>
+                            <fields>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>columns</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>rows</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>source_type</name>
+                                    <value>2</value>
+                                </field>
+                                <field>
+                                    <type>GRAPH_PROTOTYPE</type>
+                                    <name>graphid</name>
+                                    <value>
+                                        <name>Node {#NAME} - Ephemeral-Storage</name>
+                                        <host>Custom - Service - Kubernetes</host>
+                                    </value>
+                                </field>
+                            </fields>
+                        </widget>
+                    </widgets>
+                </dashboard>
+                <dashboard>
                     <name>Custom - Service - Kubernetes - Nodes - Memory</name>
-                    <hsize>1</hsize>
-                    <vsize>1</vsize>
-                    <screen_items>
-                        <screen_item>
-                            <resourcetype>20</resourcetype>
-                            <style>0</style>
-                            <resource>
-                                <name>Node {#NAME} - Memory</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <width>900</width>
-                            <height>300</height>
-                            <x>0</x>
-                            <y>0</y>
-                            <colspan>1</colspan>
-                            <rowspan>1</rowspan>
-                            <elements>0</elements>
-                            <valign>0</valign>
-                            <halign>0</halign>
-                            <dynamic>0</dynamic>
-                            <sort_triggers>0</sort_triggers>
-                            <url/>
-                            <application/>
-                            <max_columns>1</max_columns>
-                        </screen_item>
-                    </screen_items>
-                </screen>
-                <screen>
+                    <widgets>
+                        <widget>
+                            <type>GRAPH_PROTOTYPE</type>
+                            <width>24</width>
+                            <height>7</height>
+                            <fields>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>columns</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>rows</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>source_type</name>
+                                    <value>2</value>
+                                </field>
+                                <field>
+                                    <type>GRAPH_PROTOTYPE</type>
+                                    <name>graphid</name>
+                                    <value>
+                                        <name>Node {#NAME} - Memory</name>
+                                        <host>Custom - Service - Kubernetes</host>
+                                    </value>
+                                </field>
+                            </fields>
+                        </widget>
+                    </widgets>
+                </dashboard>
+                <dashboard>
                     <name>Custom - Service - Kubernetes - Nodes - Node Pods</name>
-                    <hsize>1</hsize>
-                    <vsize>1</vsize>
-                    <screen_items>
-                        <screen_item>
-                            <resourcetype>20</resourcetype>
-                            <style>0</style>
-                            <resource>
-                                <name>Node {#NAME} - Pods</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <width>900</width>
-                            <height>300</height>
-                            <x>0</x>
-                            <y>0</y>
-                            <colspan>1</colspan>
-                            <rowspan>1</rowspan>
-                            <elements>0</elements>
-                            <valign>0</valign>
-                            <halign>0</halign>
-                            <dynamic>0</dynamic>
-                            <sort_triggers>0</sort_triggers>
-                            <url/>
-                            <application/>
-                            <max_columns>1</max_columns>
-                        </screen_item>
-                    </screen_items>
-                </screen>
-                <screen>
+                    <widgets>
+                        <widget>
+                            <type>GRAPH_PROTOTYPE</type>
+                            <width>24</width>
+                            <height>7</height>
+                            <fields>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>columns</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>rows</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>source_type</name>
+                                    <value>2</value>
+                                </field>
+                                <field>
+                                    <type>GRAPH_PROTOTYPE</type>
+                                    <name>graphid</name>
+                                    <value>
+                                        <name>Node {#NAME} - Pods</name>
+                                        <host>Custom - Service - Kubernetes</host>
+                                    </value>
+                                </field>
+                            </fields>
+                        </widget>
+                    </widgets>
+                </dashboard>
+                <dashboard>
                     <name>Custom - Service - Kubernetes - Nodes - Pods</name>
-                    <hsize>1</hsize>
-                    <vsize>1</vsize>
-                    <screen_items>
-                        <screen_item>
-                            <resourcetype>20</resourcetype>
-                            <style>0</style>
-                            <resource>
-                                <name>Pod {#NAMESPACE} / {#NAME} - Launch Statistics</name>
-                                <host>Custom - Service - Kubernetes</host>
-                            </resource>
-                            <width>900</width>
-                            <height>300</height>
-                            <x>0</x>
-                            <y>0</y>
-                            <colspan>1</colspan>
-                            <rowspan>1</rowspan>
-                            <elements>0</elements>
-                            <valign>0</valign>
-                            <halign>0</halign>
-                            <dynamic>0</dynamic>
-                            <sort_triggers>0</sort_triggers>
-                            <url/>
-                            <application/>
-                            <max_columns>1</max_columns>
-                        </screen_item>
-                    </screen_items>
-                </screen>
-            </screens>
+                    <widgets>
+                        <widget>
+                            <type>GRAPH_PROTOTYPE</type>
+                            <width>24</width>
+                            <height>7</height>
+                            <fields>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>columns</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>rows</name>
+                                    <value>1</value>
+                                </field>
+                                <field>
+                                    <type>INTEGER</type>
+                                    <name>source_type</name>
+                                    <value>2</value>
+                                </field>
+                                <field>
+                                    <type>GRAPH_PROTOTYPE</type>
+                                    <name>graphid</name>
+                                    <value>
+                                        <name>Pod {#NAMESPACE} / {#NAME} - Launch Statistics</name>
+                                        <host>Custom - Service - Kubernetes</host>
+                                    </value>
+                                </field>
+                            </fields>
+                        </widget>
+                    </widgets>
+                </dashboard>
+            </dashboards>
         </template>
     </templates>
     <graphs>

@@ -57,7 +57,14 @@ def get_pvc_data(api, node, timeout_seconds):
                 'item': volume
             }
             data['item']['nodename'] = node
-            for key in ['name', 'pvcRef', 'time']:
+
+            data['item']['usedBytesPercentage'] = float(float(
+                data['item']['usedBytes'] / data['item']['capacityBytes'])) * 100
+
+            data['item']['inodesUsedPercentage'] = float(float(
+                data['item']['inodesUsed'] / data['item']['inodesBytes'])) * 100
+
+            for key in ['name', 'pvcRef', 'time', 'availableBytes', 'inodesFree']:
                 data['item'].pop(key, None)
             pvc_volumes.append(data)
     return pvc_volumes
