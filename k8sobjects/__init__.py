@@ -2,6 +2,7 @@ from .deployment import *
 from .daemonset import *
 from .ingress import *
 from .node import *
+from .pvc import *
 from .pod import *
 from .service import *
 from .statefulset import *

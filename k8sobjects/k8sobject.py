@@ -20,6 +20,7 @@ K8S_RESOURCES = dict(
     containers='container',
     secrets='secret',
     ingresses='ingress',
+    pvcs='pvc'
 )
 
 

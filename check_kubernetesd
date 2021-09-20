@@ -18,7 +18,8 @@ from k8s_zabbix_base.daemon_thread import CheckKubernetesDaemon, str2bool
 
 KNOWN_ACTIONS = ['discover', 'get']
 
-formatter = logging.Formatter('%(asctime)s - %(threadName)s : {%(pathname)s:%(lineno)d} : %(levelname)s : %(name)s - %(message)s')
+formatter = logging.Formatter(
+    '%(asctime)s - %(threadName)s : {%(pathname)s:%(lineno)d} : %(levelname)s : %(name)s - %(message)s')
 stream = logging.StreamHandler(sys.stdout)
 stream.setFormatter(formatter)
 
@@ -95,7 +96,6 @@ if __name__ == '__main__':
     zabbix_resources_exclude = to_array(config.zabbix_resources_exclude)
     resources_exclude = to_array(config.resources_exclude)
 
-    # ['nodes', 'secrets']
     mgmt_daemon = CheckKubernetesDaemon(config, config_name,
                                         ['nodes'],
                                         resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     daemons.append(mgmt_daemon)
 
     daemons.append(CheckKubernetesDaemon(config, config_name,
-                                         ['components', 'services'],
+                                         ['components', 'services', 'pvcs'],
                                          resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
                                          config.discovery_interval_slow, config.resend_data_interval_fast))
 
@@ -116,9 +116,11 @@ if __name__ == '__main__':
         for daemon in daemons:
             daemon.debug_k8s_events = True
 
+
     # SIGNAL processing
     def _signal_handler(signum, *args):
         mgmt_daemon.handler(signum)
+
 
     def stacktraces_and_terminate(signum, frame):
         print("#" * 80)
