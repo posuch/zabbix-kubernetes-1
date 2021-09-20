@@ -213,8 +213,7 @@ class CheckKubernetesDaemon:
             send_discovery_thread = TimedThread(resource, self.discovery_interval, exit_flag,
                                                 daemon=self, daemon_method='send_zabbix_discovery',
                                                 delay_first_run=True,
-                                                # TODO: revert to 30
-                                                delay_first_run_seconds=3)
+                                                delay_first_run_seconds=30)
             self.manage_threads.append(send_discovery_thread)
             send_discovery_thread.start()
 
@@ -223,8 +222,7 @@ class CheckKubernetesDaemon:
             resend_thread = TimedThread(resource, self.data_resend_interval, exit_flag,
                                         daemon=self, daemon_method='resend_data',
                                         delay_first_run=True,
-                                        # TODO: revert to 60
-                                        delay_first_run_seconds=6,
+                                        delay_first_run_seconds=60,
                                         )
             self.manage_threads.append(resend_thread)
             resend_thread.start()
