@@ -2,9 +2,10 @@
 \#*
 lib/__pycache__/*
 *.pyc
+.git
 .idea
-configd_*
+.pytest_cache
 *.swp
 venv/*
 *.log
-test*.py
+config*.py

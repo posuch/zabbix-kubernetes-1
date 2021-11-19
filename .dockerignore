@@ -6,4 +6,4 @@ build.sh
 .gitignore
 kubernetes/*
 venv/*
-configd_*
+config_*

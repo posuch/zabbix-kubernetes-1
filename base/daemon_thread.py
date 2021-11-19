@@ -70,15 +70,21 @@ class CheckKubernetesDaemon:
         self.api_zabbix_interval = 60
         self.rate_limit_seconds = 30
 
-        if hasattr(config, "k8s_use_kube_config") and str2bool(config.k8s_use_kube_config):
+        if hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "incluster":
+            kube_config.load_incluster_config()
+        elif hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "kubeconfig":
             kube_config.load_kube_config()
             self.api_client = kube_config.new_client_from_config()
-        else:
+        elif hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "token":
             self.api_configuration = client.Configuration()
             self.api_configuration.host = config.k8s_api_host
             self.api_configuration.verify_ssl = str2bool(config.verify_ssl)
             self.api_configuration.api_key = {"authorization": "Bearer " + config.k8s_api_token}
             self.api_client = client.ApiClient(self.api_configuration)
+        else:
+            self.logger.fatal(
+                f"k8s_config_type = {config.k8s_config_type} is not valid user incluster, kubeconfig or token")
+            sys.exit(1)
 
         # K8S API
         self.debug_k8s_events = False

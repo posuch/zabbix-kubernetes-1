@@ -1,6 +1,4 @@
-k8s_use_kube_config = False
-k8s_api_host = 'https://example.kube-apiserver.com'
-k8s_api_token = ''
+k8s_config_type = "kubeconfig"
 verify_ssl = True
 debug = False
 debug_k8s_events = False
