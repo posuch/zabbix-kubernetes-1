@@ -59,7 +59,7 @@ test_container(){
    IDENT="${IMAGE_NAME}_test"
    docker kill $IDENT
    docker rm $IDENT
-   exec_cmd "docker run --rm --env ZABBIX_SERVER='localhost' --env ZABBIX_HOST='localhost' -d --name $IDENT ${IMAGE_BASE} config_default"
+   exec_cmd "docker run --rm --env ZABBIX_SERVER='localhost' --env ZABBIX_HOST='localhost' -d --name $IDENT ${IMAGE_BASE} template_config_token"
    sleep 10
    echo "====== DOCKER LOGS"
    docker logs --until=50s $IDENT
