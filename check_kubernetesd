@@ -14,7 +14,7 @@ import signal
 import sys
 import sentry_sdk
 import time
-from k8s_zabbix_base.daemon_thread import CheckKubernetesDaemon, str2bool
+from base.daemon_thread import CheckKubernetesDaemon, str2bool
 
 KNOWN_ACTIONS = ['discover', 'get']
 

@@ -1,7 +1,6 @@
 import logging
 
-from pyzabbix import ZabbixMetric
-from .k8sobject import K8sObject, transform_value
+from .k8sobject import K8sObject
 
 logger = logging.getLogger(__name__)
 
@@ -17,4 +16,4 @@ class Ingress(K8sObject):
     def get_zabbix_metrics(self):
         data = self.resource_data
         data_to_send = list()
-        return data_to_send
+        return data

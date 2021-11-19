@@ -46,7 +46,7 @@ spec:
              - name: "WEB_API_TOKEN"
                value: "17812110692887024374221963068327794883098412835131004"
              # The name of the k8s cluster in the management system
-             - name: "web_api_cluster"
+             - name: "WEB_API_CLUSTER"
                value: "k8s-test-cluster"
           imagePullPolicy: Always
           resources:

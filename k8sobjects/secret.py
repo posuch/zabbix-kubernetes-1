@@ -1,12 +1,12 @@
 import base64
-import logging
 import datetime
+import logging
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-
 from pyzabbix import ZabbixMetric
-from .k8sobject import K8sObject, transform_value
+
+from .k8sobject import K8sObject
 
 logger = logging.getLogger(__name__)
 

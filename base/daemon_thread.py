@@ -10,8 +10,8 @@ from kubernetes import client, watch
 from kubernetes import config as kube_config
 from pyzabbix import ZabbixMetric, ZabbixSender
 
-from k8s_zabbix_base.timed_threads import TimedThread
-from k8s_zabbix_base.watcher_thread import WatcherThread
+from base.timed_threads import TimedThread
+from base.watcher_thread import WatcherThread
 from k8sobjects import get_node_names
 from k8sobjects.container import get_container_zabbix_metrics
 from k8sobjects.k8sobject import K8sResourceManager
