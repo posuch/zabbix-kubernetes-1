@@ -72,6 +72,7 @@ class CheckKubernetesDaemon:
 
         if hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "incluster":
             kube_config.load_incluster_config()
+            self.api_client = client.ApiClient()
         elif hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "kubeconfig":
             kube_config.load_kube_config()
             self.api_client = kube_config.new_client_from_config()
