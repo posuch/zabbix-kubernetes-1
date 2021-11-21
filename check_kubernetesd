@@ -14,6 +14,8 @@ import signal
 import sys
 import sentry_sdk
 import time
+
+from base.config import Configuration
 from base.daemon_thread import CheckKubernetesDaemon, str2bool
 
 KNOWN_ACTIONS = ['discover', 'get']
@@ -50,21 +52,12 @@ if __name__ == '__main__':
 
     config_name = remaining_args[0]
     try:
-        config_name = re.sub(r"\.py", "", config_name)
-        config = importlib.import_module(config_name)
+        config = Configuration()
+        config.load_config_file()
+        config.load_from_environment_variables()
     except ImportError:
-        print("config file %s.py not found. ABORTING!" % config_name)
+        print(f"config file {config_name} not found. ABORTING!")
         sys.exit(1)
-
-    defaults_file = os.path.realpath(os.path.dirname(sys.argv[0])) + "/" + config_name + ".py"
-    with open(defaults_file, 'r') as fh:
-        content_lines = fh.read().split('\n')
-
-    for key, val in [x.split('=') for x in content_lines if x]:
-        key = key.strip()
-        if key.upper() in os.environ and os.environ[key.upper()] != "":
-            print("setting %s by environment variable %s" % (key, key.upper()))
-            setattr(config, key, os.environ[key.upper()])
 
     if str2bool(config.sentry_enabled):
         logger.info("starting with sentry DSN %s" % config.sentry_dsn)

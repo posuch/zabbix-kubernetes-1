@@ -38,4 +38,4 @@ type-check: deps
 .PHONY: type-check
 
 test: deps
-	${activate} && python3 -m pytest
+	${activate} && python3 -m pytest tests

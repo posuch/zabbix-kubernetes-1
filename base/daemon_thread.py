@@ -35,10 +35,7 @@ def get_discovery_timeout_datetime():
     return datetime.now() - timedelta(hours=1)
 
 
-def str2bool(v: Union[str, bool]):
-    if isinstance(v, bool):
-        return v
-    return v.lower() in ("yes", "true", "t", "1")
+
 
 
 class KubernetesApi:
