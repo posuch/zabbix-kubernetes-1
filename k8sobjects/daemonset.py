@@ -15,5 +15,4 @@ class Daemonset(K8sObject):
 
     def get_zabbix_metrics(self):
         data = self.resource_data
-        data_to_send = list()
-        return data_to_send
+        return data

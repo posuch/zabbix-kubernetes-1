@@ -6,10 +6,11 @@ import time
 class TimedThread(threading.Thread):
     stop_thread = False
     restart_thread = False
-    daemon = None
+    daemon: bool = False
 
     # TODO: change default of delay_first_run_seconds to 120 seconds
-    def __init__(self, resource, interval, exit_flag, daemon, daemon_method, delay_first_run=False,
+    def __init__(self, resource, interval, exit_flag, daemon, daemon_method,
+                 delay_first_run=False,
                  delay_first_run_seconds=60):
         self.cycle_interval_seconds = interval
         self.exit_flag = exit_flag

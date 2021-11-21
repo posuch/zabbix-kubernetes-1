@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 from datetime import datetime, timedelta
+from typing import Dict
 
 from kubernetes import client, watch
 from kubernetes import config as kube_config
@@ -54,7 +55,7 @@ class KubernetesApi:
 
 
 class CheckKubernetesDaemon:
-    data = {'zabbix_discovery_sent': {}}
+    data: Dict[str, Dict] = {'zabbix_discovery_sent': {}}
     thread_lock = threading.Lock()
 
     def __init__(self, config, config_name,
