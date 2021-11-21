@@ -50,6 +50,7 @@ build_image(){
    else
       SQUASH_OPT=""
    fi
+
    exec_cmd "docker build $SQUASH_OPT -t ${IMAGE_BASE} -f Dockerfile ."
    SIZE="$(docker inspect $IMAGE_BASE --format='{{.Size}}')"
    notice "Image size $(( $SIZE / 1024 / 1024 ))MB"
@@ -57,8 +58,8 @@ build_image(){
 
 test_container(){
    IDENT="${IMAGE_NAME}_test"
-   docker kill $IDENT
-   docker rm $IDENT
+   docker kill $IDENT &> /dev/null
+   docker rm $IDENT &> /dev/null
    exec_cmd "docker run --rm --env ZABBIX_SERVER='localhost' --env ZABBIX_HOST='localhost' -d --name $IDENT ${IMAGE_BASE} template_config_token"
    sleep 10
    echo "====== DOCKER LOGS"
@@ -105,6 +106,7 @@ display_hint(){
     echo " -  $PHASE <repo_name>"
   done
   echo " -  publish_image (optional)"
+  echo " -  inspect (optional)"
 }
 
 

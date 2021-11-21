@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.9-alpine
 LABEL maintainer="operations@vico-research.com"
 LABEL Description="zabbix-kubernetes - efficent kubernetes monitoring for zabbix"
 
@@ -10,8 +10,8 @@ ENV ZABBIX_SERVER "zabbix"
 ENV ZABBIX_HOST "k8s"
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST "1"
 
+COPY --chown=nobody:users requirements.txt /app/requirements.txt
 
-COPY --chown=nobody:users . /app
 RUN  apk update && \
        apk add build-base libffi-dev libffi openssl-dev bash && \
        pip install --upgrade pip && \
@@ -19,6 +19,11 @@ RUN  apk update && \
        apk upgrade --update-cache --available && \
        apk del build-base openssl-dev libffi-dev && \
        rm -rf /var/cache/apk/
+
+COPY --chown=nobody:users base /app/base
+COPY --chown=nobody:users k8sobjects /app/k8sobjects
+COPY --chown=nobody:users check_kubernetesd /app/check_kubernetesd
+COPY --chown=nobody:users template_*.py /app/
 
 USER nobody
 WORKDIR /app
