@@ -5,10 +5,12 @@ import sys
 import threading
 import time
 from datetime import datetime, timedelta
-from typing import Dict
+from types import ModuleType
+from typing import Dict, List, Union
 
 from kubernetes import client, watch
 from kubernetes import config as kube_config
+from kubernetes.client import ApiClient
 from pyzabbix import ZabbixMetric, ZabbixSender
 
 from base.timed_threads import TimedThread
@@ -33,7 +35,7 @@ def get_discovery_timeout_datetime():
     return datetime.now() - timedelta(hours=1)
 
 
-def str2bool(v):
+def str2bool(v: Union[str, bool]):
     if isinstance(v, bool):
         return v
     return v.lower() in ("yes", "true", "t", "1")
@@ -44,7 +46,7 @@ class KubernetesApi:
                           apps_v1=None,
                           extensions_v1=None)
 
-    def __init__(self, api_client):
+    def __init__(self, api_client: ApiClient):
         self.__dict__ = self.__shared_state
         if not getattr(self, 'core_v1', None):
             self.core_v1 = client.CoreV1Api(api_client)
@@ -58,9 +60,10 @@ class CheckKubernetesDaemon:
     data: Dict[str, Dict] = {'zabbix_discovery_sent': {}}
     thread_lock = threading.Lock()
 
-    def __init__(self, config, config_name,
-                 resources, resources_excluded, resources_excluded_web, resources_excluded_zabbix,
-                 discovery_interval, data_resend_interval):
+    def __init__(self, config: ModuleType, config_name: str,
+                 resources: List[str], resources_excluded: List[str], resources_excluded_web: List[str],
+                 resources_excluded_zabbix: List[str],
+                 discovery_interval: int, data_resend_interval: int):
         self.manage_threads = []
 
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -77,6 +80,7 @@ class CheckKubernetesDaemon:
         elif hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "kubeconfig":
             kube_config.load_kube_config()
             self.api_client = kube_config.new_client_from_config()
+            self.api_client
         elif hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "token":
             self.api_configuration = client.Configuration()
             self.api_configuration.host = config.k8s_api_host
@@ -117,14 +121,14 @@ class CheckKubernetesDaemon:
             self.logger.info(f"WEB Api Host {self.web_api_host} with resources {','.join(self.web_api_resources)}")
 
     @staticmethod
-    def exclude_resources(available_types, excluded_types):
+    def exclude_resources(available_types: List[str], excluded_types: List[str]) -> List[str]:
         result = []
         for k8s_type_available in available_types:
             if k8s_type_available not in excluded_types:
                 result.append(k8s_type_available)
         return result
 
-    def handler(self, signum, *args):
+    def handler(self, signum: signal, *args):
         if signum in [signal.SIGTERM]:
             self.logger.info('Signal handler called with signal %s... stopping (max %s seconds)' % (signum, 3))
             exit_flag.set()

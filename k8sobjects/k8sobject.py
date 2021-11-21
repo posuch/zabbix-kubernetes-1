@@ -32,7 +32,7 @@ def json_encoder(obj):
 def transform_value(value):
     if value is None:
         return 0
-    m = re.match(r"^(\d+)Ki$", str(value))
+    m = re.match(r'^(\d+)Ki$', str(value))
     if m:
         return int(m.group(1)) * 1024
     return value

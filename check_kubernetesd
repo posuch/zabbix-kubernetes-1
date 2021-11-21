@@ -49,7 +49,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     config_name = remaining_args[0]
-
     try:
         config_name = re.sub(r"\.py", "", config_name)
         config = importlib.import_module(config_name)
