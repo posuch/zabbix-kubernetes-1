@@ -95,7 +95,7 @@ publish_image(){
 display_hint(){
   notice "CMD:"
   echo
-  echo "$0 <phase> <repo_name>"
+  echo "$0 <phase>..<phase> <dockerhub repo_name>"
   echo
   notice "AVAILABLE PHASES:"
   echo  " -  default"
@@ -108,20 +108,20 @@ display_hint(){
 }
 
 
-if [ -z "$1" ] || [ -z "$2" ];then
+if [ ${#@} -lt 2 ];then 
   display_hint
   exit 2
-else
-  PHASE="$1"
-  IMAGE_REPO="$2"
 fi
 
+IMAGE_REPO="${@: -1}"
 PHASES=""
-if [ "$PHASE" = "default" ];then
-   PHASES="$DEFAULT_PHASES"
-else
-   PHASES="$PHASE"
-fi
+for arg in "${@:1:$(( ${#@} - 1 ))}"; do
+   if [ "$arg" = "default" ];then
+      PHASES="$PHASES $DEFAULT_PHASES"
+   else
+      PHASES="$PHASES $arg"
+   fi
+done
 
 IMAGE_NAME="k8s-zabbix"
 IMAGE_BASE="${IMAGE_REPO}/${IMAGE_NAME}:${VERSION}"
