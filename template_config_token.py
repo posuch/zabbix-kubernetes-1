@@ -5,6 +5,7 @@ verify_ssl = True
 debug = False
 debug_k8s_events = False
 resources_exclude = []
+namespace_exclude_re = None
 
 sentry_enabled = False
 sentry_dsn = ""

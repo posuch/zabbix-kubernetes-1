@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import signal
 import sys
 import threading
@@ -63,9 +64,10 @@ class CheckKubernetesDaemon:
     def __init__(self, config: ModuleType, config_name: str,
                  resources: List[str], resources_excluded: List[str], resources_excluded_web: List[str],
                  resources_excluded_zabbix: List[str],
-                 discovery_interval: int, data_resend_interval: int):
+                 discovery_interval: int, data_resend_interval: int,
+                 ):
         self.manage_threads = []
-
+        self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
         self.config_name = config_name
         self.discovery_interval = int(discovery_interval)
@@ -80,7 +82,6 @@ class CheckKubernetesDaemon:
         elif hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "kubeconfig":
             kube_config.load_kube_config()
             self.api_client = kube_config.new_client_from_config()
-            self.api_client
         elif hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "token":
             self.api_configuration = client.Configuration()
             self.api_configuration.host = config.k8s_api_host
@@ -309,9 +310,17 @@ class CheckKubernetesDaemon:
             self.logger.debug("Watch/fetch completed for resource >>>%s<<<, restarting" % resource)
 
     def watch_event_handler(self, resource, event):
-        event_type = event['type']
+
         obj = event['object'].to_dict()
-        self.logger.debug(event_type + ' [' + resource + ']: ' + obj['metadata']['name'])
+        event_type = event['type']
+        name = obj['metadata']['name']
+        namespace = str(obj['metadata']['namespace'])
+
+        if self.config.namespace_exclude_re and re.match(self.config.namespace_exclude_re, namespace):
+            self.logger.debug(f"skip namespace {namespace}")
+            return
+
+        self.logger.debug(f"{event_type} [{resource}]: {namespace}/{name}")
         with self.thread_lock:
             if not self.data[resource].resource_class:
                 self.logger.error('Could not add watch_event_handler! No resource_class for "%s"' % resource)
