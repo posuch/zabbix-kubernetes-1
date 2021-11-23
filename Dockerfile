@@ -13,7 +13,7 @@ ENV CRYPTOGRAPHY_DONT_BUILD_RUST "1"
 COPY --chown=nobody:users requirements.txt /app/requirements.txt
 
 RUN  apk update && \
-       apk add build-base libffi-dev libffi openssl-dev bash && \
+       apk add build-base libffi-dev libffi openssl-dev bash screen && \
        pip install --upgrade pip && \
        pip install -r /app/requirements.txt && \
        apk upgrade --update-cache --available && \

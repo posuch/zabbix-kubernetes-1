@@ -12,6 +12,8 @@ import os
 import re
 import signal
 import sys
+
+import coloredlogs as coloredlogs
 import sentry_sdk
 import time
 
@@ -24,6 +26,8 @@ formatter = logging.Formatter(
     '%(asctime)s - %(threadName)s : {%(pathname)s:%(lineno)d} : %(levelname)s : %(name)s - %(message)s')
 stream = logging.StreamHandler(sys.stdout)
 stream.setFormatter(formatter)
+
+coloredlogs.install()
 
 logger = logging.getLogger()
 
@@ -103,8 +107,9 @@ if __name__ == '__main__':
 
     daemons.append(
         CheckKubernetesDaemon(config, config_name,
-                              # ['deployments', 'statefulsets', 'daemonsets', 'pods', 'containers', 'ingresses'],
-                              ['deployments', 'statefulsets', 'pods', 'containers'],
+                              # ['deployments', 'statefulsets', 'daemonsets', 'pods', 'containers',
+                              # 'ingresses', 'containers', 'pods'],
+                              ['deployments', 'statefulsets'],
                               resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
                               config.discovery_interval_slow, config.resend_data_interval_slow))
 

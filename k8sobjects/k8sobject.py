@@ -4,6 +4,7 @@ import importlib
 import hashlib
 import json
 import logging
+from typing import Union
 
 from pyzabbix import ZabbixMetric
 
@@ -24,17 +25,23 @@ K8S_RESOURCES = dict(
 )
 
 
-def json_encoder(obj):
+def json_encoder(obj: datetime):
     if isinstance(obj, (datetime.date, datetime.datetime)):
         return obj.isoformat()
 
 
-def transform_value(value):
+def transform_value(value: str) -> str:
     if value is None:
         return 0
-    m = re.match(r'^(\d+)Ki$', str(value))
+    m = re.match(r'^(\d+)(Ki)$', str(value))
     if m:
-        return int(m.group(1)) * 1024
+        if m.group(2) == "Ki":
+            return str(int(float(m.group(1)) * 1024))
+
+    m = re.match(r'^(\d+)(m)$', str(value))
+    if m:
+        if m.group(2) == "m":
+            return str(float(m.group(1)) / 1000)
     return value
 
 
