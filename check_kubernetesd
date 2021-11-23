@@ -110,8 +110,9 @@ if __name__ == '__main__':
 
     daemons.append(
         CheckKubernetesDaemon(config, config_name,
-                              # ['deployments', 'statefulsets', 'daemonsets', 'pods', 'containers', 'ingresses'],
-                              ['deployments', 'statefulsets', 'pods', 'containers'],
+                              # ['deployments', 'statefulsets', 'daemonsets', 'pods', 'containers',
+                              # 'ingresses', 'containers', 'pods'],
+                              ['deployments', 'statefulsets'],
                               resources_exclude, web_api_resources_exclude, zabbix_resources_exclude,
                               config.discovery_interval_slow, config.resend_data_interval_slow))
 
