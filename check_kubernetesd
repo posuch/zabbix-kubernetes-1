@@ -12,6 +12,8 @@ import os
 import re
 import signal
 import sys
+
+import coloredlogs as coloredlogs
 import sentry_sdk
 import time
 from base.daemon_thread import CheckKubernetesDaemon, str2bool
@@ -22,6 +24,8 @@ formatter = logging.Formatter(
     '%(asctime)s - %(threadName)s : {%(pathname)s:%(lineno)d} : %(levelname)s : %(name)s - %(message)s')
 stream = logging.StreamHandler(sys.stdout)
 stream.setFormatter(formatter)
+
+coloredlogs.install()
 
 logger = logging.getLogger()
 

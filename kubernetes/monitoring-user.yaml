@@ -23,6 +23,7 @@ rules:
   resources:
   - pods
   - nodes
+  - nodes/proxy
   - services
   - componentstatuses
   - secrets
