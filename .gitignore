@@ -8,4 +8,4 @@ lib/__pycache__/*
 *.swp
 venv/*
 *.log
-config*.py
+/config*.py
