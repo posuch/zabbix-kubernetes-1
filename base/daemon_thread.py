@@ -289,7 +289,9 @@ class CheckKubernetesDaemon:
             elif resource == 'pvcs':
                 with self.thread_lock:
                     for node in get_node_names(api):
-                        for pvc_volume in get_pvc_data(api, node, timeout_seconds=timeout):
+                        for pvc_volume in get_pvc_data(api, node,
+                                                       timeout_seconds=timeout,
+                                                       namespace_exclude_re=self.config.namespace_exclude_re):
                             self.data[resource].add_obj(pvc_volume)
                 time.sleep(self.data_resend_interval)
             elif resource == 'ingresses':

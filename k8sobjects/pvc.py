@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 from pyzabbix import ZabbixMetric
 
@@ -8,7 +9,7 @@ from .k8sobject import K8sObject
 logger = logging.getLogger(__name__)
 
 
-def get_pvc_data(api, node, timeout_seconds):
+def get_pvc_data(api, node, timeout_seconds: str, namespace_exclude_re: str):
     query_params = []
     form_params = []
     header_params = {}
@@ -45,29 +46,38 @@ def get_pvc_data(api, node, timeout_seconds):
     for item in loaded_json['pods']:
         if "volume" not in item:
             continue
-        for volume in item['volume']:
-            if 'pvcRef' not in volume:
-                continue
-            namespace = volume['pvcRef']['namespace']
-            name = volume['pvcRef']['name']
-            data = {
-                'metadata': {
-                    'name': name,
-                    'namespace': namespace
-                },
-                'item': volume
-            }
-            data['item']['nodename'] = node
+        pvc_volumes = _check_volume(item, namespace_exclude_re, node, pvc_volumes)
+    return pvc_volumes
 
-            data['item']['usedBytesPercentage'] = float(float(
-                data['item']['usedBytes'] / data['item']['capacityBytes'])) * 100
 
-            data['item']['inodesUsedPercentage'] = float(float(
-                data['item']['inodesUsed'] / data['item']['inodes'])) * 100
+def _check_volume(item, namespace_exclude_re, node, pvc_volumes):
+    for volume in item['volume']:
+        if 'pvcRef' not in volume:
+            continue
 
-            for key in ['name', 'pvcRef', 'time', 'availableBytes', 'inodesFree']:
-                data['item'].pop(key, None)
-            pvc_volumes.append(data)
+        namespace = volume['pvcRef']['namespace']
+        if namespace_exclude_re and re.match(namespace_exclude_re, namespace):
+            continue
+
+        name = volume['pvcRef']['name']
+        data = {
+            'metadata': {
+                'name': name,
+                'namespace': namespace
+            },
+            'item': volume
+        }
+        data['item']['nodename'] = node
+
+        data['item']['usedBytesPercentage'] = float(float(
+            data['item']['usedBytes'] / data['item']['capacityBytes'])) * 100
+
+        data['item']['inodesUsedPercentage'] = float(float(
+            data['item']['inodesUsed'] / data['item']['inodes'])) * 100
+
+        for key in ['name', 'pvcRef', 'time', 'availableBytes', 'inodesFree']:
+            data['item'].pop(key, None)
+        pvc_volumes.append(data)
     return pvc_volumes
 
 
