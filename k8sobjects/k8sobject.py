@@ -1,10 +1,9 @@
-import re
 import datetime
-import importlib
 import hashlib
+import importlib
 import json
 import logging
-from typing import Union
+import re
 
 from pyzabbix import ZabbixMetric
 

@@ -472,6 +472,8 @@ class CheckKubernetesDaemon:
                 metric = obj.get_discovery_for_zabbix(data)
                 self.logger.debug('sending discovery for [%s]: %s' % (resource, metric))
                 self.send_discovery_to_zabbix(resource, metric=[metric])
+            else:
+                self.logger.debug('no discovery data for %s' % resource)
 
             self.data['zabbix_discovery_sent'][resource] = datetime.now()
 
@@ -527,12 +529,13 @@ class CheckKubernetesDaemon:
 
     def send_discovery_to_zabbix(self, resource, metric=None, obj=None):
         if resource not in self.zabbix_resources:
+            self.logger.warning(f'resource {resource} ist not activated')
             return
 
         if obj:
             discovery_data = obj.get_discovery_for_zabbix()
             if not discovery_data:
-                self.logger.debug('No discovery_data for obj %s, not sending to zabbix!' % obj.uid)
+                self.logger.warning('No discovery_data for obj %s, not sending to zabbix!' % obj.uid)
                 return
 
             discovery_key = 'check_kubernetesd[discover,' + resource + ']'
