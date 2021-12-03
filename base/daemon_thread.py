@@ -14,6 +14,7 @@ from kubernetes import config as kube_config
 from kubernetes.client import ApiClient
 from pyzabbix import ZabbixMetric, ZabbixSender
 
+from base.config import Configuration
 from base.timed_threads import TimedThread
 from base.watcher_thread import WatcherThread
 from k8sobjects import get_node_names
@@ -58,31 +59,30 @@ class CheckKubernetesDaemon:
     data: Dict[str, Dict] = {'zabbix_discovery_sent': {}}
     thread_lock = threading.Lock()
 
-    def __init__(self, config: ModuleType, config_name: str,
+    def __init__(self, config: Configuration,
                  resources: List[str], resources_excluded: List[str], resources_excluded_web: List[str],
                  resources_excluded_zabbix: List[str],
                  discovery_interval: int, data_resend_interval: int,
                  ):
         self.manage_threads = []
         self.config = config
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.config_name = config_name
+        self.logger = logging.getLogger(__file__)
         self.discovery_interval = int(discovery_interval)
         self.data_resend_interval = int(data_resend_interval)
 
         self.api_zabbix_interval = 60
         self.rate_limit_seconds = 30
 
-        if hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "incluster":
+        if config.k8s_config_type.lower() == "incluster":
             kube_config.load_incluster_config()
             self.api_client = client.ApiClient()
-        elif hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "kubeconfig":
+        elif config.k8s_config_type.lower() == "kubeconfig":
             kube_config.load_kube_config()
             self.api_client = kube_config.new_client_from_config()
-        elif hasattr(config, "k8s_config_type") and config.k8s_config_type.lower() == "token":
+        elif config.k8s_config_type.lower() == "token":
             self.api_configuration = client.Configuration()
             self.api_configuration.host = config.k8s_api_host
-            self.api_configuration.verify_ssl = str2bool(config.verify_ssl)
+            self.api_configuration.verify_ssl = config.verify_ssl
             self.api_configuration.api_key = {"authorization": "Bearer " + config.k8s_api_token}
             self.api_client = client.ApiClient(self.api_configuration)
         else:
@@ -99,17 +99,17 @@ class CheckKubernetesDaemon:
         self.zabbix_sender = ZabbixSender(zabbix_server=config.zabbix_server)
         self.zabbix_resources = CheckKubernetesDaemon.exclude_resources(resources, resources_excluded_zabbix)
         self.zabbix_host = config.zabbix_host
-        self.zabbix_debug = str2bool(config.zabbix_debug)
-        self.zabbix_single_debug = str2bool(config.zabbix_single_debug)
-        self.zabbix_dry_run = str2bool(config.zabbix_dry_run)
+        self.zabbix_debug = config.zabbix_debug
+        self.zabbix_single_debug = config.zabbix_single_debug
+        self.zabbix_dry_run = config.zabbix_dry_run
 
-        self.web_api_enable = str2bool(config.web_api_enable)
+        self.web_api_enable = config.web_api_enable
         self.web_api_resources = CheckKubernetesDaemon.exclude_resources(resources, resources_excluded_web)
 
         self.web_api_host = config.web_api_host
         self.web_api_token = config.web_api_token
         self.web_api_cluster = config.web_api_cluster
-        self.web_api_verify_ssl = str2bool(config.web_api_verify_ssl)
+        self.web_api_verify_ssl = config.web_api_verify_ssl
 
         self.resources = CheckKubernetesDaemon.exclude_resources(resources, resources_excluded)
 

@@ -1,4 +1,5 @@
 import os
+import re
 from dataclasses import dataclass, field
 from configparser import SectionProxy, ConfigParser
 from itertools import chain
@@ -45,6 +46,15 @@ class Configuration:
     discovery_interval_slow: int = 60 * 60 * 2
     resend_data_interval_slow: int = 60 * 30
 
+    def _convert_to_type(self, field_name, value):
+        if isinstance(getattr(self, field_name), bool):
+            value = str2bool(value)
+        elif isinstance(getattr(self, field_name), int):
+            value = int(value)
+        elif isinstance(getattr(self, field_name), list):
+            value = re.split(r"[\s,]+", value.strip())
+        return value
+
     def load_config_file(self, file_name: str):
         if not os.path.isfile(file_name):
             raise ValueError(f"file {file_name} does not exist")
@@ -57,11 +67,14 @@ class Configuration:
             config_ini.read_file(lines)
 
         for field_name in self.__dataclass_fields__:
-            if field_name in config_ini["top"]:
-                setattr(self, field_name, config_ini["top"][file_name])
+            if field_name not in config_ini["top"]:
+                continue
+
+            value = config_ini["top"][field_name]
+            setattr(self, field_name, self._convert_to_type(field_name, value))
 
     def load_from_environment_variables(self):
         for field_name in self.__dataclass_fields__:
             if field_name.upper() in os.environ and os.environ[field_name.upper()] != "":
                 print("setting %s by environment variable %s" % (field_name, field_name.upper()))
-                setattr(self, field_name, os.environ[field_name.upper()])
+                setattr(self, field_name, self._convert_to_type(field_name. os.environ[field_name.upper()]))
