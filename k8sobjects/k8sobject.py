@@ -1,14 +1,13 @@
-import re
 import datetime
-import importlib
 import hashlib
+import importlib
 import json
 import logging
-from typing import Union
+import re
 
 from pyzabbix import ZabbixMetric
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
 
 K8S_RESOURCES = dict(
     nodes='node',
@@ -25,9 +24,10 @@ K8S_RESOURCES = dict(
 )
 
 
-def json_encoder(obj: datetime):
+def json_encoder(obj) -> str:
     if isinstance(obj, (datetime.date, datetime.datetime)):
         return obj.isoformat()
+    raise Exception("unable to encode")
 
 
 def transform_value(value: str) -> str:

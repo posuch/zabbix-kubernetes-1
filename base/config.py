@@ -1,7 +1,8 @@
 import os
 import re
+from configparser import ConfigParser
 from dataclasses import dataclass, field
-from configparser import SectionProxy, ConfigParser
+from enum import Enum
 from itertools import chain
 from typing import List, Union
 
@@ -12,14 +13,21 @@ def str2bool(v: Union[str, bool]):
     return v.lower() in ("yes", "true", "t", "1")
 
 
+class ClusterAccessConfigType(Enum):
+    KUBECONFIG = "kubeconfig"
+    INCLUSTER = "incluster"
+    TOKEN = "token"
+
+
 @dataclass(order=True)
 class Configuration:
-    k8s_config_type: str = "incluster"
+    k8s_config_type: ClusterAccessConfigType = ClusterAccessConfigType.INCLUSTER
     k8s_api_host: str = 'https://example.kube-apiserver.com'
     k8s_api_token: str = ''
     verify_ssl: bool = True
     debug: bool = False
     debug_k8s_events: bool = False
+    namespace_exclude_re: str = ""
     resources_exclude: List[str] = field(default_factory=lambda: [])
 
     sentry_enabled: bool = False
@@ -53,6 +61,8 @@ class Configuration:
             value = int(value)
         elif isinstance(getattr(self, field_name), list):
             value = re.split(r"[\s,]+", value.strip())
+        elif isinstance(getattr(self, field_name), ClusterAccessConfigType):
+            value = ClusterAccessConfigType(value)
         return value
 
     def load_config_file(self, file_name: str):
@@ -62,11 +72,11 @@ class Configuration:
         config_ini = ConfigParser(inline_comment_prefixes="#")
 
         # fake a "top" section because configparser wants mandatory sections
-        with open(file_name) as lines:
-            lines = chain(("[top]",), lines)  # This line does the trick.
+        with open(file_name) as lines_io:
+            lines = chain(["[top]"], lines_io.readlines())
             config_ini.read_file(lines)
 
-        for field_name in self.__dataclass_fields__:
+        for field_name in self.__dataclass_fields__:  # type: ignore
             if field_name not in config_ini["top"]:
                 continue
 
@@ -77,4 +87,4 @@ class Configuration:
         for field_name in self.__dataclass_fields__:
             if field_name.upper() in os.environ and os.environ[field_name.upper()] != "":
                 print("setting %s by environment variable %s" % (field_name, field_name.upper()))
-                setattr(self, field_name, self._convert_to_type(field_name. os.environ[field_name.upper()]))
+                setattr(self, field_name, self._convert_to_type(field_name.os.environ[field_name.upper()]))

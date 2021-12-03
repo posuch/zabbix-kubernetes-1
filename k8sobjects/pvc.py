@@ -5,7 +5,7 @@ from pyzabbix import ZabbixMetric
 
 from .k8sobject import K8sObject
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__file__)
 
 
 def get_pvc_data(api, node, timeout_seconds):

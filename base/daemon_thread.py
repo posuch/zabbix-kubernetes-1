@@ -6,15 +6,14 @@ import sys
 import threading
 import time
 from datetime import datetime, timedelta
-from types import ModuleType
-from typing import Dict, List, Union
+from typing import Dict, List
 
 from kubernetes import client, watch
 from kubernetes import config as kube_config
 from kubernetes.client import ApiClient
 from pyzabbix import ZabbixMetric, ZabbixSender
 
-from base.config import Configuration
+from base.config import Configuration, ClusterAccessConfigType
 from base.timed_threads import TimedThread
 from base.watcher_thread import WatcherThread
 from k8sobjects import get_node_names
@@ -37,9 +36,6 @@ def get_discovery_timeout_datetime():
     return datetime.now() - timedelta(hours=1)
 
 
-
-
-
 class KubernetesApi:
     __shared_state = dict(core_v1=None,
                           apps_v1=None,
@@ -56,7 +52,7 @@ class KubernetesApi:
 
 
 class CheckKubernetesDaemon:
-    data: Dict[str, Dict] = {'zabbix_discovery_sent': {}}
+    data: Dict[str, Dict] = {'zabbix_discovery_sent': {}, 'objects': {}}
     thread_lock = threading.Lock()
 
     def __init__(self, config: Configuration,
@@ -64,7 +60,7 @@ class CheckKubernetesDaemon:
                  resources_excluded_zabbix: List[str],
                  discovery_interval: int, data_resend_interval: int,
                  ):
-        self.manage_threads = []
+        self.manage_threads: List[TimedThread] = []
         self.config = config
         self.logger = logging.getLogger(__file__)
         self.discovery_interval = int(discovery_interval)
@@ -73,23 +69,23 @@ class CheckKubernetesDaemon:
         self.api_zabbix_interval = 60
         self.rate_limit_seconds = 30
 
-        if config.k8s_config_type.lower() == "incluster":
+        if config.k8s_config_type is ClusterAccessConfigType.INCLUSTER:
             kube_config.load_incluster_config()
             self.api_client = client.ApiClient()
-        elif config.k8s_config_type.lower() == "kubeconfig":
+        elif config.k8s_config_type is ClusterAccessConfigType.KUBECONFIG:
             kube_config.load_kube_config()
             self.api_client = kube_config.new_client_from_config()
-        elif config.k8s_config_type.lower() == "token":
+        elif config.k8s_config_type is ClusterAccessConfigType.TOKEN:
             self.api_configuration = client.Configuration()
             self.api_configuration.host = config.k8s_api_host
             self.api_configuration.verify_ssl = config.verify_ssl
             self.api_configuration.api_key = {"authorization": "Bearer " + config.k8s_api_token}
             self.api_client = client.ApiClient(self.api_configuration)
         else:
-            self.logger.fatal(
-                f"k8s_config_type = {config.k8s_config_type} is not valid user incluster, kubeconfig or token")
+            self.logger.fatal(f"k8s_config_type = {config.k8s_config_type} is not implmented")
             sys.exit(1)
 
+        self.logger.info(f"Initialized cluster access for {config.k8s_config_type}")
         # K8S API
         self.debug_k8s_events = False
         self.core_v1 = KubernetesApi(self.api_client).core_v1
@@ -126,7 +122,7 @@ class CheckKubernetesDaemon:
                 result.append(k8s_type_available)
         return result
 
-    def handler(self, signum: signal, *args):
+    def handler(self, signum: int, *args: str):
         if signum in [signal.SIGTERM]:
             self.logger.info('Signal handler called with signal %s... stopping (max %s seconds)' % (signum, 3))
             exit_flag.set()
@@ -141,7 +137,7 @@ class CheckKubernetesDaemon:
                 for r, d in self.data.items():
                     rd = dict()
                     if hasattr(d, 'objects'):
-                        for obj_name, obj_d in d.objects.items():
+                        for obj_name, obj_d in d['objects'].items():
                             rd[obj_name] = dict(
                                 last_sent_zabbix=obj_d.last_sent_zabbix,
                                 last_sent_web=obj_d.last_sent_web,
@@ -156,7 +152,7 @@ class CheckKubernetesDaemon:
                 for r, d in self.data.items():
                     rd = dict()
                     if hasattr(d, 'objects'):
-                        for obj_uid, obj in d.objects.items():
+                        for obj_uid, obj in d['objects'].items():
                             rd[obj_uid] = obj.data
                     else:
                         rd = d
