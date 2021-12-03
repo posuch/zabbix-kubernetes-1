@@ -9,3 +9,4 @@ lib/__pycache__/*
 venv/*
 *.log
 /config*.py
+/config*.ini
