@@ -282,7 +282,9 @@ class CheckKubernetesDaemon:
             elif resource == 'pvcs':
                 with self.thread_lock:
                     for node in get_node_names(api):
-                        for pvc_volume in get_pvc_data(api, node, timeout_seconds=timeout):
+                        for pvc_volume in get_pvc_data(api, node,
+                                                       timeout_seconds=timeout,
+                                                       namespace_exclude_re=self.config.namespace_exclude_re):
                             self.data[resource].add_obj(pvc_volume)
                 time.sleep(self.data_resend_interval)
             elif resource == 'ingresses':
@@ -465,6 +467,8 @@ class CheckKubernetesDaemon:
                 metric = obj.get_discovery_for_zabbix(data)
                 self.logger.debug('sending discovery for [%s]: %s' % (resource, metric))
                 self.send_discovery_to_zabbix(resource, metric=[metric])
+            else:
+                self.logger.debug('no discovery data for %s' % resource)
 
             self.data['zabbix_discovery_sent'][resource] = datetime.now()
 
@@ -520,12 +524,13 @@ class CheckKubernetesDaemon:
 
     def send_discovery_to_zabbix(self, resource, metric=None, obj=None):
         if resource not in self.zabbix_resources:
+            self.logger.warning(f'resource {resource} ist not activated')
             return
 
         if obj:
             discovery_data = obj.get_discovery_for_zabbix()
             if not discovery_data:
-                self.logger.debug('No discovery_data for obj %s, not sending to zabbix!' % obj.uid)
+                self.logger.warning('No discovery_data for obj %s, not sending to zabbix!' % obj.uid)
                 return
 
             discovery_key = 'check_kubernetesd[discover,' + resource + ']'
